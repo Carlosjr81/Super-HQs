@@ -48,7 +48,8 @@ com um conector para o formato que o licenciante entregar.
             fonte: "commons-categoria", origem: { id, url },   // procedência
             titulo, colecao, autor, ano, categoria, idioma,
             direitos: { situacao: "dominio-publico", base, autor, autorFalecidoEm },
-            paginas: [{ id: <SHA-1 da fonte>, titulo, url, thumb, largura, altura, licenca, origemUrl }],
+            paginas: [{ id: <SHA-1 da fonte>, titulo, url, thumb, largura, altura,
+                        larguraOriginal, alturaOriginal, arquivo?, licenca, origemUrl }],
             versao,                       // hash da lista de SHA-1: mudou, a obra mudou
             status: "publicada" | "indisponivel",
             publicadaEm, atualizadaEm, editado? }],   // editado: o que o dono mudou, vence a fonte
@@ -57,7 +58,7 @@ com um conector para o formato que o licenciante entregar.
 
 ## O que a sincronização garante (e o teste cobra)
 
-`testes/teste-conectores.js`, 39 checagens com um Commons de mentira:
+`testes/teste-conectores.js`, 50 checagens com um Commons de mentira:
 
 - **Paginação** pelo `continue` da API, 50 arquivos por consulta.
 - **Checkpoint e retomada**: o cursor é gravado a cada consulta; interrompida,
@@ -72,6 +73,15 @@ com um conector para o formato que o licenciante entregar.
   menos de 70 anos, licença não livre na fonte, arquivo que não é imagem ou
   que não respondeu na conferência → revisão, com o motivo.
 - **As edições do dono** (campo `editado`) vencem a fonte.
+- **A melhor versão de cada página**: a mesma página costuma estar no Commons
+  em mais de um escaneamento. As do `padrao` da fonte são as bases (quais
+  páginas a obra tem e a ordem); as que casam com `alternativas` substituem a
+  base quando têm a mesma data no nome (ou `chave`), a mesma proporção (até
+  12%: recorte de um quadro não passa), pelo menos 20% mais pixels e direito
+  de republicação. A página trocada mantém o título da base e guarda o nome
+  do arquivo em `arquivo`. O relatório mostra a largura mediana dos originais,
+  quantas páginas foram trocadas e os maiores arquivos da categoria que ficaram
+  de fora (para ajustar `alternativas`).
 - Sessão expirada não se aplica: a fonte de hoje é pública e não tem login.
 
 ## Controles

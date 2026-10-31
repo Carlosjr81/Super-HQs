@@ -37,6 +37,45 @@ function decidirDireitos(pagina, fonte, anoAtual) {
 // Ordem natural, igual à da estante do app: "2" antes de "10".
 const ordemNatural = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" }).compare;
 
+// A melhor versão de cada página. A mesma página de jornal costuma estar no
+// Commons mais de uma vez (escaneamentos diferentes). As do padrão da fonte
+// são as "bases" (definem quais páginas a obra tem e a ordem); as
+// alternativas (fonte.alternativas) só substituem uma base quando:
+// - têm a mesma chave (a data AAAA-MM-DD no nome, ou fonte.chave);
+// - têm a mesma proporção (até 12% de diferença: um recorte de um quadro não
+//   passa);
+// - têm pelo menos 20% mais pixels;
+// - passam em `aceitavel(p)` (os direitos e a conferência do arquivo).
+// A página trocada mantém o título da base (ordem e revisão não mudam) e
+// guarda o nome do arquivo novo em `arquivo`. Alternativa sem base não entra.
+function escolherMelhorVersao(paginas, fonte, aceitavel) {
+  const re = new RegExp((fonte && fonte.chave) || "\\d{4}-\\d{2}-\\d{2}");
+  const chave = (p) => { const m = re.exec(p.titulo); return m ? m[0] : null; };
+  const area = (p) => (p.larguraOriginal || 0) * (p.alturaOriginal || 0);
+  const prop = (p) => (p.larguraOriginal && p.alturaOriginal ? p.larguraOriginal / p.alturaOriginal : 0);
+  const pode = aceitavel || (() => true);
+  const alts = paginas.filter((p) => p.alternativa);
+  let trocas = 0;
+  const saida = paginas.filter((p) => !p.alternativa).map((base) => {
+    const k = chave(base);
+    if (!k || !prop(base)) return base;
+    let melhor = base;
+    for (const c of alts) {
+      if (chave(c) !== k || !prop(c)) continue;
+      if (Math.abs(prop(c) / prop(base) - 1) > 0.12) continue;
+      if (area(c) < area(base) * 1.2 || area(c) <= area(melhor)) continue;
+      if (!pode(c)) continue;
+      melhor = c;
+    }
+    if (melhor === base) return base;
+    trocas++;
+    const p = Object.assign({}, melhor, { titulo: base.titulo, arquivo: melhor.titulo });
+    delete p.alternativa;
+    return p;
+  });
+  return { paginas: saida, trocas: trocas };
+}
+
 // Monta a obra (uma edição) a partir das páginas coletadas de uma fonte.
 // O id interno é estável ("dp-" + id da fonte): o progresso de leitura e os
 // favoritos de cada pessoa ficam presos a ele, e ele nunca muda.
@@ -46,11 +85,12 @@ const ordemNatural = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "b
 function montarObra(fonte, paginas, anoAtual, aprovadas, indisponiveis) {
   const aceitas = [], revisao = [];
   const ok = aprovadas || new Set(), fora = indisponiveis || new Set();
-  for (const p of paginas) {
+  const escolha = escolherMelhorVersao(paginas, fonte, (p) => decidirDireitos(p, fonte, anoAtual).publicar && !fora.has(p.titulo));
+  for (const p of escolha.paginas) {
     const chave = "dp-" + fonte.id + "|" + p.titulo;
     let d = decidirDireitos(p, fonte, anoAtual);
     if (!d.publicar && ok.has(chave) && p.url && p.sha1) d = { publicar: true };
-    if (d.publicar && fora.has(p.titulo)) d = { publicar: false, motivo: "o arquivo não respondeu na conferência" };
+    if (d.publicar && fora.has(p.arquivo || p.titulo)) d = { publicar: false, motivo: "o arquivo não respondeu na conferência" };
     if (d.publicar) aceitas.push(p);
     else revisao.push({ obra: "dp-" + fonte.id, pagina: p.titulo, origemUrl: p.origemUrl, motivo: d.motivo });
   }
@@ -75,11 +115,14 @@ function montarObra(fonte, paginas, anoAtual, aprovadas, indisponiveis) {
         autor: fonte.autor || "",
         autorFalecidoEm: fonte.autorFalecidoEm,
       },
-      paginas: unicas.map((p) => ({ id: p.sha1, titulo: p.titulo, url: p.url, thumb: p.thumb, largura: p.largura, altura: p.altura, licenca: p.licenca, origemUrl: p.origemUrl })),
+      paginas: unicas.map((p) => Object.assign({ id: p.sha1, titulo: p.titulo, url: p.url, thumb: p.thumb, largura: p.largura, altura: p.altura },
+        p.larguraOriginal ? { larguraOriginal: p.larguraOriginal, alturaOriginal: p.alturaOriginal } : {},
+        p.arquivo ? { arquivo: p.arquivo } : {}, { licenca: p.licenca, origemUrl: p.origemUrl })),
       versao: unicas.map((p) => p.sha1).join(",").length ? hashTexto(unicas.map((p) => p.sha1).join(",")) : "",
       status: unicas.length ? "publicada" : "sem-paginas",
     },
     revisao: revisao,
+    trocas: escolha.trocas,
   };
 }
 
@@ -111,7 +154,10 @@ function aplicarObra(catalogo, obraNova, agora) {
     obras[i] = Object.assign({}, velha, { status: "indisponivel", atualizadaEm: agora });
     return { catalogo: Object.assign({}, catalogo, { obras }), mudanca: "indisponivel" };
   }
-  if (velha.versao === obraNova.versao && velha.status === "publicada") return { catalogo, mudanca: "nada" };
+  // mesma lista de arquivos E mesmos dados de cada página (um campo novo, como
+  // o tamanho do original, também precisa chegar ao catálogo)
+  if (velha.versao === obraNova.versao && velha.status === "publicada" &&
+    JSON.stringify(velha.paginas) === JSON.stringify(obraNova.paginas)) return { catalogo, mudanca: "nada" };
   // as alterações editoriais do dono (campo "editado") vencem a fonte
   const editado = velha.editado || {};
   obras[i] = Object.assign({}, obraNova, editado, { editado, publicadaEm: velha.publicadaEm, atualizadaEm: agora });
@@ -143,4 +189,4 @@ async function comTentativas(fazer, opcoes) {
   throw ultimo;
 }
 
-module.exports = { dominioPublicoNoBrasil, licencaLivre, decidirDireitos, montarObra, aplicarObra, juntarRevisao, comTentativas, hashTexto, ordemNatural };
+module.exports = { dominioPublicoNoBrasil, licencaLivre, decidirDireitos, escolherMelhorVersao, montarObra, aplicarObra, juntarRevisao, comTentativas, hashTexto, ordemNatural };

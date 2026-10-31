@@ -145,6 +145,36 @@ const dep = (extra) => Object.assign({ config: { fontes: [FONTE] }, conectores: 
   const r17 = await sincronizar(dep({ buscarJson: fp, config: { fontes: [Object.assign({}, FONTE, { pausado: true })] } }));
   teste("fonte pausada: nenhuma consulta", ["pausada", 0], [r17.resumo.fontes[0].situacao, fp.chamadas.n]);
 
+  console.log("\n--- a melhor versão de cada página ---");
+  const tam = (nome, sha1, w, h, lic) => { const x = arquivo(nome, sha1, lic); x.imageinfo[0].width = w; x.imageinfo[0].height = h; return x; };
+  const FD = Object.assign({}, FONTE, { id: "datas", padrao: "^Nemo \\d{4}-\\d{2}-\\d{2}\\.jpg$", alternativas: "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$" });
+  const ARQS = [
+    tam("Nemo 1905-10-15.jpg", "b1", 1500, 2000),
+    tam("Nemo 1905-10-22.jpg", "b2", 1500, 2000),
+    tam("Nemo in Slumberland 1905-10-15 (hi-res).png", "h1", 4500, 6000),                    // a mesma página, 9x os pixels
+    tam("Nemo 1905-10-22 panel 3.jpg", "c1", 3000, 1500),                                   // recorte de um quadro: proporção outra
+    tam("Nemo 1905-10-22 restored.jpg", "h2", 1600, 2130),                                  // só 13% maior: não vale a troca
+    tam("Nemo 1905-10-29 scan.jpg", "o1", 4000, 5300),                                      // sem base: não entra
+    tam("Nemo 1905-10-15 big.jpg", "h3", 6000, 8000, "CC BY-SA 4.0"),                        // maior ainda, mas sem direito
+    tam("Capa do livro.jpg", "x1", 800, 600),
+  ];
+  const rD = await sincronizar(dep({ config: { fontes: [FD] }, buscarJson: commonsFalso(ARQS) }));
+  const oD = rD.catalogo.obras[0];
+  teste("as páginas da obra são as do padrão (base), na ordem", ["Nemo 1905-10-15.jpg", "Nemo 1905-10-22.jpg"], oD.paginas.map((p) => p.titulo));
+  teste("a mesma página em resolução maior substitui a base", ["h1", "Nemo in Slumberland 1905-10-15 (hi-res).png", 4500], [oD.paginas[0].id, oD.paginas[0].arquivo, oD.paginas[0].larguraOriginal]);
+  teste("versão maior sem direito de republicação não substitui", true, oD.paginas[0].id !== "h3");
+  teste("recorte de quadro e versão quase igual não substituem", "b2", oD.paginas[1].id);
+  teste("alternativa sem página base não vira página nova", false, oD.paginas.some((p) => p.id === "o1"));
+  teste("a página guarda o tamanho do original (para o leitor)", [1500, 2000], [oD.paginas[1].larguraOriginal, oD.paginas[1].alturaOriginal]);
+  const relD = relatorio(rD.resumo, rD.catalogo);
+  teste("o relatório conta 2 na fonte (sem as alternativas) e 1 troca", [true, true], [/\| 2 \| 2 \| 0 \|/.test(relD), /\| 1 \|$/m.test(relD)]);
+  teste("o relatório lista o que mais existe na categoria, com o tamanho", true, /Capa do livro\.jpg — 800×600/.test(relD));
+  teste("sem alternativas no config, nada muda (o recorte continua fora)", 4, r1.catalogo.obras[0].paginas.length);
+  const velhoSemTam = JSON.parse(JSON.stringify(r1.catalogo));
+  velhoSemTam.obras[0].paginas.forEach((p) => { delete p.larguraOriginal; delete p.alturaOriginal; });
+  const rT = await sincronizar(dep({ buscarJson: commonsFalso(BASE), catalogo: velhoSemTam, estado: r1.estado }));
+  teste("catálogo antigo (sem o tamanho do original) ganha o tamanho na próxima coleta", ["alterada", 2000], [rT.resumo.fontes[0].mudanca, rT.catalogo.obras[0].paginas[0].larguraOriginal]);
+
   console.log("\n" + ok + " passou / " + mal + " falhou");
   process.exit(mal ? 1 : 0);
 })();
