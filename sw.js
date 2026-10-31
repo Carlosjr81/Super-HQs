@@ -1,5 +1,5 @@
 // Super HQs - Service Worker (modo offline). Veio do Treino Livre.
-const CACHE = "superhqs-v4";
+const CACHE = "superhqs-v5";
 // A vinheta de abertura num cache só dela, preservado entre versões: guardá-la
 // no cache da versão a baixaria de novo a cada atualização do app.
 const CACHE_MIDIA = "superhqs-midia";
@@ -49,6 +49,9 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.protocol !== "http:" && url.protocol !== "https:") return;
+  // O app controla a persistência dos índices e das revistas. Nunca guardar
+  // uma falha de login ou um catálogo antigo como se fosse uma atualização.
+  if (e.request.cache === "no-store" && !url.pathname.endsWith("/catalogo/acervo.json")) return;
   // Contador de visitas: nunca interceptar (precisa chegar ao servidor para contar)
   if (url.hostname.indexOf("goatcounter") !== -1 || url.hostname === "gc.zgo.at") return;
   // O arquivo da versão existe para delatar que há versão nova: nunca do cache.

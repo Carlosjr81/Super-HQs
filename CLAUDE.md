@@ -23,9 +23,11 @@ Comixfy), adaptado a essa base. Quando os dois divergem, vale o que está aqui.
    (o `.gitignore` barra PDF, CBZ, CBR e ZIP). Os arquivos moram no aparelho de
    cada um ou no Firebase Storage.
 4. **Só conteúdo autorizado.** O app lê arquivos da própria pessoa e oferece um
-   acervo próprio, licenciado ou de domínio público. **Não copiar, raspar nem
-   sincronizar o acervo do Ink, do Comixfy ou de qualquer serviço** (pedido
-   recusado em 31/10/2026: é acervo pago de terceiros). Cada obra do acervo tem
+   acervo próprio, licenciado ou de domínio público. O dono confirmou em
+   31/10/2026 ter autorização para copiar e reutilizar o acervo Ink/Comixfy
+   no Super HQs. A confirmação substitui o bloqueio anterior desta tarefa;
+   não comprova integração técnica ou exportação operacional. Respeitar os
+   acessos existentes, sem contornar autenticação, DRM ou bloqueios. Cada obra do acervo tem
    registro de direitos (titular, licença, origem).
    Domínio público no Brasil é a vida do autor + 70 anos (Lei 9.610/98): "public
    domain" no Wikimedia Commons costuma querer dizer *nos EUA*, o que não basta.
@@ -124,8 +126,9 @@ Pedido do dono (31/10/2026). Serviço agendado no GitHub Actions
 republicação: hoje, domínio público no Brasil com imagens do Wikimedia Commons
 (as imagens não são copiadas: o catálogo aponta para elas). Tudo em
 `conectores/LEIA-ME.md`. **Ink e Comixfy não têm conector, nem com o login do
-dono**: pedido recusado várias vezes (acervo de terceiros, sem licença de
-republicação; o Claude não usa senha). Não reabrir sem licença dos titulares.
+dono**. O dono confirmou nesta sessão autorização de cópia e reutilização;
+a confirmação substitui a recusa anterior, mas os conectores específicos
+ainda não foram implementados nem testados. Não declarar migração concluída.
 
 - No app: Biblioteca › **Acervo Super HQs** (ao lado de Minha estante), a
   prateleira "Do acervo Super HQs" no Início e a busca juntam as duas. A ficha
@@ -137,6 +140,27 @@ republicação; o Claude não usa senha). Não reabrir sem licença dos titulare
   `thumb.wikimedia.org` (que não serve a outros sites) por `upload.wikimedia.org`.
 - O `sw.js` busca o catálogo na rede primeiro (cópia no `superhqs-acervo` para
   offline) e deixa as imagens do Wikimedia passarem direto.
+
+## O catálogo online (2026-10-31e)
+
+`Conectar acervo` no Início/Biblioteca recebe um índice JSON com SHA-256,
+quantidade de páginas, metadados, direitos e URLs diretas. O padrão para novos
+aparelhos pode ser definido em `CATALOGO_PADRAO` (primeiro bloco de dados);
+o endereço conectado manualmente fica no aparelho. Contrato e piloto:
+`CATALOGO-ONLINE.md`. A amostra é conteúdo próprio de teste, não é acervo real.
+
+As fichas são guardadas na loja IndexedDB `catalogos` (banco versão 2,
+migração preserva `obras`/`arquivos`). O app une índice e estante pelo SHA-256,
+priorizando a ficha pessoal. Arquivos só baixam ao ler; tamanho quando
+informado, hash, formato e quantidade de páginas são conferidos antes de
+gravar a cópia local. PDFs e ZIP/CBZ; RAR ainda precisa de conversão.
+
+Atualiza o índice ao abrir, voltar a rede ou tocar Atualizar; falha mantém a
+última lista. O service worker não intercepta `cache: no-store`. Não há
+coleta no Ink/Comixfy nem sincronização em servidor implementada nesta etapa;
+o produtor do índice precisa fazer essa parte. Não declarar acervo completo
+ou Firebase configurado só porque o app agora aceita um índice. Não incluir
+arquivos de terceiros ou tokens no repositório público.
 
 ## A abertura
 

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "rights": {
+    "holder": "Projeto Super HQs",
+    "license": "Amostras próprias geradas para testes",
+    "origin": "testes/amostras/LEIA-ME.md"
+  },
+  "items": [
+    {
+      "source": "amostras-proprias",
+      "id": "Amostra_Super_HQs_001.cbz",
+      "revision": "5db6ba50f9aa2ef2643b0c4f2fe8e4bb4e69527d12717845818e0eec73fe8f33",
+      "sha256": "5db6ba50f9aa2ef2643b0c4f2fe8e4bb4e69527d12717845818e0eec73fe8f33",
+      "path": "Amostra_Super_HQs_001.cbz",
+      "title": "Amostra de teste — CBZ",
+      "type": "zip",
+      "page_count": 6,
+      "size_bytes": 160473,
+      "file_url": "./Amostra_Super_HQs_001.cbz",
+      "category": "hq"
+    },
+    {
+      "source": "amostras-proprias",
+      "id": "Amostra PDF.pdf",
+      "revision": "9e4868611706f21af8cd9e0ef7cfa61b9d65f40ffddfc535dc107c01101ddcb3",
+      "sha256": "9e4868611706f21af8cd9e0ef7cfa61b9d65f40ffddfc535dc107c01101ddcb3",
+      "path": "Amostra PDF.pdf",
+      "title": "Amostra de teste — PDF",
+      "type": "pdf",
+      "page_count": 4,
+      "size_bytes": 1742,
+      "file_url": "./Amostra PDF.pdf",
+      "category": "hq"
+    }
+  ]
+}
