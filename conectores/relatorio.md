@@ -1,10 +1,10 @@
 # Relatório da sincronização do acervo
 
-Gerado em 2026-10-31T15:06:28.792Z. Gravado a cada execução por `conectores/rodar.js`.
+Gerado em 2026-10-31T15:06:42.761Z. Gravado a cada execução por `conectores/rodar.js`.
 
 | Fonte | Situação | Mudança | Na fonte | Publicadas | Em revisão |
 |---|---|---|---|---|---|
-| Little Nemo in Slumberland — 1906 | ok | alterada | 48 | 48 | 0 |
+| Little Nemo in Slumberland — 1907 | ok | alterada | 52 | 52 | 0 |
 
 No catálogo: 4 obras publicadas, 0 indisponíveis, 163 páginas, 0 itens esperando revisão.
 
@@ -14,17 +14,17 @@ No catálogo: 4 obras publicadas, 0 indisponíveis, 163 páginas, 0 itens espera
 
 | Fonte | Largura mediana do original | Páginas trocadas por versão maior |
 |---|---|---|
-| Little Nemo in Slumberland — 1906 | 1768 px | 1 |
+| Little Nemo in Slumberland — 1907 | 1752 px | 0 |
 
-Outros arquivos em **Little Nemo in Slumberland — 1906** (fora do padrão, os maiores primeiro):
+Outros arquivos em **Little Nemo in Slumberland — 1907** (fora do padrão, os maiores primeiro):
 
-- Winsor McCay, Little Nemo in Slumberland - "I don't like this, one little tiny bit, not one tiny weenie bit", 1906, NGA 142153.jpg — 3166×4000 (image/jpeg)
-- Little Nemo pink dress.jpg — 1193×1660 (image/jpeg)
-- Nemo1906.jpg — 1132×1548 (image/jpeg)
-- Little Nemo Elephant.jpg — 1050×1382 (image/jpeg)
-- Little NemoSlumberland band.jpg — 788×1016 (image/jpeg)
-- Little Nemo Dragon.jpg — 800×614 (image/jpeg)
-- 1906 0311 peacocks 650.jpg — 650×421 (image/jpeg)
-- Pointing Flip.png — 482×316 (image/png)
-- Little Nemo title.jpg — 600×159 (image/jpeg)
-- Little Nemo princess.jpg — 111×173 (image/jpeg)
+- Winsor McCay, Little Nemo in Slumberland - Climbing the Great North Pole, 1907, NGA 142154.jpg — 3208×4000 (image/jpeg)
+- Nemo012707.jpg — 1220×1592 (image/jpeg)
+- Nemo120107.jpg — 1202×1571 (image/jpeg)
+- Nemo-pl1.jpg — 811×1043 (image/jpeg)
+- Little Nemo in the forest.jpg — 968×631 (image/jpeg)
+- Little Nemo Palace.jpg — 675×549 (image/jpeg)
+- Little Nemo snow.jpg — 693×357 (image/jpeg)
+- Little Nemo snow 4.jpg — 263×637 (image/jpeg)
+- Little Nemo snow 2.jpg — 260×610 (image/jpeg)
+- Little Nemo snow 3.jpg — 260×610 (image/jpeg)
