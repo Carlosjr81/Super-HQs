@@ -7,7 +7,11 @@ Esta pasta **não é servida** pelo Super HQs. É o lembrete do que precisa esta
 O `.well-known/assetlinks.json` de lá precisa ganhar **mais uma entrada**, para o
 app `br.com.superhqs.app`, **sem apagar a do Treino Livre**. A impressão digital
 sai do passo "Impressão digital da chave" do workflow App Android, depois do
-primeiro APK. Até lá o app abre com a barra de endereço do Chrome no topo.
+primeiro APK.
+
+**Feito em 31/10/2026**: a entrada do Super HQs está no repositório do domínio,
+com a impressão digital 
+(a chave do cache do Actions). Se a chave mudar, este número muda e a barra volta.
 
 A entrada a acrescentar (trocar o `XX:...` pela impressão digital):
 
