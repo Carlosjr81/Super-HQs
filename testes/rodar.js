@@ -14,6 +14,7 @@ const SUITES = [
   ["teste-estante", "a estante: tipo pelos bytes, páginas do CBZ, título, busca e leitura"],
   ["teste-conectores", "a sincronização do acervo: paginação, retomada, duplicatas, direitos e falhas"],
   ["teste-leitor", "o leitor: toque x arraste, virada da folha e o Toque para Ler achando o balão"],
+  ["teste-catalogo", "catálogo online, união com a estante e download conferido"],
 ];
 
 console.log("app: " + caminhoDoApp() + "\n");
