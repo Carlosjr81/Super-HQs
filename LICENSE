@@ -33,7 +33,8 @@ Componentes de terceiros
 ------------------------
 O app usa bibliotecas carregadas por CDN. Cada uma continua sob a sua
 própria licença, e nada neste aviso muda isso: React e ReactDOM (MIT),
-Babel (MIT), qrcode-generator (MIT). As bibliotecas do app Android
+Babel (MIT), qrcode-generator (MIT), pdf.js (Apache-2.0),
+fflate (MIT). As bibliotecas do app Android
 (AndroidX, Android Browser Helper) seguem as licenças dos seus fabricantes.
 
 Para pedir autorização ou licenciamento comercial: Instagram @carlos.jr.81.

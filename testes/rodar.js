@@ -11,6 +11,7 @@ const { caminhoDoApp } = require("./app");
 
 const SUITES = [
   ["teste-acesso", "login com aprovação, termos, cobrança e o painel do dono"],
+  ["teste-estante", "a estante: tipo pelos bytes, páginas do CBZ, título, busca e leitura"],
 ];
 
 console.log("app: " + caminhoDoApp() + "\n");

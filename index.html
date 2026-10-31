@@ -236,7 +236,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31a";
+const VERSAO_APP = "2026-10-31b";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -2324,6 +2324,451 @@ function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
 }
 
 
+// ---------------- ESTANTE: AS CONTAS ----------------
+// A estante pessoal: os arquivos que a própria pessoa abre (PDF, CBZ e, na
+// próxima versão, CBR), guardados no aparelho. Só contas puras aqui, sem tela
+// e sem navegador: o teste-estante.js recorta este trecho e roda no Node.
+const EXT_IMAGEM = /\.(jpe?g|png|gif|webp|avif|bmp)$/i;
+const MIME_IMAGEM = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp", avif: "image/avif", bmp: "image/bmp" };
+// Ordem natural: "Página 2" antes de "Página 10", e "#0.1" entre "#0" e "#1".
+const ordemNatural = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" }).compare;
+// O tipo vem dos primeiros bytes, não do nome: muito "CBR" por aí é um ZIP
+// renomeado, e muito ".cbz" baixado é outra coisa.
+function tipoDoArquivo(bytes) {
+  const b = bytes || [];
+  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return "pdf";
+  if (b[0] === 0x50 && b[1] === 0x4B && b[2] === 0x03 && b[3] === 0x04) return "zip";
+  if (b[0] === 0x52 && b[1] === 0x61 && b[2] === 0x72 && b[3] === 0x21) return "rar";
+  if (b[0] === 0x37 && b[1] === 0x7A && b[2] === 0xBC && b[3] === 0xAF) return "7z";
+  return null;
+}
+const NOME_FORMATO = { pdf: "PDF", zip: "CBZ", rar: "CBR", "7z": "CB7" };
+// As páginas de um CBZ: só imagens, sem as pastas de lixo do Mac nem arquivos
+// ocultos, em ordem natural (pasta e nome).
+function paginasDoZip(nomes) {
+  return nomes.filter((n) => EXT_IMAGEM.test(n) && !/(^|\/)(__MACOSX\/|\.)/.test(n)).sort(ordemNatural);
+}
+// O título de exibição sai do nome do arquivo, sem a extensão e sem os
+// sublinhados. Nada além disso: autoria, ano e editora nunca são adivinhados
+// pelo nome. O nome original fica guardado à parte, intacto.
+function tituloDoArquivo(nome) {
+  const base = String(nome || "").replace(/^.*[\\/]/, "").replace(/\.[^.]+$/, "");
+  return base.replace(/_+/g, " ").replace(/\s+/g, " ").trim() || "Sem título";
+}
+const CATEGORIAS = [["hq", "HQs"], ["manga", "Mangás"], ["manhwa", "Manhwas"], ["livro", "Livros"]];
+const ORDENS = [["recentes", "Adicionadas recentemente"], ["titulo", "Título A-Z"], ["lidas", "Lidas por último"]];
+function estadoLeitura(o) {
+  if (!o || !o.leitura) return "nova";
+  return o.leitura.pagina >= (o.paginas || 1) - 1 ? "lida" : "lendo";
+}
+function progressoTexto(o) {
+  const e = estadoLeitura(o);
+  if (e === "nova") return "Não iniciada";
+  if (e === "lida") return "Lida";
+  return "Página " + (o.leitura.pagina + 1) + " de " + o.paginas;
+}
+// Busca sem acento, palavra por palavra, no título, no nome original e na
+// coleção; filtro de categoria e de estado; ordem estável.
+function buscarObras(lista, f) {
+  const o = f || {};
+  const palavras = semAcento(o.termo || "").split(" ").filter(Boolean);
+  const cmp = {
+    titulo: (a, b) => ordemNatural(a.titulo, b.titulo),
+    recentes: (a, b) => (b.adicionadoEm || 0) - (a.adicionadoEm || 0) || ordemNatural(a.titulo, b.titulo),
+    lidas: (a, b) => ((b.leitura && b.leitura.em) || 0) - ((a.leitura && a.leitura.em) || 0) || ordemNatural(a.titulo, b.titulo),
+  }[o.ordem || "recentes"] || ((a, b) => ordemNatural(a.titulo, b.titulo));
+  return (lista || []).filter((x) => {
+    if (o.categoria && o.categoria !== "todas" && x.categoria !== o.categoria) return false;
+    if (o.estado && o.estado !== "todos" && estadoLeitura(x) !== o.estado) return false;
+    const texto = semAcento([x.titulo, x.nomeOriginal, x.colecao].filter(Boolean).join(" "));
+    return palavras.every((p) => texto.indexOf(p) >= 0);
+  }).sort(cmp);
+}
+// Continuar lendo: as começadas e não terminadas, a mais recente primeiro.
+function continuarLendo(lista, n) {
+  return (lista || []).filter((o) => estadoLeitura(o) === "lendo")
+    .sort((a, b) => (b.leitura.em || 0) - (a.leitura.em || 0)).slice(0, n || 10);
+}
+function hexDe(buf) { return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join(""); }
+function tamanhoTexto(bytes) {
+  if (!(bytes > 0)) return "";
+  return bytes < 1048576 ? Math.max(1, Math.round(bytes / 1024)) + " KB" : (bytes / 1048576).toFixed(1).replace(".", ",") + " MB";
+}
+// ---------------- FIM DAS CONTAS DA ESTANTE ----------------
+
+// ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------
+// Duas gavetas: "obras" (a ficha, leve, com a capa reduzida) e "arquivos" (o
+// arquivo original, pesado). A lista da estante lê só as fichas. O id é o
+// SHA-256 do arquivo: o mesmo arquivo importado duas vezes não duplica, e o
+// mesmo arquivo em outro aparelho tem o mesmo id (para a sincronia da Etapa 4).
+const BANCO_ESTANTE = "superhqs-estante";
+let bancoEstante = null;
+function abrirBancoEstante() {
+  if (!bancoEstante) {
+    bancoEstante = new Promise((res, rej) => {
+      const r = indexedDB.open(BANCO_ESTANTE, 1);
+      r.onupgradeneeded = () => {
+        r.result.createObjectStore("obras", { keyPath: "id" });
+        r.result.createObjectStore("arquivos", { keyPath: "id" });
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => { bancoEstante = null; rej(r.error); };
+    });
+  }
+  return bancoEstante;
+}
+// Uma transação que só resolve quando o navegador confirma a gravação: o
+// "gravou" antes do commit já enganou o Treino Livre uma vez (cota cheia).
+async function transacaoEstante(lojas, modo, fazer) {
+  const db = await abrirBancoEstante();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(lojas, modo);
+    const r = fazer(tx);
+    tx.oncomplete = () => res(r && "result" in r ? r.result : true);
+    tx.onerror = () => rej(tx.error);
+    tx.onabort = () => rej(tx.error || new Error("o aparelho recusou a gravação (espaço cheio?)"));
+  });
+}
+const estanteDb = {
+  listar: () => transacaoEstante("obras", "readonly", (tx) => tx.objectStore("obras").getAll()),
+  obra: (id) => transacaoEstante("obras", "readonly", (tx) => tx.objectStore("obras").get(id)),
+  arquivo: (id) => transacaoEstante("arquivos", "readonly", (tx) => tx.objectStore("arquivos").get(id)).then((r) => r && r.blob),
+  guardar: (obra, blob) => transacaoEstante(["obras", "arquivos"], "readwrite", (tx) => {
+    tx.objectStore("arquivos").put({ id: obra.id, blob: blob });
+    tx.objectStore("obras").put(obra);
+  }),
+  atualizar: (obra) => transacaoEstante("obras", "readwrite", (tx) => tx.objectStore("obras").put(obra)),
+  apagar: (id) => transacaoEstante(["obras", "arquivos"], "readwrite", (tx) => {
+    tx.objectStore("obras").delete(id);
+    tx.objectStore("arquivos").delete(id);
+  }),
+};
+
+// ---------------- ESTANTE: ABRIR OS ARQUIVOS ----------------
+// As bibliotecas vêm por CDN com SRI, só quando a estante precisa delas.
+// pdf.js 3.11 (Apache-2.0): a última com versão UMD, que dispensa build.
+// O worker vem de outro endereço, e o navegador não deixa criar worker de
+// outra origem: um blob com importScripts contorna isso.
+const LIB_ESTANTE = {
+  fflate: { url: "https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js", sri: "sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT" },
+  pdf: { url: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", sri: "sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ==",
+    worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" },
+};
+// Uma imagem de página maior que isto, descompactada, é recusada: protege o
+// celular de um arquivo compactado feito para estourar a memória.
+const LIMITE_PAGINA = 80 * 1048576;
+let pdfJsPronto = null;
+function carregarPdfJs() {
+  if (!pdfJsPronto) {
+    pdfJsPronto = carregarScript(LIB_ESTANTE.pdf.url, LIB_ESTANTE.pdf.sri).then(() => {
+      const lib = window.pdfjsLib;
+      lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
+        new Blob(['importScripts("' + LIB_ESTANTE.pdf.worker + '");'], { type: "text/javascript" }));
+      return lib;
+    }).catch((e) => { pdfJsPronto = null; throw e; });
+  }
+  return pdfJsPronto;
+}
+// Os dois abridores têm a mesma cara: quantas páginas, a imagem da página i
+// (um Blob) e fechar. O leitor não sabe de que formato veio a revista.
+async function abrirZip(blob) {
+  await carregarScript(LIB_ESTANTE.fflate.url, LIB_ESTANTE.fflate.sri);
+  const dados = new Uint8Array(await blob.arrayBuffer());
+  const nomes = [];
+  // filtro que sempre diz "não": lista o índice do ZIP sem descompactar nada
+  window.fflate.unzipSync(dados, { filter: (f) => { if (f.originalSize <= LIMITE_PAGINA) nomes.push(f.name); return false; } });
+  const paginas = paginasDoZip(nomes);
+  return {
+    paginas: paginas.length,
+    async imagem(i) {
+      const nome = paginas[i];
+      const r = window.fflate.unzipSync(dados, { filter: (f) => f.name === nome });
+      return new Blob([r[nome]], { type: MIME_IMAGEM[nome.split(".").pop().toLowerCase()] || "image/jpeg" });
+    },
+    fechar() {},
+  };
+}
+async function abrirPdf(blob) {
+  const lib = await carregarPdfJs();
+  const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
+  return {
+    paginas: doc.numPages,
+    // a página é desenhada na largura pedida (a da tela, vezes a densidade)
+    async imagem(i, largura) {
+      const pg = await doc.getPage(i + 1);
+      const base = pg.getViewport({ scale: 1 });
+      const v = pg.getViewport({ scale: Math.min(4, Math.max(0.5, (largura || 1200) / base.width)) });
+      const c = document.createElement("canvas");
+      c.width = Math.round(v.width); c.height = Math.round(v.height);
+      await pg.render({ canvasContext: c.getContext("2d"), viewport: v }).promise;
+      pg.cleanup();
+      return new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
+    },
+    fechar() { try { doc.destroy(); } catch (e) {} },
+  };
+}
+function abrirArquivoDaEstante(blob, tipo) {
+  if (tipo === "pdf") return abrirPdf(blob);
+  if (tipo === "zip") return abrirZip(blob);
+  return Promise.reject(new Error("formato que ainda não abre: " + (NOME_FORMATO[tipo] || tipo)));
+}
+async function miniatura(blob, largura) {
+  const bmp = await createImageBitmap(blob);
+  const esc = Math.min(1, largura / bmp.width);
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * esc); c.height = Math.round(bmp.height * esc);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  if (bmp.close) bmp.close();
+  return new Promise((r) => c.toBlob(r, "image/jpeg", 0.82));
+}
+// Importar um arquivo: confere o tipo pelos bytes, calcula o id, lê a capa e
+// guarda. Devolve { obra }, { repetida } ou { erro } — um arquivo ruim vira
+// uma linha no relatório, nunca trava os outros.
+async function importarArquivo(file) {
+  const tipo = tipoDoArquivo(new Uint8Array(await file.slice(0, 8).arrayBuffer()));
+  if (tipo === "rar") return { erro: "CBR (RAR) ainda não abre neste app: chega na próxima versão." };
+  if (tipo === "7z") return { erro: "CB7 (7-Zip) ainda não abre neste app." };
+  if (!tipo) return { erro: "não é PDF, CBZ nem CBR." };
+  const id = hexDe(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()));
+  if (await estanteDb.obra(id)) return { repetida: true };
+  let ab = null;
+  try {
+    ab = await abrirArquivoDaEstante(file, tipo);
+    if (!ab.paginas) return { erro: "não achei nenhuma página dentro." };
+    const capa = await miniatura(await ab.imagem(0, 600), 320);
+    const obra = { id: id, titulo: tituloDoArquivo(file.name), nomeOriginal: file.name, tipo: tipo,
+      tamanho: file.size, paginas: ab.paginas, capa: capa, categoria: "hq", adicionadoEm: Date.now(), leitura: null };
+    await estanteDb.guardar(obra, file);
+    return { obra: obra };
+  } catch (e) {
+    return { erro: /senha|password/i.test(String(e && e.message)) ? "o arquivo tem senha." : "não consegui abrir (" + ((e && e.message) || "arquivo danificado") + ")." };
+  } finally { if (ab) ab.fechar(); }
+}
+
+// ---------------- ESTANTE: AS TELAS ----------------
+function Capa({ obra, altura }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    if (!obra.capa) return;
+    const u = URL.createObjectURL(obra.capa);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [obra.capa]);
+  return (
+    <div style={{ width: "100%", height: altura || 190, borderRadius: 10, overflow: "hidden", background: "var(--bg2)", border: "1px solid var(--borda)" }}>
+      {url && <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+    </div>
+  );
+}
+
+function GradeObras({ obras, onAbrir }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 12 }}>
+      {obras.map((o) => {
+        const e = estadoLeitura(o);
+        return (
+          <button key={o.id} onClick={() => onAbrir(o)} aria-label={o.titulo + ", " + progressoTexto(o)}
+            style={{ background: "none", border: "none", padding: 0, textAlign: "left", color: "var(--texto)", cursor: "pointer", minWidth: 0 }}>
+            <Capa obra={o} altura={156} />
+            {e === "lendo" && (
+              <div style={{ height: 3, background: "var(--borda)", borderRadius: 2, marginTop: 4 }}>
+                <div style={{ height: 3, width: Math.round(100 * (o.leitura.pagina + 1) / o.paginas) + "%", background: "var(--marca)", borderRadius: 2 }} />
+              </div>
+            )}
+            <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.3, marginTop: 5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{o.titulo}</div>
+            <div style={{ fontSize: 11, color: e === "lida" ? "var(--ok)" : "var(--cinza)" }}>{e === "nova" ? NOME_FORMATO[o.tipo] + " · " + o.paginas + " pág." : progressoTexto(o)}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Chips({ opcoes, valor, onMudar }) {
+  return (
+    <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
+      {opcoes.map(([id, nome]) => (
+        <button key={id} onClick={() => onMudar(id)} aria-pressed={valor === id}
+          style={{ flexShrink: 0, borderRadius: 999, padding: "7px 13px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+            border: "1px solid " + (valor === id ? "var(--marca)" : "var(--borda2)"),
+            background: valor === id ? "var(--marca)" : "transparent", color: valor === id ? "#FFFFFF" : "var(--texto)" }}>{nome}</button>
+      ))}
+    </div>
+  );
+}
+
+function EstanteVazia({ onImportar }) {
+  return (
+    <div style={{ ...S.card, textAlign: "center", padding: "28px 18px" }}>
+      <div style={{ fontSize: 40 }} aria-hidden="true">📚</div>
+      <div style={{ fontSize: 17, fontWeight: 800, margin: "8px 0 6px" }}>A sua estante está vazia</div>
+      <div style={{ fontSize: 13.5, color: "var(--cinza)", lineHeight: 1.6, marginBottom: 16 }}>
+        Abra os seus arquivos de quadrinhos, mangás e livros (PDF ou CBZ). Eles ficam guardados neste aparelho e abrem sem internet.
+      </div>
+      <button style={S.btn} onClick={onImportar}>＋ Abrir arquivos</button>
+      <div style={{ fontSize: 11.5, color: "var(--cinza)", marginTop: 10 }}>{AVISO_CONTEUDO.curto}</div>
+    </div>
+  );
+}
+
+// A ficha da edição (pré-leitura): capa, números reais, ações. O que não se
+// sabe fica de fora em vez de ser inventado.
+function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
+  const e = estadoLeitura(obra);
+  const [apagando, setApagando] = useState(false);
+  const linha = (rot, val) => val ? (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13, padding: "5px 0", borderBottom: "1px solid var(--borda)" }}>
+      <span style={{ color: "var(--cinza)" }}>{rot}</span><span style={{ textAlign: "right", wordBreak: "break-word" }}>{val}</span>
+    </div>
+  ) : null;
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 60, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={onFechar}>
+      <div role="dialog" aria-modal="true" aria-label={obra.titulo} onClick={(ev) => ev.stopPropagation()}
+        style={{ ...S.card, width: "100%", maxWidth: 480, margin: 0, borderRadius: "20px 20px 0 0", maxHeight: "90vh", overflowY: "auto", paddingBottom: "calc(18px + env(safe-area-inset-bottom))" }}>
+        <div style={{ display: "flex", gap: 14 }}>
+          <div style={{ width: 110, flexShrink: 0 }}><Capa obra={obra} altura={165} /></div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.3 }}>{obra.titulo}</div>
+            <div style={{ fontSize: 13, color: "var(--cinza)", marginTop: 4 }}>{progressoTexto(obra)}</div>
+            <select value={obra.categoria} onChange={(ev) => onMudar({ ...obra, categoria: ev.target.value })} aria-label="Categoria"
+              style={{ ...S.input, padding: "8px 10px", fontSize: 14, marginTop: 10 }}>
+              {CATEGORIAS.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{ marginTop: 12 }}>
+          {linha("Páginas", String(obra.paginas))}
+          {linha("Formato", NOME_FORMATO[obra.tipo])}
+          {linha("Tamanho", tamanhoTexto(obra.tamanho))}
+          {linha("Arquivo", obra.nomeOriginal)}
+          {linha("Adicionada em", new Date(obra.adicionadoEm).toLocaleDateString("pt-BR"))}
+        </div>
+        <button style={{ ...S.btn, marginTop: 14 }} onClick={() => onLer(obra, e === "lendo" ? obra.leitura.pagina : 0)}>
+          {e === "lendo" ? "▶ Continuar da página " + (obra.leitura.pagina + 1) : e === "lida" ? "↺ Ler de novo" : "▶ Ler agora"}
+        </button>
+        {e === "lendo" && <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={() => onLer(obra, 0)}>Começar do início</button>}
+        <button style={{ ...S.btnGhost, marginTop: 8, color: apagando ? "#ED4956" : "var(--cinza)", borderColor: apagando ? "#ED4956" : "var(--borda2)" }}
+          onClick={() => { if (apagando) onApagar(obra); else setApagando(true); }}>
+          {apagando ? "Toque de novo para tirar da estante (apaga a cópia deste aparelho)" : "Tirar da estante"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// O leitor: página simples, a imagem inteira na tela. Tocar à direita avança,
+// à esquerda volta, no meio mostra ou esconde os controles; setas e Esc no
+// teclado. Guarda a página a cada virada. Fica com a página atual e as
+// vizinhas prontas, e solta as outras (não decodifica o arquivo inteiro).
+// A virada de livro (Etapa 3) e o Toque para Ler (Etapa 2) entram aqui.
+function Leitor({ obra, inicio, onFechar, onProgresso }) {
+  const [pagina, setPagina] = useState(Math.min(Math.max(0, inicio || 0), obra.paginas - 1));
+  const [urls, setUrls] = useState({});
+  const [erro, setErro] = useState("");
+  const [controles, setControles] = useState(true);
+  const [fim, setFim] = useState(false);
+  const abridor = useRef(null);
+  const pedidas = useRef({});
+  const urlsRef = useRef({});
+
+  useEffect(() => {
+    let vivo = true;
+    estanteDb.arquivo(obra.id)
+      .then((blob) => { if (!blob) throw new Error("o arquivo não está mais neste aparelho"); return abrirArquivoDaEstante(blob, obra.tipo); })
+      .then((ab) => { if (vivo) { abridor.current = ab; setUrls({}); } else ab.fechar(); })
+      .catch((e) => { if (vivo) setErro((e && e.message) || "não consegui abrir"); });
+    return () => {
+      vivo = false;
+      if (abridor.current) abridor.current.fechar();
+      Object.values(urlsRef.current).forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [obra.id]);
+
+  // a janela: a página atual, a próxima e a anterior
+  useEffect(() => {
+    const ab = abridor.current;
+    if (!ab) return;
+    const largura = Math.round(Math.min(2400, (window.innerWidth || 800) * (window.devicePixelRatio || 1)));
+    const janela = [pagina, pagina + 1, pagina - 1, pagina + 2].filter((i) => i >= 0 && i < obra.paginas);
+    janela.forEach((i) => {
+      if (urlsRef.current[i] || pedidas.current[i]) return;
+      pedidas.current[i] = true;
+      ab.imagem(i, largura).then((b) => {
+        delete pedidas.current[i];
+        urlsRef.current[i] = URL.createObjectURL(b);
+        setUrls(Object.assign({}, urlsRef.current));
+      }).catch(() => { delete pedidas.current[i]; if (i === pagina) setErro("a página " + (i + 1) + " não abriu"); });
+    });
+    Object.keys(urlsRef.current).forEach((k) => {
+      if (Math.abs(k - pagina) > 3) { URL.revokeObjectURL(urlsRef.current[k]); delete urlsRef.current[k]; }
+    });
+    onProgresso(obra, pagina);
+  }, [pagina, urls === null, abridor.current]);
+
+  const ir = useCallback((d) => {
+    setFim(false);
+    setPagina((p) => {
+      const n = p + d;
+      if (n >= obra.paginas) { setFim(true); return p; }
+      return Math.max(0, n);
+    });
+  }, [obra.paginas]);
+  useEffect(() => {
+    const tecla = (e) => {
+      if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); ir(1); }
+      else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); ir(-1); }
+      else if (e.key === "Escape") onFechar();
+    };
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  }, [ir, onFechar]);
+
+  const tocar = (e) => {
+    const x = e.clientX / (window.innerWidth || 1);
+    if (x < 0.3) ir(-1);
+    else if (x > 0.7) ir(1);
+    else setControles((c) => !c);
+  };
+  const barra = { position: "absolute", left: 0, right: 0, zIndex: 2, background: "rgba(11,11,15,0.88)", color: "#F2F2F5", padding: "10px 14px",
+    display: "flex", alignItems: "center", gap: 10, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" };
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#000", userSelect: "none", touchAction: "manipulation" }}>
+      <div onClick={tocar} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {urls[pagina]
+          ? <img src={urls[pagina]} alt={"Página " + (pagina + 1) + " de " + obra.paginas} draggable={false}
+              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
+          : <div style={{ color: "#A6A6B3", fontSize: 14, padding: 24, textAlign: "center" }}>{erro || "Abrindo a página " + (pagina + 1) + "…"}</div>}
+      </div>
+      {controles && (
+        <React.Fragment>
+          <div style={{ ...barra, top: 0, paddingTop: "calc(10px + env(safe-area-inset-top))" }}>
+            <button onClick={onFechar} aria-label="Voltar à estante" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 22, cursor: "pointer", padding: "2px 6px" }}>✕</button>
+            <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{obra.titulo}</div>
+          </div>
+          <div style={{ ...barra, bottom: 0, paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
+            <button onClick={() => ir(-1)} aria-label="Página anterior" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 20, cursor: "pointer" }}>‹</button>
+            <input type="range" min={1} max={obra.paginas} value={pagina + 1} aria-label="Ir à página"
+              onChange={(e) => { setFim(false); setPagina(+e.target.value - 1); }} style={{ flex: 1, accentColor: "#FF4D2E" }} />
+            <span style={{ fontSize: 12.5, minWidth: 64, textAlign: "center" }}>{pagina + 1} / {obra.paginas}</span>
+            <button onClick={() => ir(1)} aria-label="Próxima página" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 20, cursor: "pointer" }}>›</button>
+          </div>
+        </React.Fragment>
+      )}
+      {fim && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 3, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ ...S.card, maxWidth: 340, width: "100%", textAlign: "center" }}>
+            <div style={{ fontSize: 13, letterSpacing: 2, color: "var(--cinza)", fontWeight: 800 }}>FIM</div>
+            <div style={{ fontSize: 17, fontWeight: 900, margin: "6px 0 16px" }}>{obra.titulo}</div>
+            <button style={S.btn} onClick={onFechar}>Voltar à estante</button>
+            <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={() => { setFim(false); setPagina(0); }}>Ler desde o início</button>
+            <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={() => setFim(false)}>Ficar na última página</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------------- ABERTURA ----------------
 // A vinheta da marca, em vídeo, feita pelo dono (como a do Treino Livre).
 // Enquanto ele não mandar o arquivo, fica vazio e o app abre direto. Quando
@@ -2440,9 +2885,6 @@ const ABAS = [
   ["ajustes", "⚙", "Ajustes"],
 ];
 const EM_BREVE = {
-  inicio: ["Continuar lendo, Descoberta do dia e Adicionadas recentemente.", "Etapa 2"],
-  biblioteca: ["Estantes, HQs, Mangás, Manhwas, Coleções, Arcos, Personagens e Pastas. Abrir os seus arquivos PDF, CBZ e CBR.", "Etapa 1"],
-  buscar: ["Buscar por coleção, personagem, ano, formato e categoria, sem se preocupar com acento.", "Etapa 1"],
   leituras: ["Fila, Favoritos, Lidas, Histórico, Calendário e Downloads para ler sem internet.", "Etapa 4"],
 };
 
@@ -2455,6 +2897,60 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   const [comoInstalar, setComoInstalar] = useState(false);
   const [promptInstalar, setPromptInstalar] = useState(null);
   const [copiado, setCopiado] = useState(false);
+
+  // A estante: as fichas vêm do IndexedDB; os arquivos só quando se lê.
+  const [obras, setObras] = useState([]);
+  const [ficha, setFicha] = useState(null);
+  const [lendo, setLendo] = useState(null);
+  const [importando, setImportando] = useState(null);
+  const [categoria, setCategoria] = useState("todas");
+  const [busca, setBusca] = useState({ termo: "", ordem: "recentes", estado: "todos", categoria: "todas" });
+  const entradaArquivo = useRef(null);
+  const recarregarEstante = useCallback(() => estanteDb.listar().then(setObras).catch(() => {}), []);
+  useEffect(() => { recarregarEstante(); }, []);
+  const abrirSeletor = () => { if (entradaArquivo.current) entradaArquivo.current.click(); };
+  // Um por vez, com relatório no fim: arquivo ruim não trava os outros.
+  const aoEscolherArquivos = async (e) => {
+    const lista = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!lista.length) return;
+    // Pedir para o navegador não apagar a estante quando faltar espaço
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (x) {}
+    const rel = { novas: 0, repetidas: 0, erros: [] };
+    for (let i = 0; i < lista.length; i++) {
+      setImportando({ atual: i + 1, total: lista.length, nome: lista[i].name });
+      let r;
+      try { r = await importarArquivo(lista[i]); } catch (x) { r = { erro: (x && x.message) || "falhou" }; }
+      if (r.obra) rel.novas++;
+      else if (r.repetida) rel.repetidas++;
+      else rel.erros.push(lista[i].name + ": " + r.erro);
+    }
+    setImportando(null);
+    await recarregarEstante();
+    registrarEvento("estante-importou");
+    if (rel.erros.length || rel.repetidas || lista.length > 1) {
+      setModal({ msg: [
+        rel.novas ? "📚 " + rel.novas + " " + plural(rel.novas, "edição nova na estante.", "edições novas na estante.") : "",
+        rel.repetidas ? "↺ " + rel.repetidas + " já " + plural(rel.repetidas, "estava", "estavam") + " na estante (o mesmo arquivo não entra duas vezes)." : "",
+        rel.erros.length ? "Não entraram:\n• " + rel.erros.join("\n• ") : "",
+      ].filter(Boolean).join("\n\n") });
+    }
+  };
+  // A página lida é guardada a cada virada; a lista em memória acompanha.
+  const guardarProgresso = useCallback((obra, pagina) => {
+    const leitura = { pagina: pagina, em: Date.now() };
+    setObras((l) => l.map((o) => (o.id === obra.id ? Object.assign({}, o, { leitura: leitura }) : o)));
+    estanteDb.obra(obra.id).then((o) => { if (o) estanteDb.atualizar(Object.assign(o, { leitura: leitura })); }).catch(() => {});
+  }, []);
+  const mudarObra = (obra) => {
+    setFicha(obra);
+    setObras((l) => l.map((o) => (o.id === obra.id ? obra : o)));
+    estanteDb.atualizar(obra).catch(() => {});
+  };
+  const apagarObra = (obra) => {
+    setFicha(null);
+    estanteDb.apagar(obra.id).then(recarregarEstante).catch(() => {});
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute("data-tema", tema);
@@ -2532,7 +3028,11 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   };
 
   if (abertura) return <Abertura onFim={() => setAbertura(false)} />;
+  if (lendo) return <Leitor obra={lendo.obra} inicio={lendo.pagina} onProgresso={guardarProgresso} onFechar={() => setLendo(null)} />;
 
+  const daCategoria = buscarObras(obras, { categoria: categoria, ordem: "recentes" });
+  const resultados = buscarObras(obras, busca);
+  const lendoAgora = continuarLendo(obras, 12);
   const titulo = (ABAS.find((a) => a[0] === aba) || [0, 0, "Painel de usuários"])[2];
   return (
     <div style={S.app}>
@@ -2566,6 +3066,55 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
           </div>
         )}
 
+        {importando && (
+          <div role="status" style={{ ...S.card, borderColor: "var(--marca)" }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>Guardando {importando.atual} de {importando.total}…</div>
+            <div style={{ fontSize: 12.5, color: "var(--cinza)", marginTop: 4, wordBreak: "break-all" }}>{importando.nome}</div>
+          </div>
+        )}
+
+        {aba === "inicio" && (
+          obras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} /> : (
+            <React.Fragment>
+              {lendoAgora.length > 0 && (
+                <div style={{ marginBottom: 18 }}>
+                  <div style={{ ...S.label, marginBottom: 10 }}>Continuar lendo</div>
+                  <GradeObras obras={lendoAgora} onAbrir={setFicha} />
+                </div>
+              )}
+              <div style={{ ...S.label, marginBottom: 10 }}>Adicionadas recentemente</div>
+              <GradeObras obras={buscarObras(obras, { ordem: "recentes" }).slice(0, 12)} onAbrir={setFicha} />
+              <button style={{ ...S.btnGhost, marginTop: 16 }} onClick={abrirSeletor}>＋ Abrir mais arquivos</button>
+            </React.Fragment>
+          )
+        )}
+
+        {aba === "biblioteca" && (
+          obras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} /> : (
+            <React.Fragment>
+              <button style={{ ...S.btn, marginBottom: 12 }} onClick={abrirSeletor}>＋ Abrir arquivos</button>
+              <Chips opcoes={[["todas", "Tudo"]].concat(CATEGORIAS)} valor={categoria} onMudar={setCategoria} />
+              {daCategoria.length ? <GradeObras obras={daCategoria} onAbrir={setFicha} />
+                : <div style={{ ...S.card, color: "var(--cinza)", fontSize: 14 }}>Nada nesta categoria ainda. Abra uma edição e escolha a categoria na ficha dela.</div>}
+            </React.Fragment>
+          )
+        )}
+
+        {aba === "buscar" && (
+          <React.Fragment>
+            <input value={busca.termo} onChange={(e) => setBusca({ ...busca, termo: e.target.value })} placeholder="Título, coleção ou nome do arquivo"
+              aria-label="Buscar na estante" type="search" style={{ ...S.input, marginBottom: 10 }} />
+            <Chips opcoes={[["todas", "Tudo"]].concat(CATEGORIAS)} valor={busca.categoria} onMudar={(v) => setBusca({ ...busca, categoria: v })} />
+            <Chips opcoes={[["todos", "Qualquer estado"], ["nova", "Não iniciadas"], ["lendo", "Lendo"], ["lida", "Lidas"]]} valor={busca.estado} onMudar={(v) => setBusca({ ...busca, estado: v })} />
+            <select value={busca.ordem} onChange={(e) => setBusca({ ...busca, ordem: e.target.value })} aria-label="Ordenar"
+              style={{ ...S.input, padding: "9px 12px", fontSize: 14, marginBottom: 14 }}>
+              {ORDENS.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+            {resultados.length ? <GradeObras obras={resultados} onAbrir={setFicha} />
+              : <div style={{ ...S.card, color: "var(--cinza)", fontSize: 14 }}>{obras.length ? "Nada encontrado com essa busca." : "A estante está vazia: abra arquivos na Biblioteca."}</div>}
+          </React.Fragment>
+        )}
+
         {aba === "painelUsuarios" && CONTA_ATUAL && CONTA_ATUAL.dono && (
           <TelaPainelUsuarios onVoltar={() => setAba("ajustes")} pedirConfirmacao={pedirConfirmacao} />
         )}
@@ -2594,7 +3143,7 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
                 Criado por Carlos Jr. ·{" "}
                 <a href={LINK_INSTAGRAM} target="_blank" rel="noopener" style={{ color: "var(--marca)", fontWeight: 800 }}>@{INSTAGRAM}</a>
                 <br />© 2026 Carlos Jr. Todos os direitos reservados.
-                <br />React e ReactDOM (MIT), Babel (MIT), qrcode-generator (MIT).
+                <br />React e ReactDOM (MIT), Babel (MIT), qrcode-generator (MIT), pdf.js (Apache-2.0), fflate (MIT).
                 <br />Versão {VERSAO_APP} · <a href="privacidade.html" style={{ color: "var(--marca)" }}>Privacidade</a>
               </div>
             </div>
@@ -2636,6 +3185,11 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
         </div>
       )}
 
+      {ficha && <FichaObra obra={ficha} onFechar={() => setFicha(null)} onMudar={mudarObra} onApagar={apagarObra}
+        onLer={(obra, pagina) => { setFicha(null); setLendo({ obra: obra, pagina: pagina }); }} />}
+      {/* Escondido: só existe para o "Abrir arquivos" abrir o seletor do aparelho */}
+      <input ref={entradaArquivo} type="file" multiple accept=".pdf,.cbz,.cbr,.zip,application/pdf,application/zip,application/x-cbz,application/x-cbr,application/vnd.comicbook+zip"
+        onChange={aoEscolherArquivos} style={{ display: "none" }} tabIndex={-1} aria-hidden="true" />
       {comoInstalar && <ComoInstalar onFechar={() => setComoInstalar(false)} onCopiarLink={copiarLink} />}
 
       {versaoNova && (
