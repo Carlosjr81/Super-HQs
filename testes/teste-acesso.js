@@ -104,7 +104,8 @@ console.log("\n--- os termos de uso ---");
   const paragrafos = [].concat.apply([], T.secoes.map((s) => s[1]));
   const faltam = paragrafos.concat(T.secoes.map((s) => s[0]), T.resumo.map((r) => r[2])).filter((p) => pagina.indexOf(esc(p)) < 0);
   teste("o termos.html tem o mesmo texto do app", [], faltam.map((p) => p.slice(0, 40)));
-  const [a, m, d] = T.versao.split("-");
+  const [a, m, diaComLetra] = T.versao.split("-");
+  const d = diaComLetra.replace(/[^0-9]/g, "");  // "31b" -> "31" (revisão no mesmo dia)
   teste("o termos.html diz a versão de agora", true, pagina.indexOf("Versão de " + d + "/" + m + "/" + a) >= 0);
   teste("o conteúdo dos termos é o aviso de conteúdo do app", true, AVISO_CONTEUDO.completo.every((p) => paragrafos.indexOf(p) >= 0));
   teste("duas caixas de aceite: termos e conteúdo autorizado", [true, true], [/Termos de Uso/.test(T.caixas[0]) && /18 anos/.test(T.caixas[0]), /autorização/.test(T.caixas[1])]);
