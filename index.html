@@ -263,7 +263,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31h";
+const VERSAO_APP = "2026-10-31i";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -1541,6 +1541,15 @@ function TelaEsperaConta({ fase, sessao, msg, onConferir, onConferirQuieto, onSa
   const email = sessao && sessao.email;
   const primeiro = String((sessao && sessao.nome) || "").trim().split(" ")[0];
   const [reenviado, setReenviado] = useState("");
+  // O "Conferir agora" volta para a mesma tela quando o acesso continua
+  // pendente: sem um recado, parece que o botão não fez nada.
+  const pediu = useRef(false);
+  useEffect(() => {
+    if (fase === "conferindo" || !pediu.current) return;
+    pediu.current = false;
+    if (fase === "aguardando") setReenviado("Conferido às " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) +
+      ": o acesso ainda não foi liberado. Esta tela confere sozinha a cada 30 segundos.");
+  }, [fase]);
   // Aguardando: o app confere sozinho a cada 30 s com a tela aberta. Liberou,
   // entra sem ninguém precisar tocar em nada.
   useEffect(() => {
@@ -1578,13 +1587,13 @@ function TelaEsperaConta({ fase, sessao, msg, onConferir, onConferirQuieto, onSa
             catch (x) { setReenviado(erroDeConta(x.message)); }
           }} style={{ ...S.btnGhost, width: "100%", marginTop: 14 }}>Mandar o link de novo</button>
         )}
-        {reenviado && <div style={{ fontSize: 12.5, color: "var(--cinza)", marginTop: 8 }}>{reenviado}</div>}
+        {reenviado && <div role="status" style={{ fontSize: 12.5, color: "var(--cinza)", marginTop: 8 }}>{reenviado}</div>}
         {(fase === "vencido" || fase === "bloqueado") && (
           <button onClick={() => setReenviado(baixarBackupLocal() ? "Backup baixado: guarde o arquivo." : "Não consegui baixar neste navegador.")}
             style={{ ...S.btnGhost, width: "100%", marginTop: 14 }}>💾 Baixar a minha estante (backup)</button>
         )}
         {fase !== "conferindo" && fase !== "bloqueado" && (
-          <button onClick={onConferir} style={{ ...(fase === "aguardando" ? S.btnGhost : S.btn), width: "100%", marginTop: 14 }}>{fase === "verificar" ? "Já confirmei" : "Conferir agora"}</button>
+          <button onClick={() => { pediu.current = true; setReenviado(""); onConferir(); }} style={{ ...(fase === "aguardando" ? S.btnGhost : S.btn), width: "100%", marginTop: 14 }}>{fase === "verificar" ? "Já confirmei" : "Conferir agora"}</button>
         )}
         {fase !== "conferindo" && (
           <button onClick={onSair} style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 700, cursor: "pointer", fontSize: 13.5, marginTop: 14 }}>Sair desta conta</button>
