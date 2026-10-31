@@ -1,0 +1,46 @@
+{
+ "fontes": {
+  "nemo-1905": {
+   "ultimaTentativa": 1793447348945,
+   "cursor": null,
+   "erro": null,
+   "ultimaColeta": 1793447348945,
+   "encontradas": 11,
+   "publicadas": 11,
+   "revisao": 0
+  },
+  "nemo-1906": {
+   "ultimaTentativa": 1793447375064,
+   "cursor": null,
+   "erro": null,
+   "erroEm": 1793447348945,
+   "falhas": 1,
+   "ultimaColeta": 1793447375064,
+   "encontradas": 48,
+   "publicadas": 48,
+   "revisao": 0
+  },
+  "nemo-1907": {
+   "ultimaTentativa": 1793447375064,
+   "cursor": null,
+   "erro": null,
+   "erroEm": 1793447348945,
+   "falhas": 1,
+   "ultimaColeta": 1793447375064,
+   "encontradas": 52,
+   "publicadas": 52,
+   "revisao": 0
+  },
+  "nemo-1908": {
+   "ultimaTentativa": 1793447375064,
+   "cursor": null,
+   "erro": null,
+   "erroEm": 1793447348945,
+   "falhas": 1,
+   "ultimaColeta": 1793447375064,
+   "encontradas": 52,
+   "publicadas": 52,
+   "revisao": 0
+  }
+ }
+}

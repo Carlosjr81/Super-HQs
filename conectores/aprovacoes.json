@@ -1,0 +1,4 @@
+{
+ "_leia": "Itens da revisão aprovados à mão pelo dono, depois de conferir os direitos por fora. Formato: \"<id da obra>|<nome do arquivo>\", copiado do campo revisao de catalogo/acervo.json. Aprovar aqui publica na próxima sincronização.",
+ "aprovadas": []
+}

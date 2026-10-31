@@ -117,6 +117,27 @@ no projeto** (o próprio documento dele pede isso).
   voltam com um toque no meio. A cor da revista nunca é alterada.
 - Cartões com raio 16 e sombra suave só no claro; no escuro, borda.
 
+## O acervo sincronizado (`conectores/`, `catalogo/acervo.json`)
+
+Pedido do dono (31/10/2026). Serviço agendado no GitHub Actions
+(`sincronizar.yml`, a cada 6 h) que publica obras com direito de
+republicação: hoje, domínio público no Brasil com imagens do Wikimedia Commons
+(as imagens não são copiadas: o catálogo aponta para elas). Tudo em
+`conectores/LEIA-ME.md`. **Ink e Comixfy não têm conector, nem com o login do
+dono**: pedido recusado várias vezes (acervo de terceiros, sem licença de
+republicação; o Claude não usa senha). Não reabrir sem licença dos titulares.
+
+- No app: Biblioteca › **Acervo Super HQs** (ao lado de Minha estante), a
+  prateleira "Do acervo Super HQs" no Início e a busca juntam as duas. A ficha
+  mostra autor, ano, direitos e o link da origem. O progresso de leitura do
+  acervo fica em `localStorage["superhqs:leiturasAcervo"]`, preso ao id
+  estável da obra.
+- **O Wikimedia só serve miniaturas de larguras da lista dele** (w.wiki/GHai):
+  320 e 640 dão 400. O app usa 330 (capa) e 1280 (leitura), e troca o host
+  `thumb.wikimedia.org` (que não serve a outros sites) por `upload.wikimedia.org`.
+- O `sw.js` busca o catálogo na rede primeiro (cópia no `superhqs-acervo` para
+  offline) e deixa as imagens do Wikimedia passarem direto.
+
 ## A abertura
 
 `VIDEO_ABERTURA` está vazio: o dono vai mandar a vinheta pronta (pedido dele,

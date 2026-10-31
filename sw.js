@@ -1,5 +1,5 @@
 // Super HQs - Service Worker (modo offline). Veio do Treino Livre.
-const CACHE = "superhqs-v3";
+const CACHE = "superhqs-v4";
 // A vinheta de abertura num cache só dela, preservado entre versões: guardá-la
 // no cache da versão a baixaria de novo a cada atualização do app.
 const CACHE_MIDIA = "superhqs-midia";
@@ -59,6 +59,19 @@ self.addEventListener("fetch", (e) => {
   // O acervo (Firebase Storage) passa direto: quem guarda as edições para ler
   // offline é o app, que confere página por página antes de dizer "disponível".
   if (url.hostname === "firebasestorage.googleapis.com") return;
+  // O catálogo do acervo: rede primeiro (é ele que traz as novidades da
+  // sincronização), guardado numa chave só, para abrir offline com o último.
+  if (url.pathname.endsWith("/catalogo/acervo.json")) {
+    const chave = url.origin + url.pathname;
+    e.respondWith(fetch(new Request(chave, { cache: "no-store" })).then((res) => {
+      if (res.ok) { const cp = res.clone(); caches.open(CACHE_ACERVO).then((c) => c.put(chave, cp)).catch(() => {}); }
+      return res;
+    }).catch(() => caches.open(CACHE_ACERVO).then((c) => c.match(chave)).then((r) => r || Response.error())));
+    return;
+  }
+  // As páginas do acervo (Wikimedia Commons) passam direto: guardar todas
+  // encheria o celular. Baixar uma edição para ler offline é a Etapa 4.
+  if (url.hostname === "upload.wikimedia.org" || url.hostname === "thumb.wikimedia.org") return;
   // O login com o Google: sempre da rede
   if (url.hostname === "accounts.google.com" || url.hostname === "www.googleapis.com") return;
   // A vinheta: do cache próprio, e na falta, da rede inteira (sem o pedaço

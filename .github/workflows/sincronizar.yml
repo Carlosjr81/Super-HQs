@@ -1,0 +1,67 @@
+# A sincronização do acervo: roda conectores/rodar.js de tempos em tempos,
+# no servidor do GitHub, sem depender de computador ou conversa aberta.
+#
+# - Agendada a cada 6 horas; cada fonte só é consultada de novo depois do
+#   intervalo de conectores/config.json (intervaloHoras), por respeito à fonte.
+# - "Run workflow" na aba Actions roda na hora (pode escolher uma fonte só).
+# - Pausar: "pausado": true em conectores/config.json (ou "pausado" numa fonte),
+#   ou Actions > Sincronizar o acervo > "..." > Disable workflow.
+# - Só grava no repositório quando algo mudou (catálogo, estado ou relatório).
+# - Nenhuma senha, cookie ou token entra aqui: as fontes autorizadas de hoje
+#   são públicas. O GITHUB_TOKEN é o do próprio Actions, só para o commit.
+name: Sincronizar o acervo
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      fonte:
+        description: "Só esta fonte (id do config.json). Vazio: todas."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+# duas execuções nunca correm juntas: a segunda espera a primeira
+concurrency:
+  group: sincronizar-acervo
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Os testes da sincronização
+        run: node testes/teste-conectores.js
+
+      - name: Sincronizar
+        env:
+          FONTE: ${{ github.event.inputs.fonte }}
+        run: |
+          if [ -n "$FONTE" ]; then node conectores/rodar.js --fonte "$FONTE"; else node conectores/rodar.js; fi
+
+      - name: Gravar o que mudou
+        run: |
+          git config user.name "Super HQs (sincronização)"
+          git config user.email "Carlosjr81@users.noreply.github.com"
+          git add catalogo/acervo.json conectores/estado.json conectores/relatorio.md
+          if git diff --cached --quiet; then
+            echo "nada mudou"
+          else
+            git commit -m "Acervo: sincronização automática $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase --quiet
+            git push
+          fi
+
+      - name: Resumo
+        if: always()
+        run: cat conectores/relatorio.md >> "$GITHUB_STEP_SUMMARY" || true
