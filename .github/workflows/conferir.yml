@@ -1,0 +1,24 @@
+# A rede de proteção que dá para ver do celular (veio do Treino Livre).
+# **Isto NÃO publica nada e não é etapa de build.** Só roda o que já dá para
+# rodar na mão: `node testes/rodar.js` e `node testes/verificar.js`.
+name: Conferir
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  conferir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      # Nenhum `npm install`: o projeto não tem dependência, de propósito.
+      - name: Os testes
+        run: node testes/rodar.js
+      - name: A conferida de publicação
+        run: node testes/verificar.js

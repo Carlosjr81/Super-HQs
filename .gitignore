@@ -1,0 +1,17 @@
+# Nenhuma revista, página ou arquivo de acervo entra no repositório: ele é
+# público. Os arquivos de leitura moram no aparelho ou no Firebase Storage.
+*.cbz
+*.cbr
+*.cb7
+*.zip
+*.rar
+*.pdf
+acervo/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.jks
+*.keystore

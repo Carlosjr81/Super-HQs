@@ -1,0 +1,46 @@
+Super HQs
+Copyright (c) 2026 Carlos Jr (github.com/Carlosjr81, @carlos.jr.81).
+Todos os direitos reservados.
+
+Este repositório é público porque é daqui que o GitHub Pages publica o app.
+Público para ver, NÃO livre para usar. Nenhuma licença de uso é concedida,
+nem de forma implícita, pelo fato de o código estar visível.
+
+Sem autorização prévia e por escrito do autor, é proibido:
+
+  1. copiar, reproduzir ou redistribuir o código, no todo ou em parte;
+  2. modificar o código ou criar obras derivadas dele;
+  3. publicar o app, ou uma cópia ou versão modificada dele, em qualquer
+     site, loja de aplicativos ou serviço;
+  4. usar o código, os textos, as imagens ou a marca "Super HQs" em outro
+     produto, gratuito ou pago;
+  5. usar o conteúdo deste repositório para fins comerciais.
+
+O que é permitido: usar o app publicado pelo autor
+(https://carlosjr81.github.io/Super-HQs/ e o app Android distribuído por
+ele) para ler os próprios arquivos e o acervo oferecido pelo app, e ler o
+código no GitHub.
+
+As obras lidas no app pertencem aos seus titulares. Este repositório não
+contém revistas, páginas ou arquivos de acervo, e nunca deve conter.
+
+A proteção vem da Lei de Software (Lei nº 9.609/1998) e da Lei de Direitos
+Autorais (Lei nº 9.610/1998), e dos tratados internacionais de direito
+autoral. A violação sujeita o infrator às sanções civis e penais previstas
+nessas leis.
+
+Componentes de terceiros
+------------------------
+O app usa bibliotecas carregadas por CDN. Cada uma continua sob a sua
+própria licença, e nada neste aviso muda isso: React e ReactDOM (MIT),
+Babel (MIT), qrcode-generator (MIT). As bibliotecas do app Android
+(AndroidX, Android Browser Helper) seguem as licenças dos seus fabricantes.
+
+Para pedir autorização ou licenciamento comercial: Instagram @carlos.jr.81.
+
+-----------------------------------------------------------------------------
+English summary: Copyright (c) 2026 Carlos Jr. All rights reserved. This
+repository is public only so GitHub Pages can serve the app. No license is
+granted to copy, modify, redistribute, publish or commercially use any part
+of it without the author's prior written permission. Third-party components
+remain under their own licenses.

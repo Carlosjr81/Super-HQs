@@ -1,0 +1,4 @@
+# Script de shell tem de chegar com LF em qualquer máquina: com CRLF, o `\r`
+# entra no shebang e o sistema procura um interpretador "bash\r".
+*.sh text eol=lf
+*.ps1 text eol=crlf

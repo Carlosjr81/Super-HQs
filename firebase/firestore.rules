@@ -1,0 +1,95 @@
+rules_version = '2';
+// As regras do Super HQs no Firestore. São elas, e não a tela do app, que
+// garantem que só o dono vê a lista de usuários e libera ou bloqueia contas.
+// Cole este arquivo inteiro em: Firebase › Firestore Database › Regras › Publicar.
+// Versão 2 (2026-10-28): aprovação automática, recado visto e apagar a própria conta.
+// Versão 3 (2026-10-29): a pessoa grava o aceite dos Termos de Uso (termos, termosEm).
+// Versão 4 (2026-10-29): o histórico de aceites (aceites/), que só o dono lê e ninguém altera.
+// Versão 5 (2026-10-30): os pagamentos (pagamentos/): a pessoa avisa que pagou, só o dono confirma.
+service cloud.firestore {
+  match /databases/{banco}/documents {
+
+    // O dono: o e-mail dele, CONFIRMADO (sem a confirmação, qualquer um que
+    // criasse uma conta com esse e-mail passaria por dono).
+    function dono() {
+      return request.auth != null
+        && request.auth.token.email == 'carlos.jr.81@hotmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function eu(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    // a aprovação automática, ligada pelo dono no painel
+    function autoLiberar() {
+      return exists(/databases/$(banco)/documents/config/acesso)
+        && get(/databases/$(banco)/documents/config/acesso).data.get('auto', false) == true;
+    }
+
+    // a regra das contas novas: todo mundo com conta lê; só o dono muda
+    match /config/acesso {
+      allow get: if request.auth != null;
+      allow write: if dono();
+    }
+
+    match /usuarios/{uid} {
+      // cada um lê só a própria conta; a lista inteira, só o dono
+      allow get: if dono() || eu(uid);
+      allow list: if dono();
+
+      // cadastro: a própria conta, com o próprio e-mail, "pendente"
+      // (ou já "liberado", se o dono ligou a aprovação automática)
+      allow create: if dono() || (eu(uid)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.keys().hasOnly(['email', 'nome', 'status', 'criadoEm', 'ultimoAcesso', 'acessos', 'aparelho', 'versao'])
+        && (request.resource.data.status == 'pendente'
+            || (request.resource.data.status == 'liberado' && autoLiberar())));
+
+      // a pessoa só atualiza quando entrou, de onde, que viu o recado e que
+      // aceitou os termos; o status, o prazo e as notas, nunca
+      allow update: if dono() || (eu(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimoAcesso', 'acessos', 'aparelho', 'versao', 'avisoVisto', 'termos', 'termosEm']));
+
+      // o dono remove da lista; a pessoa apaga a própria conta
+      allow delete: if dono() || eu(uid);
+    }
+
+    // O histórico de aceites dos termos: a prova para o dono se defender.
+    // A pessoa só CRIA o registro do próprio aceite, com o próprio e-mail e a
+    // hora do servidor; ninguém lê além do dono; ninguém altera nem apaga
+    // (nem o dono, pelo app: só pelo console do Firebase). Fica mesmo se a
+    // conta for apagada.
+    match /aceites/{id} {
+      allow get, list: if dono();
+      allow create: if request.auth != null
+        && request.resource.data.conta == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.servidorEm == request.time
+        && id.matches(request.auth.uid + '_[0-9]+')
+        && request.resource.data.keys().hasOnly(['conta', 'email', 'nome', 'termos', 'em', 'de', 'caixas', 'hash', 'aparelho', 'versaoApp', 'navegador', 'servidorEm']);
+      allow update, delete: if false;
+    }
+
+    // Os pagamentos. A pessoa só AVISA que pagou (status "informado", com o
+    // próprio e-mail e a hora do servidor) e lê os próprios avisos; quem
+    // confirma, recusa e devolve é só o dono. Ninguém apaga pelo app: é o
+    // livro-caixa. O acesso pago (pagoAte, vitalicio, plano, cortesia) mora em
+    // usuarios/, e a regra de lá não deixa a pessoa mexer nesses campos.
+    match /pagamentos/{id} {
+      allow get, list: if dono() || (request.auth != null && resource.data.conta == request.auth.uid);
+      allow create: if dono() || (request.auth != null
+        && request.resource.data.conta == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'informado'
+        && request.resource.data.servidorEm == request.time
+        && id.matches(request.auth.uid + '_[0-9]+')
+        && request.resource.data.keys().hasOnly(['conta', 'email', 'nome', 'plano', 'planoNome', 'valor', 'dias', 'metodo', 'txid', 'nota', 'condicoes', 'status', 'em', 'aparelho', 'versaoApp', 'servidorEm']));
+      allow update: if dono();
+      allow delete: if false;
+    }
+
+    // qualquer outra coisa: ninguém
+    match /{tudo=**} {
+      allow read, write: if false;
+    }
+  }
+}

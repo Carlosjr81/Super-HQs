@@ -1,0 +1,2670 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!--
+  Super HQs — Copyright (c) 2026 Carlos Jr (github.com/Carlosjr81). Todos os direitos reservados.
+  Código visível não é código livre: copiar, modificar, republicar ou usar
+  em outro app, gratuito ou pago, exige autorização por escrito. Ver LICENSE.
+-->
+<meta name="theme-color" content="#0B0B0F" />
+<title>Super HQs</title>
+<meta name="description" content="Leia os seus quadrinhos, mangás e livros no celular: virada de página como um livro e o balão ampliado com um toque." />
+
+<!-- Instalação como app (PWA) -->
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png" />
+<link rel="icon" href="icon-512.png" sizes="512x512" type="image/png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Super HQs" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<!-- Prévia ao compartilhar o link no WhatsApp, Instagram etc. -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Super HQs" />
+<meta property="og:description" content="Leia os seus quadrinhos, mangás e livros no celular: virada de página como um livro e o balão ampliado com um toque." />
+<meta property="og:image" content="https://carlosjr81.github.io/Super-HQs/icon-512.png" />
+<meta property="og:url" content="https://carlosjr81.github.io/Super-HQs/" />
+<meta property="og:locale" content="pt_BR" />
+<meta name="twitter:card" content="summary" />
+
+<!--
+  Mesmo arranjo do Treino Livre: React e Babel por CDN, com "integrity". Se o
+  servidor da CDN for adulterado, o navegador recusa o arquivo. O "?v=3" tem de
+  bater com a lista do sw.js, senão o cache offline nunca é encontrado.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js?v=3"
+  integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js?v=3"
+  integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js?v=3"
+  integrity="sha384-1qlE7MZPM2pHD/pBZCU/yB8UCP52RYL8bge/qNdfNBCWToySp8/M+JL2waXU4hjJ" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: #0B0B0F; --bg2: #101016; --card: #15151C;
+    --borda: #26262F; --borda2: #383844;
+    --texto: #F2F2F5; --cinza: #A6A6B3; --cinza2: #9497A3;
+    --perigo: #F58E8E; --perigo-borda: #F58E8E55;
+    --aviso-bg: #2A1512; --ok: #4ADE80; --ok-bg: #173B1E;
+    --obs: #E5B93C; --input: #0B0B0F;
+    --marca: #FF4D2E;
+    --barra: rgba(14,14,20,0.92); --barra-sombra: 0 -10px 30px rgba(0,0,0,0.55);
+  }
+  [data-tema="claro"] {
+    --bg: #FFFFFF; --bg2: #FFFFFF; --card: #FFFFFF;
+    --borda: #DBDBE2; --borda2: #C4C4CE;
+    --texto: #1B1B22; --cinza: #62626E; --cinza2: #6E6E78;
+    --perigo: #C62828; --perigo-borda: #C6282855;
+    --aviso-bg: #FFF1EF; --ok: #1B7F3B; --ok-bg: #E8F7EC;
+    --obs: #8A6D00; --input: #FAFAFA;
+    --marca: #D9361A;
+    --barra: rgba(255,255,255,0.95); --barra-sombra: 0 -8px 26px rgba(38,38,38,0.12);
+  }
+  html, body { margin: 0; background: var(--bg); color: var(--texto); }
+  * { -webkit-tap-highlight-color: transparent; }
+  #carregando {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; background: #0B0B0F; color: #A6A6B3; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  #carregando .marca {
+    font-size: 30px; font-weight: 900; letter-spacing: -0.5px;
+    background: linear-gradient(45deg, #FFB000, #FF4D2E, #C2185B); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  #carregando .barra { width: 140px; height: 4px; border-radius: 2px; background: #26262F; overflow: hidden; }
+  #carregando .barra i { display: block; width: 40%; height: 100%; border-radius: 2px;
+    background: linear-gradient(45deg, #FFB000, #FF4D2E, #C2185B); animation: carrega 1.1s ease-in-out infinite alternate; }
+  @keyframes carrega { from { transform: translateX(-10%); } to { transform: translateX(160%); } }
+  @keyframes surge { 0% { transform: scale(.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    #carregando .barra i { animation: none; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="carregando">
+    <div class="marca">Super HQs</div>
+    <div class="barra"><i></i></div>
+    <div style="font-size:13px">Abrindo a sua estante...</div>
+  </div>
+</div>
+<noscript>
+  <div style="font-family:sans-serif;color:#F2F2F5;background:#0B0B0F;padding:24px;line-height:1.6">
+    O Super HQs precisa de JavaScript para funcionar. Ative o JavaScript nas configurações do
+    seu navegador e recarregue a página.
+  </div>
+</noscript>
+<script>
+/* Dados puros, fora do script que o Babel compila (o mesmo motivo do Treino
+   Livre: compilar dado é trabalho jogado fora a cada abertura no celular).
+   Dados novos vão neste bloco; código vai no segundo. */
+// ---------------- TERMOS (dados) ----------------
+
+// O aviso do conteúdo: o equivalente, aqui, do aviso de saúde do Treino Livre.
+// O app é um leitor. Ele não vende nem entrega revistas de ninguém: lê os
+// arquivos que a própria pessoa abre, ou o acervo que o dono do app tiver
+// autorização para oferecer. Um texto só, no cadastro, nos termos e nos Ajustes.
+const AVISO_CONTEUDO = {
+  curto: "O Super HQs é um leitor. Abra nele só arquivos que são seus, que você comprou, que estão em domínio público ou que você tem autorização para ler.",
+  completo: [
+    "O Super HQs é um aplicativo de leitura. Ele abre e organiza arquivos de quadrinhos, mangás, revistas e livros (PDF, CBZ e CBR) que você escolhe no seu aparelho.",
+    "Você só pode abrir no app arquivos que são seus, que você comprou, que estão em domínio público ou que o titular dos direitos autorizou você a ler. O app não vende, não empresta e não distribui obras de terceiros.",
+    "Os personagens, as histórias e as marcas das obras pertencem aos seus titulares. Nada no app transfere a você direitos sobre elas.",
+    "Os arquivos que você abre ficam guardados no seu aparelho. O app não os envia para servidor nenhum.",
+  ],
+};
+
+// Os Termos de Uso. Um texto só: a tela de aceite, o cadastro, os Ajustes e o
+// termos.html (que o teste-acesso.js confere que está igual a este). Mudou o
+// texto de um jeito que importa, suba a versao e crie termos-versoes/<versão>.txt:
+// todo mundo vê os termos de novo e precisa aceitar outra vez.
+// Não é parecer jurídico: é o que dá para escrever sem um advogado.
+const TERMOS_USO = {
+  versao: "2026-10-31",
+  resumo: [
+    ["\u{1F193}", "Acesso liberado pelo criador", "A conta precisa da liberação do criador do app, que pode pôr prazo ou bloquear quem descumprir estas regras. Se houver plano pago, você vê o preço antes, e nada é cobrado sem o seu aceite."],
+    ["\u{1F4DA}", "Só o que é seu", "Abra no app só arquivos que são seus, que você comprou, que estão em domínio público ou que você tem autorização para ler."],
+    ["\u{1F4F1}", "Os seus arquivos ficam com você", "As revistas que você abre ficam no seu aparelho, não num servidor. Guarde os originais: se o aparelho se perder, o app não tem como recuperar."],
+    ["\u{1F50E}", "Toque para Ler", "O balão ampliado é um recorte da própria página. O app não inventa nem troca as falas."],
+    ["\u{1F91D}", "Respeito", "Nada de conta falsa, apelido ofensivo ou usar o app para espalhar obra de terceiros sem autorização."],
+    ["\u{00A9}\u{FE0F}", "O app tem dono", "Usar é livre. Copiar, revender ou tentar burlar a liberação, não."],
+    ["\u{1F504}", "Termos novos, aceite novo", "Se estas regras mudarem, o app mostra a versão nova e pede o seu aceite outra vez."],
+  ],
+  secoes: [
+    ["1. O que é o Super HQs", [
+      "O Super HQs é um aplicativo para ler e organizar quadrinhos, mangás, manhwas, revistas e livros, com virada de página como um livro e a ampliação do texto tocado (Toque para Ler). Ele é criado e mantido por Carlos Jr. (Instagram @carlos.jr.81), chamado aqui de criador do app, e funciona no site carlosjr81.github.io/Super-HQs e no app Android.",
+      "Estes Termos de Uso são as regras para usar o app. A Política de Privacidade explica o que acontece com os seus dados e faz parte destes termos.",
+    ]],
+    ["2. O seu aceite", [
+      "Para usar o app você precisa ler e aceitar estes termos. Ao marcar as caixas de aceite e tocar no botão de aceitar, você declara que leu, entendeu e concorda com eles. O app guarda a data e a versão do seu aceite, no seu aparelho e na sua conta.",
+      "Se não concordar com alguma parte, não use o app.",
+    ]],
+    ["3. Quem pode usar", [
+      "O app é para maiores de 18 anos. Quem tem entre 13 e 17 anos só pode usar com a autorização e o acompanhamento dos pais ou do responsável legal, que aceitam estes termos por ele. Menores de 13 anos não podem criar conta.",
+    ]],
+    ["4. O conteúdo que você abre", AVISO_CONTEUDO.completo.concat([
+      "Você é o responsável pelos arquivos que abre, guarda e organiza no app. Se o titular de uma obra reclamar do uso dela no app, o criador do app pode bloquear o acesso de quem a espalhou.",
+      "Quando o próprio app oferecer obras para ler, elas serão próprias, licenciadas ou de domínio público, e o app indica isso.",
+    ])],
+    ["5. O que o app não promete", [
+      "O app não garante que todo arquivo abra: arquivos danificados, protegidos por senha ou com proteção contra cópia (DRM) podem não abrir. A ampliação do Toque para Ler mostra o melhor recorte que a imagem permite, e não recupera detalhes que o arquivo original não tem. O texto reconhecido automaticamente, quando houver, pode errar e é sempre identificado como tal.",
+    ]],
+    ["6. A sua conta", [
+      "Para entrar é preciso criar uma conta com nome, e-mail e senha, ou entrar com o Google. Dê informações verdadeiras, guarde a sua senha e não a compartilhe: o que for feito com a sua conta é de sua responsabilidade. Se perceber uso indevido, troque a senha e avise o criador do app.",
+      "O acesso é liberado pelo criador do app, que pode liberar com prazo, renovar, bloquear ou recusar contas, em especial quando estes termos não forem cumpridos. Quando houver um motivo para o bloqueio, ele aparece para você.",
+      "Se houver planos pagos, as condições e o preço são mostrados antes, e nada é cobrado sem que você aceite. As condições de cada plano aparecem na tela de planos.",
+    ]],
+    ["7. Os seus dados e as suas leituras", [
+      "Os arquivos que você abre, a sua estante e o seu progresso de leitura ficam guardados no seu aparelho. Por isso, apagar os dados do navegador, desinstalar o app ou perder o celular pode apagar a sua estante. Guarde os arquivos originais e use o backup em Ajustes.",
+      "Fora do aparelho ficam só os dados da conta de acesso e, se você escolher, o progresso de leitura para continuar em outro aparelho. O que cada um guarda está na Política de Privacidade, que segue a Lei Geral de Proteção de Dados (Lei 13.709/2018).",
+    ]],
+    ["8. Serviços de terceiros", [
+      "Alguns recursos dependem de serviços de outras empresas, com regras próprias: o Google (Firebase e o entrar com o Google), as bibliotecas que abrem PDF e arquivos compactados e o seu navegador. O app não controla esses serviços e não responde pela disponibilidade deles.",
+    ]],
+    ["9. O que não é permitido", [
+      "Criar conta falsa ou em nome de outra pessoa; usar nome ou mensagem ofensiva, discriminatória ou que se passe por outra pessoa; usar o app para copiar, vender ou distribuir obras sem autorização do titular; tentar burlar a liberação de acesso ou o pagamento, invadir, sobrecarregar ou atrapalhar o app ou os serviços que ele usa; copiar, modificar, revender ou distribuir o app, no todo ou em parte, sem autorização por escrito do criador do app.",
+    ]],
+    ["10. Direitos sobre o app", [
+      "O código, o design, os textos, as imagens e a marca Super HQs são do criador do app, com todos os direitos reservados (Leis 9.609/1998 e 9.610/1998). Usar o app não transfere nenhum desses direitos a você. Os componentes de terceiros seguem as próprias licenças, listadas em Ajustes, Créditos.",
+      "As obras que você lê pertencem aos seus titulares. As listas, cronologias e anotações que você cria são suas.",
+    ]],
+    ["11. Disponibilidade e responsabilidade", [
+      "O app é oferecido como está e pode ter falhas, ficar fora do ar, mudar ou deixar de oferecer recursos, com ou sem aviso. O criador do app trabalha para que ele funcione bem, mas não garante que funcione sempre e sem erro.",
+      "Na medida permitida pela lei, o criador do app não responde por perdas que resultem do descumprimento destes termos, do uso de arquivos sem autorização do titular, da perda de dados guardados só no aparelho ou de falhas de serviços de terceiros. Nada nestes termos tira os direitos que a lei garante a você, como os do Código de Defesa do Consumidor.",
+    ]],
+    ["12. Sair e apagar a conta", [
+      "Você pode parar de usar o app quando quiser e apagar a sua conta em Ajustes, Sua conta, Apagar minha conta. A sua estante continua no seu aparelho até você a apagar.",
+      "O criador do app pode bloquear ou encerrar o acesso de quem descumprir estes termos.",
+    ]],
+    ["13. Mudanças nestes termos", [
+      "Estes termos podem mudar. Quando mudarem, o app mostra a versão nova e pede o seu aceite de novo antes de você continuar. A data da versão fica no topo.",
+    ]],
+    ["14. Lei e foro", [
+      "Estes termos seguem as leis do Brasil, entre elas o Marco Civil da Internet (Lei 12.965/2014), a Lei Geral de Proteção de Dados (Lei 13.709/2018), a Lei de Direitos Autorais (Lei 9.610/1998) e o Código de Defesa do Consumidor (Lei 8.078/1990). Qualquer questão será resolvida no foro da cidade onde você mora.",
+    ]],
+    ["15. Fale com o criador do app", [
+      "Dúvidas, pedidos ou reclamações sobre estes termos ou sobre a sua conta: Instagram @carlos.jr.81.",
+    ]],
+  ],
+  // as duas caixas de aceite (o cadastro e a tela de aceite)
+  caixas: [
+    "Li e aceito os Termos de Uso e a Política de Privacidade, e tenho 18 anos ou mais (ou a autorização do meu responsável).",
+    "Vou abrir no app só arquivos que são meus, que comprei, de domínio público ou que tenho autorização para ler.",
+  ],
+};
+
+// As condições da assinatura. Ficam fora dos Termos de Uso de propósito: mudar
+// os termos obriga todo mundo a aceitar de novo, e quem nunca vai pagar não
+// precisa disso. Aparecem na tela de planos, e o aceite vai junto com cada
+// pagamento informado (`condicoes`). Não é parecer jurídico.
+const CONDICOES_ASSINATURA = {
+  versao: "2026-10-31",
+  itens: [
+    "O pagamento é feito por Pix ou pelo link de pagamento indicado, direto ao criador do app. O acesso é liberado quando o pagamento é confirmado, normalmente em até 1 dia útil.",
+    "Não há renovação automática: nada é cobrado sem você pagar de novo. Perto do vencimento, o app avisa.",
+    "Os planos mensal, anual e de pagamento único valem pelo período do plano, contado da confirmação, ou do fim do período que ainda estiver valendo.",
+    "O plano vitalício dá acesso enquanto o Super HQs for oferecido, sem novas cobranças pelo mesmo plano.",
+    "Você pode desistir em até 7 dias depois do pagamento e receber o valor de volta (Código de Defesa do Consumidor, art. 49). Peça pelo Instagram @carlos.jr.81.",
+    "A sua estante fica no seu aparelho. Se o acesso vencer, nada é apagado: você pode baixar o backup a qualquer momento e volta a ler tudo ao renovar.",
+    "Os preços podem mudar para compras novas. O que você já pagou não muda.",
+  ],
+};
+// ---------------- FIM DOS DADOS ----------------
+</script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+// ---------------- ARMAZENAMENTO ----------------
+// O mesmo `store` do Treino Livre: gravar devolve se gravou. Falhar calado
+// aqui (cota cheia, janela anônima, navegador embutido) faria a pessoa achar
+// que a estante foi salva quando não foi.
+const memoria = {};
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return memoria[k] != null ? memoria[k] : null; } },
+  set(k, v) {
+    try { localStorage.setItem(k, v); return true; }
+    catch (e) { memoria[k] = v; return false; }
+  },
+};
+const STORAGE_KEY = "superhqs:v1";
+const LINK_APP = "https://carlosjr81.github.io/Super-HQs/";
+// Quem fez. Uma constante só, porque o @ aparece em vários lugares.
+const INSTAGRAM = "carlos.jr.81";
+const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
+// Qual versão está rodando neste aparelho. Aparece nos Ajustes.
+// SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
+const VERSAO_APP = "2026-10-31a";
+// Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
+const JA_INSTALADO = (() => {
+  try {
+    return window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+  } catch (e) { return false; }
+})();
+const NAVEGADOR_INAPP = /Instagram|FBAN|FBAV|FB_IAB|Line\/|; wv\)/i.test(navigator.userAgent || "");
+// Aberto pelo app Android (o ícone do APK abre ?app=android). A marca fica na
+// sessão da aba: a navegação dentro do app tira o ?app da barra.
+const NO_APP_ANDROID = (() => {
+  const daUrl = typeof location !== "undefined" && /[?&]app=android\b/.test(location.search);
+  try {
+    if (daUrl) { sessionStorage.setItem("superhqs:app", "1"); localStorage.setItem("superhqs:temApp", "1"); }
+    return daUrl || sessionStorage.getItem("superhqs:app") === "1";
+  } catch (e) { return daUrl; }
+})();
+
+// Registra eventos anônimos de uso (só contagem, sem dados pessoais)
+function registrarEvento(nome) {
+  try {
+    if (window.goatcounter && window.goatcounter.count) {
+      window.goatcounter.count({ path: nome, title: nome, event: true });
+    }
+  } catch (e) {}
+}
+
+// Concordância de número, para os textos não saírem como "pagamento(s)"
+function plural(n, singular, pluralTxt) { return n === 1 ? singular : pluralTxt; }
+
+// Carrega um script de CDN só quando a tela precisa dele (o QR do Pix, o botão
+// do Google). Com SRI, o navegador recusa um arquivo adulterado.
+const scriptsCarregados = {};
+function carregarScript(src, sri) {
+  if (!scriptsCarregados[src]) {
+    scriptsCarregados[src] = new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = src;
+      if (sri) { s.crossOrigin = "anonymous"; s.integrity = sri; }
+      s.onload = res;
+      s.onerror = () => { delete scriptsCarregados[src]; rej(new Error("não carregou: " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  return scriptsCarregados[src];
+}
+
+// ---------------- ESTILOS ----------------
+// O degradê da marca é um só: amarelo, laranja e vermelho de capa de gibi.
+const GRAD = "linear-gradient(45deg, #FFB000, #FF4D2E, #C2185B)";
+const S = {
+  app: { minHeight: "100vh", background: "var(--bg)", color: "var(--texto)", fontFamily: "-apple-system, 'Segoe UI', Roboto, sans-serif", paddingBottom: "calc(96px + env(safe-area-inset-bottom))" },
+  header: { padding: "20px 18px 10px", position: "sticky", top: 0, background: "var(--bg)", zIndex: 5 },
+  logo: { fontSize: 27, fontWeight: 900, letterSpacing: -0.5, display: "inline-block", backgroundImage: GRAD, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" },
+  faixa: { height: 3, width: 72, marginTop: 10, background: GRAD, borderRadius: 2 },
+  card: { background: "var(--card)", borderRadius: 18, padding: 16, marginBottom: 12, border: "1px solid var(--borda)" },
+  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, color: "var(--cinza)", fontWeight: 700 },
+  btn: { background: GRAD, color: "#FFFFFF", border: "none", borderRadius: 12, padding: "13px 16px", fontWeight: 800, fontSize: 15, width: "100%", cursor: "pointer" },
+  btnGhost: { background: "transparent", color: "var(--texto)", border: "1px solid var(--borda2)", borderRadius: 12, padding: "12px 16px", fontWeight: 700, fontSize: 14, width: "100%", cursor: "pointer" },
+  input: { background: "var(--input)", border: "1px solid var(--borda2)", borderRadius: 12, color: "var(--texto)", padding: "12px 14px", fontSize: 16, width: "100%", boxSizing: "border-box" },
+  inputMini: { background: "var(--input)", border: "1px solid var(--borda2)", borderRadius: 10, color: "var(--texto)", padding: "10px 8px", fontSize: 16, width: "100%", boxSizing: "border-box", textAlign: "center" },
+  voltar: { background: "none", border: "none", color: "var(--cinza)", fontWeight: 700, fontSize: 14, padding: 0, cursor: "pointer", marginBottom: 12 },
+};
+
+// Busca sem acento e sem caixa: "Mônica" acha "monica".
+const semAcento = (s) => String(s || "").toLowerCase()
+  .replace(/[áàâã]/g, "a").replace(/[éê]/g, "e").replace(/í/g, "i")
+  .replace(/[óôõ]/g, "o").replace(/ú/g, "u").replace(/ç/g, "c");
+
+// ---------------- ACESSO (copiado do Treino Livre) ----------------
+// Login com aprovação, termos, cobrança e o painel do dono. Veio do Treino
+// Livre (versão 2026-10-30f) com os nomes trocados; o CLAUDE.md explica tudo.
+// ---------------- ACESSO: AS CONTAS ----------------
+// Pedido do dono: login, cadastro com a aprovação dele, e um painel em que só
+// ele vê quem acessa, libera, bloqueia e restringe. Decidido com ele: Firebase
+// (Google), todo mundo se cadastra e espera a aprovação (inclusive quem já
+// usava), e o servidor guarda SÓ o controle de acesso — a estante continua
+// no aparelho de cada um.
+//
+// É a segunda exceção à regra "sem servidor" (a primeira é o retransmissor do
+// Desafio). Fala com o Firebase pela API REST, sem o SDK: o SDK são uns 500 KB
+// no meio mega do app e mais três hashes de SRI para manter. São quatro
+// chamadas (entrar, criar, renovar a chave, ler e gravar o documento).
+//
+// **Quem garante que só o dono abre o painel são as regras do Firestore**
+// (firebase/firestore.rules), não esta tela: elas exigem o e-mail do dono
+// CONFIRMADO no token. Esconder o botão é só arrumação.
+//
+// O que nenhuma regra resolve, e o dono sabe: o app roda no aparelho e o
+// código é público. Quem entende de programação pode pular o porteiro na
+// própria cópia. O porteiro decide quem entra pelo caminho normal e mostra ao
+// dono quem acessa; o painel e a lista de usuários, esses sim, são protegidos
+// de verdade no servidor.
+//
+// Sem configuração (FIREBASE_ACESSO vazio) o porteiro não existe e o app abre
+// como sempre: é como ele fica até o dono criar o projeto no Firebase.
+// O projeto do dono (criado em 28/10/2026). A chave é pública: só identifica
+// o projeto; quem protege são as regras (firebase/firestore.rules).
+// Vazio até o dono criar o projeto do Super HQs no Firebase (firebase/LEIA-ME.md).
+const FIREBASE_ACESSO = { apiKey: "", projectId: "" };
+const EMAIL_DONO = "carlos.jr.81@hotmail.com";
+// Sem rede, quem estava liberado continua entrando por 7 dias: quem lê no metrô
+// ou no avião não tem sinal, e travar a leitura por isso seria punir quem pode.
+const ACESSO_OFFLINE_MS = 7 * 864e5;
+const STATUS_CONTA = {
+  pendente: { nome: "Aguardando", cor: "var(--obs)", icone: "⏳" },
+  liberado: { nome: "Liberado", cor: "var(--ok)", icone: "✅" },
+  bloqueado: { nome: "Bloqueado", cor: "var(--perigo)", icone: "⛔" },
+  vencido: { nome: "Prazo vencido", cor: "var(--obs)", icone: "⌛" },
+  pagar: { nome: "Precisa pagar", cor: "var(--obs)", icone: "💳" },
+};
+function ehEmailDono(email) { return String(email || "").trim().toLowerCase() === EMAIL_DONO; }
+// O documento do Firestore vem com o tipo de cada campo; o app só usa texto e número.
+function paraFirestore(obj) {
+  const fields = {};
+  Object.keys(obj).forEach((k) => {
+    const v = obj[k];
+    if (v === null || v === undefined) fields[k] = { nullValue: null };
+    else if (typeof v === "number") fields[k] = Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+    else if (typeof v === "boolean") fields[k] = { booleanValue: v };
+    else fields[k] = { stringValue: String(v) };
+  });
+  return { fields: fields };
+}
+function deFirestore(doc) {
+  if (!doc || !doc.fields) return null;
+  const o = {};
+  Object.keys(doc.fields).forEach((k) => {
+    const f = doc.fields[k];
+    if ("integerValue" in f) o[k] = parseInt(f.integerValue, 10);
+    else if ("doubleValue" in f) o[k] = +f.doubleValue;
+    else if ("booleanValue" in f) o[k] = !!f.booleanValue;
+    else if ("stringValue" in f) o[k] = f.stringValue;
+    else if ("timestampValue" in f) o[k] = Date.parse(f.timestampValue);
+    else o[k] = null;
+  });
+  if (doc.name) o.uid = doc.name.split("/").pop();
+  return o;
+}
+// "Android · app", "iPhone · navegador", "Computador · navegador": o bastante
+// para o dono saber de onde a pessoa entra, sem guardar a identificação do
+// aparelho.
+function aparelhoDe(ua, noApp) {
+  const u = String(ua || "");
+  const tipo = /iPhone|iPad|iPod/i.test(u) ? "iPhone" : /Android/i.test(u) ? "Android" : "Computador";
+  return tipo + " · " + (noApp ? "app" : "navegador");
+}
+// Pode entrar sem conferir agora? Só quem estava liberado, conferido há menos
+// de 7 dias, e com a mesma conta.
+function liberadoSemRede(cache, agora) {
+  return !!(cache && cache.status === "liberado" && cache.conferidoEm > 0 && agora - cache.conferidoEm < ACESSO_OFFLINE_MS &&
+    !(cache.ate > 0 && agora >= cache.ate) &&
+    // com a cobrança ligada, o plano que venceu sem rede também barra
+    !(cache.cob && cache.cob.ligada && cache.conta && planoDaConta(cache.conta, agora, cache.cob).tipo === "pagar"));
+}
+// A ordem do painel: quem espera primeiro (o mais novo em cima), depois quem
+// usa (o mais recente em cima), e os bloqueados no fim.
+function ordenarContas(lista, agora, cob) {
+  const ag = agora || Date.now();
+  const peso = { pendente: 0, vencido: 1, pagar: 1, liberado: 2, bloqueado: 3 };
+  return lista.slice().sort((a, b) => {
+    const sa = situacaoConta(a, ag, cob), sb = situacaoConta(b, ag, cob);
+    if (peso[sa] !== peso[sb]) return peso[sa] - peso[sb];
+    if (sa === "pendente") return (b.criadoEm || 0) - (a.criadoEm || 0);
+    return (b.ultimoAcesso || 0) - (a.ultimoAcesso || 0);
+  });
+}
+function resumoContas(lista, agora, cob) {
+  const r = { total: lista.length, pendente: 0, liberado: 0, bloqueado: 0, vencido: 0, pagar: 0, ativos7: 0, hoje: 0, online: 0, sumidos: 0, vencendo: 0, pagantes: 0, cortesia: 0 };
+  const inicioHoje = new Date(agora); inicioHoje.setHours(0, 0, 0, 0);
+  lista.forEach((c) => {
+    const s = situacaoConta(c, agora, cob);
+    r[s]++;
+    if (filtroConta(c, "pagantes", agora, cob)) r.pagantes++;
+    if (filtroConta(c, "cortesia", agora, cob)) r.cortesia++;
+    if (c.ultimoAcesso && agora - c.ultimoAcesso < 7 * 864e5) r.ativos7++;
+    if (c.ultimoAcesso && c.ultimoAcesso >= inicioHoje.getTime()) r.hoje++;
+    if (onlineAgora(c, agora)) r.online++;
+    if (filtroConta(c, "sumidos", agora)) r.sumidos++;
+    if (filtroConta(c, "vencendo", agora)) r.vencendo++;
+  });
+  return r;
+}
+// Os filtros do painel. "Sumidos": liberados que não abrem o app há 30 dias
+// (ou nunca abriram). "Prazo": o prazo vence em 7 dias ou já venceu.
+function filtroConta(c, filtro, agora, cob) {
+  const s = situacaoConta(c, agora, cob);
+  if (!filtro || filtro === "todos") return true;
+  if (filtro === "pagantes") { const t = planoDaConta(c, agora, cob).tipo; return t === "pago" || t === "vitalicio"; }
+  if (filtro === "cortesia") return planoDaConta(c, agora, cob).tipo === "cortesia";
+  if (filtro === "online") return onlineAgora(c, agora);
+  if (filtro === "sumidos") return s === "liberado" && (!c.ultimoAcesso || agora - c.ultimoAcesso > SUMIDO_MS);
+  if (filtro === "vencendo") return s === "vencido" || (s === "liberado" && c.ate > 0 && c.ate - agora < 7 * 864e5);
+  return s === filtro;
+}
+function filtrarContas(lista, filtro, busca, agora, cob) {
+  const b = String(busca || "").trim().toLowerCase();
+  const ag = agora || Date.now();
+  return lista.filter((c) => filtroConta(c, filtro, ag, cob) &&
+    (!b || String(c.email || "").toLowerCase().indexOf(b) >= 0 || String(c.nome || "").toLowerCase().indexOf(b) >= 0 || String(c.nota || "").toLowerCase().indexOf(b) >= 0));
+}
+// As mensagens de erro do Firebase, em português de quem não programa
+const ERROS_CONTA = {
+  EMAIL_EXISTS: "Já existe uma conta com este e-mail. Toque em Entrar.",
+  INVALID_LOGIN_CREDENTIALS: "E-mail ou senha não conferem.",
+  INVALID_PASSWORD: "E-mail ou senha não conferem.",
+  EMAIL_NOT_FOUND: "E-mail ou senha não conferem.",
+  USER_DISABLED: "Esta conta foi desativada.",
+  INVALID_EMAIL: "Esse e-mail não parece certo. Confira.",
+  MISSING_PASSWORD: "Digite a senha.",
+  WEAK_PASSWORD: "A senha precisa de pelo menos 6 caracteres.",
+  TOO_MANY_ATTEMPTS_TRY_LATER: "Muitas tentativas. Espere alguns minutos e tente de novo.",
+  PERMISSION_DENIED: "O servidor recusou. Se você é o dono, confirme o seu e-mail antes.",
+  SEM_REDE: "Sem internet. Conecte e tente de novo.",
+  OPERATION_NOT_ALLOWED: "O login com o Google ainda não foi ligado pelo criador do app. Entre com e-mail e senha.",
+  INVALID_IDP_RESPONSE: "O Google não confirmou a sua conta. Tente de novo.",
+  FEDERATED_USER_ID_ALREADY_LINKED: "Essa conta do Google já está ligada a outro cadastro.",
+  CONTA_COM_SENHA: "Já existe uma conta com este e-mail criada com senha. Entre com o e-mail e a senha (ou toque em Esqueci a senha).",
+};
+// "fulano@gmial.com": o erro de digitação que faz o link de senha nova nunca
+// chegar. Só sugere quando o domínio está a uma ou duas letras de um comum.
+const DOMINIOS_COMUNS = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "yahoo.com.br", "icloud.com", "live.com", "hotmail.com.br", "outlook.com.br", "bol.com.br", "uol.com.br", "terra.com.br"];
+function distanciaLetras(a, b) {
+  const m = a.length, n = b.length;
+  if (Math.abs(m - n) > 2) return 3;
+  let ant = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let x = 1; x <= m; x++) {
+    const cur = [x];
+    for (let y = 1; y <= n; y++) cur[y] = Math.min(ant[y] + 1, cur[y - 1] + 1, ant[y - 1] + (a[x - 1] === b[y - 1] ? 0 : 1));
+    ant = cur;
+  }
+  return ant[n];
+}
+function sugerirEmail(email) {
+  const e = String(email || "").trim().toLowerCase();
+  const k = e.lastIndexOf("@");
+  if (k < 1) return null;
+  const dom = e.slice(k + 1);
+  if (!dom || dom.indexOf(".") < 0 || DOMINIOS_COMUNS.indexOf(dom) >= 0) return null;
+  let melhor = null, dist = 3;
+  DOMINIOS_COMUNS.forEach((d) => { const x = distanciaLetras(dom, d); if (x < dist) { dist = x; melhor = d; } });
+  return melhor && dist <= 2 ? e.slice(0, k + 1) + melhor : null;
+}
+function erroDeConta(codigo) {
+  const c = String(codigo || "").split(" ")[0].split(":")[0];
+  return ERROS_CONTA[c] || "Não deu certo (" + (codigo || "erro desconhecido") + "). Tente de novo.";
+}
+// A situação de verdade de uma conta. Liberado com o prazo vencido é
+// "vencido": o prazo existe para o dono poder liberar por um tempo (um mês de
+// teste, uma assinatura) sem ter de lembrar de bloquear depois.
+function situacaoConta(d, agora, cob) {
+  if (!d) return "pendente";
+  if (d.status === "liberado" && d.ate > 0 && agora >= d.ate) return "vencido";
+  const s = d.status === "liberado" || d.status === "bloqueado" ? d.status : "pendente";
+  if (s === "liberado" && cob && cob.ligada && planoDaConta(d, agora, cob).tipo === "pagar") return "pagar";
+  return s;
+}
+const PRAZOS_ACESSO = [
+  { dias: 0, nome: "Sem prazo" }, { dias: 7, nome: "7 dias" }, { dias: 30, nome: "30 dias" },
+  { dias: 90, nome: "90 dias" }, { dias: 365, nome: "1 ano" },
+];
+// O prazo vale até o fim do dia: "30 dias" dado às 9h não vence às 9h.
+function prazoAte(dias, agora) {
+  if (!(dias > 0)) return 0;
+  const d = new Date(agora + dias * 864e5);
+  d.setHours(23, 59, 59, 999);
+  return d.getTime();
+}
+// Online é ter aberto o app nos últimos 15 minutos: o app confere a conta ao
+// abrir e a cada volta ao app (no máximo a cada 15 min).
+const ONLINE_MS = 15 * 60000;
+const SUMIDO_MS = 30 * 864e5;
+function onlineAgora(c, agora) { return !!(c.ultimoAcesso && agora - c.ultimoAcesso < ONLINE_MS); }
+// Recado do dono que a pessoa ainda não viu
+function recadoNovo(d) { return !!(d && d.aviso && (d.avisoEm || 0) > (d.avisoVisto || 0)); }
+// A lista em planilha (CSV com ponto e vírgula, que o Excel em português abre
+// direto nas colunas certas)
+function csvContas(lista, agora, cob) {
+  const data = (ms) => (ms ? new Date(ms).toLocaleDateString("pt-BR") : "");
+  const cel = (v) => { const s = String(v == null ? "" : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const nomes = { pendente: "Aguardando", liberado: "Liberado", bloqueado: "Bloqueado", vencido: "Prazo vencido", pagar: "Precisa pagar" };
+  const linhas = [["Nome", "E-mail", "Situação", "Cadastro", "Último acesso", "Acessos", "Aparelho", "Versão", "Liberado até", "Nota", "Motivo do bloqueio", "Termos aceitos em", "Versão dos termos", "Plano", "Pago até", "Cortesia"]];
+  lista.forEach((c) => linhas.push([c.nome || "", c.email || "", nomes[situacaoConta(c, agora, cob)], data(c.criadoEm), data(c.ultimoAcesso),
+    c.acessos || 0, c.aparelho || "", c.versao || "", data(c.ate), c.nota || "", c.motivo || "", data(c.termosEm), c.termos || "", c.vitalicio ? "Vitalício" : c.plano || "", data(c.pagoAte),
+    c.cortesia ? "Sim" + (c.cortesiaAte ? " até " + data(c.cortesiaAte) : "") + (c.cortesiaMotivo ? " (" + c.cortesiaMotivo + ")" : "") : ""]));
+  return "﻿" + linhas.map((l) => l.map(cel).join(";")).join("\r\n");
+}
+// O histórico de aceites dos termos, para o dono: o mais novo primeiro, e a
+// planilha (o registro que ele guarda para se defender, se um dia precisar)
+const ONDE_ACEITE = { cadastro: "No cadastro", tela: "Na tela de aceite", novos: "Na tela de aceite (termos novos)" };
+function ordenarAceites(l) { return l.slice().sort((a, b) => (b.em || 0) - (a.em || 0)); }
+function dataHora(ms) { return ms ? new Date(ms).toLocaleString("pt-BR") : ""; }
+function csvAceites(lista) {
+  const cel = (v) => { const s = String(v == null ? "" : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const linhas = [["Nome", "E-mail", "Conta (id)", "Versão dos termos", "Aceito em (relógio do celular)", "Registrado pelo servidor em",
+    "Onde aceitou", "Aparelho", "Versão do app", "Navegador", "Caixas marcadas", "Impressão digital do texto (SHA-256)"]];
+  ordenarAceites(lista).forEach((a) => linhas.push([a.nome || "", a.email || "", a.conta || "", a.termos || "", dataHora(a.em), dataHora(a.servidorEm),
+    ONDE_ACEITE[a.de] || a.de || "", a.aparelho || "", a.versaoApp || "", a.navegador || "", a.caixas || "", a.hash || ""]));
+  return "\uFEFF" + linhas.map((l) => l.map(cel).join(";")).join("\r\n");
+}
+// ---- A COBRANÇA (pedido do dono, 2026-10-30a) ----
+// O app pode virar pago com uma chave só, no painel do dono (`cobranca` em
+// config/acesso). Desligada (hoje), nada muda para ninguém. Ligada, entra quem
+// tem plano pago, vitalício, cortesia, ou ainda está no período de teste; os
+// outros veem a tela de planos. Sem servidor próprio não há como o Pix avisar
+// o app sozinho: a pessoa paga, avisa no app, e o dono confirma no painel. São
+// as regras do Firestore que garantem que só o dono libera acesso pago.
+const PLANOS_PADRAO = [
+  { id: "mensal", nome: "Mensal", preco: 19.9, dias: 30, ativo: true, link: "" },
+  { id: "anual", nome: "Anual", preco: 149.9, dias: 365, ativo: true, link: "" },
+  { id: "unico", nome: "Pagamento único (3 meses)", preco: 49.9, dias: 90, ativo: true, link: "" },
+  { id: "vitalicio", nome: "Vitalício", preco: 399.9, dias: 0, ativo: true, link: "" },
+];
+const TESTE_DIAS_PADRAO = 7;
+// A configuração guardada em config/acesso: só texto, número e sim/não (o
+// Firestore daqui não guarda listas), então os planos vão como texto JSON.
+function lerCobranca(cfg) {
+  const c = cfg || {};
+  let planos = PLANOS_PADRAO;
+  try { const p = JSON.parse(c.planos || "null"); if (Array.isArray(p) && p.length) planos = p; } catch (e) {}
+  planos = PLANOS_PADRAO.map((base) => {
+    const p = planos.find((x) => x && x.id === base.id) || {};
+    const preco = Math.round((+p.preco >= 0 ? +p.preco : base.preco) * 100) / 100;
+    const dias = base.id === "vitalicio" ? 0 : Math.max(1, Math.round(+p.dias > 0 ? +p.dias : base.dias));
+    return { id: base.id, nome: String(p.nome || base.nome).slice(0, 40), preco: preco, dias: dias,
+      ativo: p.ativo === undefined ? base.ativo : !!p.ativo, link: /^https:\/\//.test(p.link || "") ? String(p.link).slice(0, 300) : "" };
+  });
+  const teste = c.testeDias === undefined || c.testeDias === null ? TESTE_DIAS_PADRAO : Math.max(0, Math.min(60, Math.round(+c.testeDias || 0)));
+  return { ligada: !!c.cobranca, desde: +c.cobrancaDesde || 0, testeDias: teste, planos: planos,
+    pix: { chave: String(c.pixChave || "").trim(), nome: String(c.pixNome || "").trim(), cidade: String(c.pixCidade || "").trim() } };
+}
+function planosAtivos(cob) { return ((cob && cob.planos) || []).filter((p) => p.ativo && p.preco > 0); }
+function planoPorId(cob, id) { return ((cob && cob.planos) || PLANOS_PADRAO).find((p) => p.id === id) || null; }
+function fimDoDia(ms) { const d = new Date(ms); d.setHours(23, 59, 59, 999); return d.getTime(); }
+function precoTexto(v) { return "R$ " + (+v || 0).toFixed(2).replace(".", ","); }
+// De que jeito esta conta entra hoje. "pagar" é o único que barra.
+function planoDaConta(d, agora, cob) {
+  const c = cob || {};
+  if (d && ehEmailDono(d.email)) return { tipo: "dono", ate: 0 };
+  if (d && d.cortesia && !(d.cortesiaAte > 0 && agora >= d.cortesiaAte)) return { tipo: "cortesia", ate: d.cortesiaAte || 0, motivo: d.cortesiaMotivo || "" };
+  if (d && d.vitalicio) return { tipo: "vitalicio", ate: 0, plano: d.plano || "vitalicio" };
+  if (d && d.pagoAte > agora) return { tipo: "pago", ate: d.pagoAte, plano: d.plano || "" };
+  if (!c.ligada) return { tipo: "gratis", ate: 0 };
+  // o teste conta do cadastro, ou do dia em que a cobrança foi ligada: quem já
+  // usava ganha o mesmo prazo que quem chega, em vez de ser barrado na hora
+  const ini = Math.max((d && d.criadoEm) || 0, c.desde || 0);
+  const fimTeste = c.testeDias > 0 ? fimDoDia(ini + c.testeDias * 864e5) : 0;
+  if (fimTeste && agora < fimTeste) return { tipo: "teste", ate: fimTeste };
+  return { tipo: "pagar", ate: Math.max(fimTeste, (d && d.pagoAte) || 0) };
+}
+const NOMES_PLANO_CONTA = { dono: "👑 Dono", cortesia: "🎁 Cortesia", vitalicio: "♾ Vitalício", pago: "💳 Pago", gratis: "Grátis", teste: "🧪 Em teste", pagar: "💳 Precisa pagar" };
+function textoPlanoConta(p, cob) {
+  const nome = p.tipo === "pago" && planoPorId(cob, p.plano) ? "💳 " + planoPorId(cob, p.plano).nome : NOMES_PLANO_CONTA[p.tipo] || p.tipo;
+  const ate = p.ate > 0 ? (p.tipo === "pagar" ? " (venceu em " : " até ") + new Date(p.ate).toLocaleDateString("pt-BR") + (p.tipo === "pagar" ? ")" : "") : (p.tipo === "cortesia" ? " sem prazo" : "");
+  return nome + ate + (p.motivo ? " · " + p.motivo : "");
+}
+// O que um pagamento confirmado grava na conta. O período soma ao que ainda
+// vale: quem renova antes de vencer não perde os dias que faltavam.
+function acessoPago(d, plano, agora) {
+  if (!plano) return {};
+  if (plano.id === "vitalicio" || !(plano.dias > 0)) return { vitalicio: true, plano: plano.id };
+  const base = d && d.pagoAte > agora ? d.pagoAte : agora;
+  return { pagoAte: fimDoDia(base + plano.dias * 864e5), plano: plano.id };
+}
+// O Pix "copia e cola" (o BR Code do Banco Central, padrão EMV), montado no
+// próprio aparelho: sem API de banco, sem servidor. O valor e o código do
+// pagamento (txid) vão dentro, e é o txid que o dono confere no extrato.
+function crc16Pix(s) {
+  let crc = 0xFFFF;
+  for (let i = 0; i < s.length; i++) {
+    crc ^= s.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+  }
+  return crc.toString(16).toUpperCase().padStart(4, "0");
+}
+function campoPix(id, valor) { const v = String(valor); return id + String(v.length).padStart(2, "0") + v; }
+function limparPix(s, max) { return semAcento(String(s || "")).replace(/[^A-Za-z0-9 .\-]/g, "").trim().toUpperCase().slice(0, max); }
+function pixCopiaECola(o) {
+  const conta = campoPix("00", "br.gov.bcb.pix") + campoPix("01", String(o.chave || "").trim());
+  let p = campoPix("00", "01") + campoPix("26", conta) + campoPix("52", "0000") + campoPix("53", "986");
+  if (o.valor > 0) p += campoPix("54", (+o.valor).toFixed(2));
+  p += campoPix("58", "BR") + campoPix("59", limparPix(o.nome, 25) || "SUPER HQS") + campoPix("60", limparPix(o.cidade, 15) || "BRASIL");
+  p += campoPix("62", campoPix("05", String(o.txid || "***").replace(/[^A-Za-z0-9]/g, "").slice(0, 25) || "***"));
+  p += "6304";
+  return p + crc16Pix(p);
+}
+// O código do pagamento: o que aparece no extrato do Pix do dono
+function txidPagamento(uid, em) { return ("SH" + String(uid || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 12) + (+em || 0).toString(36)).slice(0, 25).toUpperCase(); }
+const STATUS_PAGAMENTO = {
+  informado: { nome: "Aguardando confirmação", icone: "⏳", cor: "var(--obs)" },
+  confirmado: { nome: "Confirmado", icone: "✅", cor: "var(--ok)" },
+  recusado: { nome: "Recusado", icone: "✖", cor: "var(--perigo)" },
+  devolvido: { nome: "Devolvido", icone: "↩", cor: "var(--cinza)" },
+};
+function ordenarPagamentos(l) {
+  const peso = { informado: 0, confirmado: 1, devolvido: 2, recusado: 3 };
+  return l.slice().sort((a, b) => (peso[a.status] || 0) - (peso[b.status] || 0) || (b.em || 0) - (a.em || 0));
+}
+function resumoPagamentos(lista, agora) {
+  const d = new Date(agora), mes = new Date(d.getFullYear(), d.getMonth(), 1).getTime(), ano = new Date(d.getFullYear(), 0, 1).getTime();
+  const r = { aConfirmar: 0, mes: 0, ano: 0, total: 0, confirmados: 0 };
+  lista.forEach((p) => {
+    if (p.status === "informado") r.aConfirmar++;
+    if (p.status !== "confirmado") return;
+    const v = +p.valor || 0, quando = p.confirmadoEm || p.em || 0;
+    r.confirmados++; r.total += v;
+    if (quando >= mes) r.mes += v;
+    if (quando >= ano) r.ano += v;
+  });
+  ["mes", "ano", "total"].forEach((k) => { r[k] = Math.round(r[k] * 100) / 100; });
+  return r;
+}
+function csvPagamentos(lista) {
+  const cel = (v) => { const s = String(v == null ? "" : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const linhas = [["Nome", "E-mail", "Conta (id)", "Plano", "Valor (R$)", "Forma", "Código do Pix (txid)", "Situação", "Informado em", "Registrado pelo servidor em",
+    "Confirmado em", "Observação da pessoa", "Motivo (recusa ou devolução)", "Aceitou as condições (versão)"]];
+  ordenarPagamentos(lista).forEach((p) => linhas.push([p.nome || "", p.email || "", p.conta || "", p.planoNome || p.plano || "", (+p.valor || 0).toFixed(2).replace(".", ","),
+    p.metodo === "manual" ? "Registrado pelo dono" : p.metodo === "link" ? "Link de pagamento" : "Pix", p.txid || "",
+    (STATUS_PAGAMENTO[p.status] || {}).nome || p.status || "", dataHora(p.em), dataHora(p.servidorEm), dataHora(p.confirmadoEm), p.nota || "", p.motivo || "", p.condicoes || ""]));
+  return "\uFEFF" + linhas.map((l) => l.map(cel).join(";")).join("\r\n");
+}
+// ---------------- FIM DAS CONTAS
+
+// ---- A conversa com o Firebase (REST) ----
+function configAcesso() {
+  // para testar sem o Firebase de verdade: um projeto de mentira no armazenamento
+  try { const t = localStorage.getItem("superhqs:firebase-teste"); if (t) return JSON.parse(t); } catch (e) {}
+  return FIREBASE_ACESSO;
+}
+function acessoLigado() { const c = configAcesso(); return !!(c && c.apiKey && c.projectId); }
+async function chamarFirebase(url, opcoes) {
+  let r;
+  try { r = await fetch(url, opcoes); } catch (e) { const x = new Error("SEM_REDE"); x.semRede = true; throw x; }
+  let j = null;
+  try { j = await r.json(); } catch (e) {}
+  if (!r.ok) {
+    const cod = (j && j.error && (j.error.message || j.error.status)) || "HTTP_" + r.status;
+    const x = new Error(cod); x.status = r.status; throw x;
+  }
+  return j;
+}
+const contaApi = {
+  auth(caminho, corpo) {
+    return chamarFirebase("https://identitytoolkit.googleapis.com/v1/" + caminho + "?key=" + configAcesso().apiKey,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  },
+  entrar(email, senha) { return this.auth("accounts:signInWithPassword", { email: email, password: senha, returnSecureToken: true }); },
+  criar(email, senha) { return this.auth("accounts:signUp", { email: email, password: senha, returnSecureToken: true }); },
+  esqueci(email) { return this.auth("accounts:sendOobCode", { requestType: "PASSWORD_RESET", email: email }); },
+  confirmarEmail(idToken) { return this.auth("accounts:sendOobCode", { requestType: "VERIFY_EMAIL", idToken: idToken }); },
+  async conferir(idToken) { const j = await this.auth("accounts:lookup", { idToken: idToken }); return (j.users || [])[0] || null; },
+  renovar(refresh) {
+    return chamarFirebase("https://securetoken.googleapis.com/v1/token?key=" + configAcesso().apiKey,
+      { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(refresh) });
+  },
+  doc(caminho) { return "https://firestore.googleapis.com/v1/projects/" + configAcesso().projectId + "/databases/(default)/documents/" + caminho; },
+  async ler(uid, token) {
+    try { return deFirestore(await chamarFirebase(this.doc("usuarios/" + uid), { headers: { Authorization: "Bearer " + token } })); }
+    catch (e) { if (e.status === 404) return null; throw e; }
+  },
+  async gravar(uid, campos, token, criar) {
+    return this.gravarEm("usuarios/" + uid, campos, token, criar ? "&currentDocument.exists=false" : "&currentDocument.exists=true");
+  },
+  async gravarEm(caminho, campos, token, condicao) {
+    const mascara = Object.keys(campos).map((k) => "updateMask.fieldPaths=" + k).join("&");
+    const url = this.doc(caminho) + "?" + mascara + (condicao || "");
+    return deFirestore(await chamarFirebase(url, { method: "PATCH", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify(paraFirestore(campos)) }));
+  },
+  // a regra das contas novas (aprovação automática): todos leem, só o dono muda
+  async lerConfig(token) {
+    try { return deFirestore(await chamarFirebase(this.doc("config/acesso"), { headers: { Authorization: "Bearer " + token } })); }
+    catch (e) { if (e.status === 404) return null; throw e; }
+  },
+  gravarConfig(campos, token) { return this.gravarEm("config/acesso", campos, token, ""); },
+  apagarDoc(uid, token) { return chamarFirebase(this.doc("usuarios/" + uid), { method: "DELETE", headers: { Authorization: "Bearer " + token } }); },
+  apagarConta(idToken) { return this.auth("accounts:delete", { idToken: idToken }); },
+  // O registro do aceite: um documento novo em "aceites", que ninguém altera
+  // nem apaga pelo app (nem o dono), com a hora posta pelo próprio servidor
+  // (REQUEST_TIME): o relógio do celular pode estar errado, o do Google não.
+  registrarAceite(id, campos, token) {
+    const p = configAcesso().projectId;
+    const corpo = { writes: [{
+      update: { name: "projects/" + p + "/databases/(default)/documents/aceites/" + id, fields: paraFirestore(campos).fields },
+      updateTransforms: [{ fieldPath: "servidorEm", setToServerValue: "REQUEST_TIME" }],
+      currentDocument: { exists: false },
+    }] };
+    return chamarFirebase("https://firestore.googleapis.com/v1/projects/" + p + "/databases/(default)/documents:commit",
+      { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  },
+  listar(token) { return this.listarColecao("usuarios", token); },
+  listarAceites(token) { return this.listarColecao("aceites", token); },
+  listarPagamentos(token) { return this.listarColecao("pagamentos", token); },
+  // Os pagamentos da própria pessoa. As regras só deixam ler os dela, e a
+  // consulta tem de pedir exatamente isso (senão o Firestore recusa tudo).
+  async meusPagamentos(uid, token) {
+    const corpo = { structuredQuery: { from: [{ collectionId: "pagamentos" }],
+      where: { fieldFilter: { field: { fieldPath: "conta" }, op: "EQUAL", value: { stringValue: uid } } } } };
+    const j = await chamarFirebase(this.doc("").replace(/\/$/, "") + ":runQuery",
+      { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+    return (j || []).map((x) => x && x.document && deFirestore(x.document)).filter(Boolean);
+  },
+  // Várias gravações de uma vez, tudo ou nada: confirmar um pagamento grava o
+  // pagamento e a conta juntos, e um não fica feito sem o outro.
+  commit(escritas, token) {
+    return chamarFirebase(this.doc("").replace(/\/$/, "") + ":commit",
+      { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ writes: escritas }) });
+  },
+  escrita(caminho, campos, opc) {
+    const o = opc || {};
+    const w = { update: { name: "projects/" + configAcesso().projectId + "/databases/(default)/documents/" + caminho, fields: paraFirestore(campos).fields } };
+    if (o.existe !== false) w.updateMask = { fieldPaths: Object.keys(campos) };
+    if (o.existe !== undefined) w.currentDocument = { exists: o.existe };
+    if (o.servidor) w.updateTransforms = [{ fieldPath: o.servidor, setToServerValue: "REQUEST_TIME" }];
+    return w;
+  },
+  // O login com o Google: o Firebase troca o "crachá" que o Google dá (o
+  // id_token) por uma conta dele, como a de e-mail e senha.
+  entrarGoogle(credencial) {
+    return this.auth("accounts:signInWithIdp", { postBody: "id_token=" + encodeURIComponent(credencial) + "&providerId=google.com",
+      requestUri: location.origin + location.pathname, returnSecureToken: true, returnIdpCredential: true });
+  },
+  // O id do cliente do Google vem do próprio projeto: o botão aparece sozinho
+  // no dia em que o dono liga o Google no Firebase, sem publicar nada.
+  // (O getProjectConfig não traz o id: quem traz é o endereço de login que o
+  // Firebase monta, e com o Google desligado ele recusa.)
+  async googleClientId() {
+    try {
+      const j = await this.auth("accounts:createAuthUri", { providerId: "google.com", continueUri: location.origin + location.pathname });
+      const m = /[?&]client_id=([^&]+)/.exec((j && j.authUri) || "");
+      return m ? decodeURIComponent(m[1]) : "";
+    } catch (e) { if (e.semRede) throw e; return ""; }
+  },
+  async listarColecao(colecao, token) {
+    const out = [];
+    let pagina = "";
+    for (let i = 0; i < 20; i++) {
+      const j = await chamarFirebase(this.doc(colecao) + "?pageSize=300" + (pagina ? "&pageToken=" + encodeURIComponent(pagina) : ""), { headers: { Authorization: "Bearer " + token } });
+      (j.documents || []).forEach((d) => { const o = deFirestore(d); if (o) out.push(o); });
+      if (!j.nextPageToken) break;
+      pagina = j.nextPageToken;
+    }
+    return out;
+  },
+};
+// A sessão (a chave do Firebase) e o último status conferido moram no aparelho
+const CHAVE_CONTA = "superhqs:conta";
+// o último e-mail que entrou: na volta, a tela já vem em "Entrar" com ele
+const CHAVE_EMAIL_CONTA = "superhqs:contaEmail";
+function lerSessaoConta() { try { return JSON.parse(localStorage.getItem(CHAVE_CONTA) || "null"); } catch (e) { return null; } }
+function gravarSessaoConta(s) { try { if (s) localStorage.setItem(CHAVE_CONTA, JSON.stringify(s)); else localStorage.removeItem(CHAVE_CONTA); } catch (e) {} }
+function sessaoDeResposta(j, antes) {
+  return Object.assign({}, antes || {}, {
+    uid: j.localId || j.user_id || (antes && antes.uid),
+    email: j.email || (antes && antes.email),
+    idToken: j.idToken || j.id_token,
+    refresh: j.refreshToken || j.refresh_token,
+    expira: Date.now() + (parseInt(j.expiresIn || j.expires_in, 10) || 3600) * 1000,
+  });
+}
+// A chave do Firebase vale uma hora: renova antes de vencer
+async function tokenValido(s) {
+  if (s.idToken && s.expira - Date.now() > 60000) return s;
+  const j = await contaApi.renovar(s.refresh);
+  const n = sessaoDeResposta(j, s);
+  gravarSessaoConta(n);
+  return n;
+}
+// O aceite dos termos mora no aparelho (e na conta, quando as regras do
+// Firebase deixam: versão 3). Só vale o da versão de agora.
+const CHAVE_TERMOS = "superhqs:termos";
+function lerAceiteTermos() { try { return JSON.parse(localStorage.getItem(CHAVE_TERMOS) || "null"); } catch (e) { return null; } }
+function termosAceitos() { const a = lerAceiteTermos(); return !!(a && a.v === TERMOS_USO.versao); }
+function gravarAceiteTermos(em, de, reg) {
+  const a = { v: TERMOS_USO.versao, em: em || Date.now(), de: de || "", reg: !!reg };
+  try { localStorage.setItem(CHAVE_TERMOS, JSON.stringify(a)); } catch (e) {}
+  return a;
+}
+// A impressão digital do texto aceito (SHA-256 do TERMOS_USO inteiro). A cópia
+// exata de cada versão fica em termos-versoes/<versão>.txt: refazer a conta
+// nela prova qual texto a pessoa aceitou.
+async function impressaoTermos() {
+  try {
+    const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(TERMOS_USO)));
+    return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join("");
+  } catch (e) { return ""; }
+}
+// Leva o aceite deste aparelho para o Firebase: o registro no histórico (só o
+// dono lê) e os campos da conta (o painel). Calado: com as regras antigas o
+// Firebase recusa, e o app tenta de novo na próxima conferida.
+let registrandoAceite = false;
+async function registrarAceite(naConta, nome) {
+  const a = lerAceiteTermos();
+  if (!a || a.v !== TERMOS_USO.versao || registrandoAceite) return;
+  registrandoAceite = true;
+  try {
+    const s = await tokenValido(lerSessaoConta());
+    if (!s || !s.uid) return;
+    if (!a.reg) {
+      const campos = { conta: s.uid, email: s.email, nome: nome || s.nome || "", termos: a.v, em: a.em, de: a.de || "",
+        caixas: TERMOS_USO.caixas.join(" | "), hash: await impressaoTermos(),
+        aparelho: aparelhoDe(navigator.userAgent, NO_APP_ANDROID), versaoApp: VERSAO_APP, navegador: String(navigator.userAgent || "").slice(0, 300) };
+      try { await contaApi.registrarAceite(s.uid + "_" + a.em, campos, s.idToken); }
+      catch (x) { if (!/ALREADY_EXISTS/.test(x.message)) throw x; }
+      gravarAceiteTermos(a.em, a.de, true);
+    }
+    if (naConta) await contaApi.gravar(s.uid, { termos: a.v, termosEm: a.em }, s.idToken);
+  } catch (e) {} finally { registrandoAceite = false; }
+}
+
+// Os termos para ler: o resumo em cartões e o texto completo
+function TextoTermos({ soResumo }) {
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {TERMOS_USO.resumo.map((r) => (
+          <div key={r[1]} style={{ border: "1px solid var(--borda2)", borderRadius: 14, padding: "10px 10px 11px", background: "var(--card)" }}>
+            <div style={{ fontSize: 24, lineHeight: 1 }} aria-hidden="true">{r[0]}</div>
+            <div style={{ fontWeight: 900, fontSize: 13.5, margin: "6px 0 3px", lineHeight: 1.3 }}>{r[1]}</div>
+            <div style={{ fontSize: 12, color: "var(--cinza)", lineHeight: 1.45 }}>{r[2]}</div>
+          </div>
+        ))}
+      </div>
+      {!soResumo && TERMOS_USO.secoes.map((s) => (
+        <div key={s[0]} style={{ marginTop: 16 }}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: "var(--marca)", marginBottom: 4 }}>{s[0]}</div>
+          {s[1].map((p, i) => <p key={i} style={{ margin: "0 0 8px", fontSize: 13.5, lineHeight: 1.6 }}>{p}</p>)}
+        </div>
+      ))}
+      {!soResumo && (
+        <div style={{ fontSize: 12.5, color: "var(--cinza)", marginTop: 12 }}>
+          Versão de {new Date(TERMOS_USO.versao + "T12:00:00").toLocaleDateString("pt-BR")} ·{" "}
+          <a href="privacidade.html" target="_blank" rel="noreferrer" style={{ color: "var(--marca)" }}>Política de Privacidade</a> ·{" "}
+          <a href="termos.html" target="_blank" rel="noreferrer" style={{ color: "var(--marca)" }}>abrir numa página</a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// A janela com os termos inteiros, por cima de tudo (no cadastro, abrir os
+// termos não pode levar embora o que a pessoa já digitou)
+function JanelaTermos({ onFechar }) {
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Termos de Uso" onClick={onFechar}
+      style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ background: "var(--bg)", color: "var(--texto)", width: "100%", maxWidth: 560, maxHeight: "92vh", borderRadius: "20px 20px 0 0", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px", borderBottom: "1px solid var(--borda2)" }}>
+          <div style={{ fontWeight: 900, fontSize: 18 }}>📜 Termos de Uso</div>
+          <button onClick={onFechar} aria-label="Fechar" style={{ background: "none", border: "none", color: "var(--texto)", fontSize: 22, cursor: "pointer", padding: 4 }}>✕</button>
+        </div>
+        <div style={{ overflowY: "auto", padding: "12px 16px 8px", fontFamily: S.app.fontFamily }}>
+          <TextoTermos />
+        </div>
+        <div style={{ padding: "10px 16px 16px", borderTop: "1px solid var(--borda2)" }}>
+          <button onClick={onFechar} style={{ ...S.btn, width: "100%" }}>Entendi</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// As duas caixas de aceite: as duas precisam estar marcadas
+function CaixasAceite({ marcas, setMarcas }) {
+  return (
+    <div>
+      {TERMOS_USO.caixas.map((txt, i) => (
+        <label key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontSize: 13.5, lineHeight: 1.5, padding: "7px 0" }}>
+          <input type="checkbox" checked={!!marcas[i]} onChange={(e) => { const m = marcas.slice(); m[i] = e.target.checked; setMarcas(m); }}
+            style={{ width: 22, height: 22, flex: "0 0 22px", marginTop: 1, accentColor: "var(--marca)" }} />
+          <span>{txt}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+// A tela de aceite: quem já tinha conta (ou entrou num aparelho novo) e quem
+// ainda não aceitou a versão de agora. Sem aceitar, o app não abre.
+function TelaAceiteTermos({ onAceitar, onSair }) {
+  const antes = lerAceiteTermos();
+  const [marcas, setMarcas] = useState([false, false]);
+  const [lendo, setLendo] = useState(false);
+  const pronto = marcas[0] && marcas[1];
+  return (
+    <CaixaConta>
+      <div style={{ textAlign: "center", margin: "6px 0 14px" }}>
+        <div style={{ fontSize: 40 }} aria-hidden="true">📜</div>
+        <div style={{ fontSize: 20, fontWeight: 900 }}>{antes ? "Os termos de uso mudaram" : "Antes de começar, o combinado"}</div>
+        <div style={{ color: "var(--cinza)", fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>
+          {antes ? "Leia o que vale a partir de agora e aceite para continuar lendo." : "As regras do Super HQs em 1 minuto. Para entrar, é preciso aceitar."}
+        </div>
+      </div>
+      <TextoTermos soResumo />
+      <button onClick={() => setLendo(true)} style={{ ...S.btnGhost, width: "100%", marginTop: 12, color: "var(--marca)", borderColor: "var(--marca)", fontWeight: 800 }}>
+        📖 Ler os termos completos
+      </button>
+      <div style={{ ...S.card, marginTop: 12 }}>
+        <CaixasAceite marcas={marcas} setMarcas={setMarcas} />
+        <button disabled={!pronto} onClick={() => onAceitar(antes ? "novos" : "tela")} style={{ ...S.btn, width: "100%", fontSize: 16, padding: "14px 10px", marginTop: 8, opacity: pronto ? 1 : 0.45 }}>
+          ✅ Aceito e quero ler
+        </button>
+        {!pronto && <div style={{ fontSize: 12, color: "var(--cinza)", textAlign: "center", marginTop: 8 }}>Marque as duas caixas para continuar.</div>}
+      </div>
+      {onSair && (
+        <div style={{ textAlign: "center" }}>
+          <button onClick={onSair} style={{ background: "none", border: "none", color: "var(--cinza)", fontWeight: 700, cursor: "pointer", fontSize: 13, marginTop: 4 }}>Não aceito: sair</button>
+        </div>
+      )}
+      {lendo && <JanelaTermos onFechar={() => setLendo(false)} />}
+    </CaixaConta>
+  );
+}
+
+// Quem está dentro, para os Ajustes (o cartão da conta e o painel do dono).
+// Ponteiro de módulo: o porteiro está acima de tudo.
+let CONTA_ATUAL = null;
+
+function Porteiro({ children }) {
+  const ligado = acessoLigado();
+  const [fase, setFase] = useState(() => {
+    if (!ligado) return "dentro";
+    const s = lerSessaoConta();
+    if (!s || !s.uid) return "entrar";
+    return liberadoSemRede(s, Date.now()) ? "dentro" : "conferindo";
+  });
+  const [msg, setMsg] = useState("");
+  const [pendentes, setPendentes] = useState(0);
+  const [recado, setRecado] = useState(null);
+  const [aceito, setAceito] = useState(termosAceitos);
+  const [pagPend, setPagPend] = useState(0);
+  const [assinando, setAssinando] = useState(false);
+  const [avisoVence, setAvisoVence] = useState(null);
+  const vistoEm = useRef(0);
+  const conferindo = useRef(false);
+  const contou = useRef(false);
+  const sair = () => { gravarSessaoConta(null); CONTA_ATUAL = null; contou.current = false; setFase("entrar"); setMsg(""); };
+  const conferir = async (forcarRenovar) => {
+    if (conferindo.current) return;
+    conferindo.current = true;
+    let s = lerSessaoConta();
+    try {
+      if (!s) { setFase("entrar"); return; }
+      if (forcarRenovar) s = Object.assign({}, s, { expira: 0 });
+      s = await tokenValido(s);
+      const dono = ehEmailDono(s.email);
+      if (dono) {
+        const u = await contaApi.conferir(s.idToken);
+        if (!u || !u.emailVerified) { gravarSessaoConta(Object.assign({}, s, { status: null })); setFase("verificar"); return; }
+        // a chave precisa trazer o e-mail confirmado: é o que as regras olham
+        if (!s.verificado) { s = await tokenValido(Object.assign({}, s, { expira: 0, verificado: true })); }
+      }
+      let d = await contaApi.ler(s.uid, s.idToken);
+      const agora = Date.now();
+      // A regra de quem entra (aprovação automática e cobrança), que todos
+      // leem. Sem resposta, vale a última que este aparelho conheceu.
+      let cfg = null;
+      try { cfg = await contaApi.lerConfig(s.idToken); } catch (x) { cfg = undefined; }
+      const cob = cfg === undefined ? (s.cob || lerCobranca(null)) : lerCobranca(cfg);
+      if (!d) {
+        // aprovação automática ligada pelo dono: entra liberado. Com as regras
+        // antigas no Firebase, a gravação "liberado" é recusada e cai no "pendente".
+        const autoLib = !dono && !!(cfg && cfg.auto);
+        const novo = { email: s.email, nome: s.nome || "", criadoEm: agora, ultimoAcesso: agora, acessos: 1,
+          aparelho: aparelhoDe(navigator.userAgent, NO_APP_ANDROID), versao: VERSAO_APP };
+        try { d = await contaApi.gravar(s.uid, Object.assign({}, novo, { status: dono || autoLib ? "liberado" : "pendente" }), s.idToken, true); }
+        catch (x) { if (!autoLib) throw x; d = await contaApi.gravar(s.uid, Object.assign({}, novo, { status: "pendente" }), s.idToken, true); }
+        contou.current = true;
+        vistoEm.current = agora;
+      } else if (dono && d.status !== "liberado") {
+        d = await contaApi.gravar(s.uid, { status: "liberado" }, s.idToken);
+      }
+      const status = situacaoConta(d, agora, dono ? null : cob);
+      // o aceite dos termos: o da conta vale neste aparelho (aceitou em outro),
+      // e o do aparelho sobe para a conta (aceitou no cadastro)
+      if (d && d.termos === TERMOS_USO.versao && !termosAceitos()) { gravarAceiteTermos(d.termosEm, "", true); setAceito(true); }
+      else if (termosAceitos() && d && (d.termos !== TERMOS_USO.versao || !lerAceiteTermos().reg)) registrarAceite(d.termos !== TERMOS_USO.versao, d.nome);
+      if (status === "liberado" && !contou.current) {
+        contou.current = true;
+        vistoEm.current = agora;
+        contaApi.gravar(s.uid, { ultimoAcesso: agora, acessos: (d.acessos || 0) + 1, aparelho: aparelhoDe(navigator.userAgent, NO_APP_ANDROID), versao: VERSAO_APP }, s.idToken).catch(() => {});
+      } else if (status === "liberado" && agora - vistoEm.current > 10 * 60000) {
+        // de volta ao app: o "último acesso" do painel acompanha (é o "online")
+        vistoEm.current = agora;
+        contaApi.gravar(s.uid, { ultimoAcesso: agora }, s.idToken).catch(() => {});
+      }
+      if (status === "liberado" && recadoNovo(d)) setRecado({ texto: d.aviso, uid: s.uid });
+      // a conta guardada leva o que decide o plano: sem rede, o vencimento
+      // continua valendo (liberadoSemRede)
+      const conta = d ? { email: d.email || s.email, criadoEm: d.criadoEm || 0, pagoAte: d.pagoAte || 0, vitalicio: !!d.vitalicio, plano: d.plano || "",
+        cortesia: !!d.cortesia, cortesiaAte: d.cortesiaAte || 0, cortesiaMotivo: d.cortesiaMotivo || "" } : null;
+      gravarSessaoConta(Object.assign({}, s, { status: d && d.status, ate: (d && d.ate) || 0, motivo: (d && d.motivo) || "", conferidoEm: agora, nome: (d && d.nome) || s.nome, cob: cob, conta: conta }));
+      // o dono fica sabendo, ao abrir o app, de quem está esperando a liberação
+      // e de quem avisou que pagou
+      if (dono && status === "liberado") {
+        contaApi.listar(s.idToken).then((l) => setPendentes(l.filter((c) => c.status === "pendente").length), () => {});
+        contaApi.listarPagamentos(s.idToken).then((l) => setPagPend(l.filter((p) => p.status === "informado").length), () => {});
+      }
+      // O acesso perto de vencer (5 dias): um aviso por dia, com "Renovar"
+      if (!dono && status === "liberado" && cob.ligada && conta) {
+        const p = planoDaConta(conta, agora, cob);
+        let visto = "";
+        try { visto = localStorage.getItem("superhqs:avisoVence") || ""; } catch (x) {}
+        if (["pago", "teste", "cortesia"].indexOf(p.tipo) >= 0 && p.ate > 0 && p.ate - agora < 5 * 864e5 && visto !== new Date(agora).toDateString()) setAvisoVence(p);
+      }
+      setFase(status === "liberado" ? "dentro" : status === "bloqueado" ? "bloqueado" : status === "vencido" ? "vencido" : status === "pagar" ? "pagar" : "aguardando");
+    } catch (e) {
+      if (e.semRede) {
+        setFase((f) => (f === "dentro" ? "dentro" : liberadoSemRede(s, Date.now()) ? "dentro" : "semRede"));
+      } else if (/TOKEN_EXPIRED|INVALID_REFRESH_TOKEN|USER_NOT_FOUND|USER_DISABLED|INVALID_ID_TOKEN/.test(e.message)) {
+        sair();
+        setMsg(e.message === "USER_DISABLED" ? erroDeConta("USER_DISABLED") : "A sua sessão venceu. Entre de novo, por favor.");
+      } else {
+        setMsg(erroDeConta(e.message));
+        setFase((f) => (f === "dentro" && liberadoSemRede(s, Date.now()) ? "dentro" : "erro"));
+      }
+    } finally { conferindo.current = false; }
+  };
+  useEffect(() => {
+    if (!ligado || fase === "entrar") return undefined;
+    conferir();
+    // na volta ao app, confere de novo (no máximo a cada 15 min): é como um
+    // bloqueio chega a quem já estava dentro
+    let ultima = Date.now();
+    const aoVoltar = () => {
+      if (document.visibilityState !== "visible" || Date.now() - ultima < 15 * 60000) return;
+      ultima = Date.now();
+      conferir();
+    };
+    document.addEventListener("visibilitychange", aoVoltar);
+    return () => document.removeEventListener("visibilitychange", aoVoltar);
+  // eslint-disable-next-line
+  }, [ligado, fase === "entrar"]);
+
+    const aceitar = (de) => { gravarAceiteTermos(Date.now(), de); setAceito(true); if (ligado) registrarAceite(true); };
+  if (!ligado) { CONTA_ATUAL = null; return aceito ? children : <TelaAceiteTermos onAceitar={aceitar} />; }
+  const s = lerSessaoConta();
+  if (fase === "dentro" && !aceito) { CONTA_ATUAL = null; return <TelaAceiteTermos onAceitar={aceitar} onSair={sair} />; }
+  if (fase === "dentro") {
+    CONTA_ATUAL = s ? { email: s.email, nome: s.nome, uid: s.uid, ate: s.ate || 0, dono: ehEmailDono(s.email) && !!s.verificado, sair: sair,
+      cob: s.cob || null, plano: s.conta ? planoDaConta(s.conta, Date.now(), s.cob) : null, assinar: () => setAssinando(true) } : null;
+    const app = CONTA_ATUAL && CONTA_ATUAL.dono ? React.cloneElement(children, { contaPendentes: pendentes, contaPagamentos: pagPend, onContaVista: () => { setPendentes(0); setPagPend(0); } }) : children;
+    if (!recado && !assinando && !avisoVence) return app;
+    const fecharAviso = () => { try { localStorage.setItem("superhqs:avisoVence", new Date().toDateString()); } catch (x) {} setAvisoVence(null); };
+    return (
+      <React.Fragment>
+        {app}
+        {recado && <RecadoDoDono texto={recado.texto} onOk={async () => {
+          setRecado(null);
+          try { const t2 = await tokenValido(lerSessaoConta()); await contaApi.gravar(recado.uid, { avisoVisto: Date.now() }, t2.idToken); } catch (x) {}
+        }} />}
+        {avisoVence && !recado && !assinando && (
+          <div role="dialog" aria-label="O seu acesso vence logo" style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div style={{ ...S.card, maxWidth: 360, width: "100%", marginBottom: 0, textAlign: "center" }}>
+              <div style={{ fontSize: 36 }} aria-hidden="true">⏳</div>
+              <div style={{ fontSize: 17, fontWeight: 900, margin: "6px 0" }}>
+                {avisoVence.tipo === "teste" ? "O seu período de teste" : avisoVence.tipo === "cortesia" ? "A sua cortesia" : "O seu plano"} acaba em {new Date(avisoVence.ate).toLocaleDateString("pt-BR")}
+              </div>
+              <div style={{ fontSize: 14, color: "var(--cinza)", lineHeight: 1.5, marginBottom: 14 }}>Renove antes para continuar lendo sem parar. A sua estante continua no aparelho de qualquer jeito.</div>
+              <button onClick={() => { fecharAviso(); setAssinando(true); }} style={{ ...S.btn, width: "100%" }}>💳 Ver os planos</button>
+              <button onClick={fecharAviso} style={{ ...S.btnGhost, width: "100%", marginTop: 8 }}>Depois</button>
+            </div>
+          </div>
+        )}
+        {assinando && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 450, background: "var(--bg)", overflowY: "auto" }}>
+            <TelaAssinatura sessao={s} cob={s && s.cob} onFechar={() => setAssinando(false)} />
+          </div>
+        )}
+      </React.Fragment>
+    );
+  }
+  CONTA_ATUAL = null;
+  if (fase === "entrar") return <TelaConta msgInicial={msg} onEntrou={() => { setMsg(""); setFase("conferindo"); }} />;
+  if (fase === "pagar") return <TelaAssinatura sessao={s} cob={s && s.cob} barrado onSair={sair} onConferir={() => conferir()} />;
+  return <TelaEsperaConta fase={fase} sessao={s} msg={msg} onConferir={() => { setFase("conferindo"); conferir(true); }} onConferirQuieto={() => conferir()} onSair={sair} />;
+}
+
+function CaixaConta({ children }) {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px", boxSizing: "border-box", background: "var(--bg)", color: "var(--texto)", fontFamily: S.app.fontFamily }}>
+      <div style={{ width: "100%", maxWidth: 380 }}>
+        <div style={{ fontSize: 30, fontWeight: 900, textAlign: "center", marginBottom: 4, background: GRAD, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>Super HQs</div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TelaConta({ onEntrou, msgInicial }) {
+  // Quem nunca entrou neste aparelho chega em "Criar conta", que é o que ele
+  // vai fazer; quem já entrou chega em "Entrar", com o e-mail preenchido.
+  const emailSalvo = (() => { try { return localStorage.getItem(CHAVE_EMAIL_CONTA) || ""; } catch (e) { return ""; } })();
+  const [modo, setModo] = useState(emailSalvo ? "entrar" : "criar"); // entrar | criar | esqueci
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState(emailSalvo);
+  const [senha, setSenha] = useState("");
+  const [verSenha, setVerSenha] = useState(false);
+  const [msg, setMsg] = useState(msgInicial || "");
+  const [ok, setOk] = useState("");
+  const [indo, setIndo] = useState(false);
+  const [errou, setErrou] = useState(false);
+  const [marcas, setMarcas] = useState([false, false]);
+  const [lendoTermos, setLendoTermos] = useState(false);
+  // "Continuar com o Google": aparece quando o dono liga o Google no Firebase
+  // (o id do cliente vem do projeto; guardado para o botão vir na hora)
+  const [google, setGoogle] = useState(() => { try { return localStorage.getItem("superhqs:googleId") || ""; } catch (e) { return ""; } });
+  const googleRef = useRef(null);
+  const atual = useRef({});
+  atual.current = { modo: modo, marcas: marcas, onEntrou: onEntrou };
+  useEffect(() => {
+    contaApi.googleClientId().then((id) => {
+      setGoogle(id);
+      try { if (id) localStorage.setItem("superhqs:googleId", id); else localStorage.removeItem("superhqs:googleId"); } catch (e) {}
+    }, () => {});
+  }, []);
+  const entrarComGoogle = async (resp) => {
+    setMsg(""); setOk(""); setIndo(true);
+    try {
+      const j = await contaApi.entrarGoogle(resp && resp.credential);
+      if (j.needConfirmation || !j.idToken) throw new Error("CONTA_COM_SENHA");
+      const s = sessaoDeResposta(j, { nome: String(j.displayName || j.fullName || "").slice(0, 60), google: true });
+      gravarSessaoConta(s);
+      try { localStorage.setItem(CHAVE_EMAIL_CONTA, s.email); } catch (x) {}
+      const a = atual.current;
+      if (a.modo === "criar" && a.marcas[0] && a.marcas[1]) gravarAceiteTermos(Date.now(), "cadastro");
+      a.onEntrou();
+    } catch (x) { setMsg(erroDeConta(x.message)); }
+    setIndo(false);
+  };
+  useEffect(() => {
+    if (!google || modo === "esqueci" || !googleRef.current) return undefined;
+    let vivo = true;
+    carregarScript("https://accounts.google.com/gsi/client").then(() => {
+      if (!vivo || !window.google || !window.google.accounts || !googleRef.current) return;
+      window.google.accounts.id.initialize({ client_id: google, callback: (r) => entrarComGoogle(r), ux_mode: "popup", auto_select: false, use_fedcm_for_prompt: true });
+      googleRef.current.innerHTML = "";
+      window.google.accounts.id.renderButton(googleRef.current, { theme: "outline", size: "large", shape: "pill", locale: "pt-BR",
+        text: modo === "criar" ? "signup_with" : "continue_with", width: Math.max(200, Math.min(360, googleRef.current.offsetWidth || 300)) });
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, [google, modo]);
+  const sugestao = sugerirEmail(email);
+  const trocar = (m) => { setModo(m); setMsg(""); setOk(""); setErrou(false); };
+  const mandarLink = async () => {
+    const em = email.trim().toLowerCase();
+    setIndo(true);
+    try { await contaApi.esqueci(em); setMsg(""); setErrou(false); setOk("Pronto! Mandamos para " + em + " um link para criar uma senha nova. Abra o e-mail (olhe também o spam), crie a senha e volte aqui para entrar."); }
+    catch (x) { setMsg(erroDeConta(x.message)); }
+    setIndo(false);
+  };
+  const enviar = async (e) => {
+    if (e) e.preventDefault();
+    setMsg(""); setOk(""); setErrou(false);
+    const em = email.trim().toLowerCase();
+    if (modo === "criar" && !nome.trim()) { setMsg("Falta o seu nome: é assim que o criador do app sabe quem está pedindo acesso."); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { setMsg(erroDeConta("INVALID_EMAIL")); return; }
+    if (modo === "esqueci") {
+      setIndo(true);
+      try { await contaApi.esqueci(em); setOk("Pronto! Se existir conta com " + em + ", chega um e-mail com o link para criar uma senha nova. Olhe também o spam."); }
+      catch (x) { setMsg(erroDeConta(x.message)); }
+      setIndo(false);
+      return;
+    }
+    if (senha.length < 6) { setMsg(modo === "criar" ? "Crie uma senha com pelo menos 6 caracteres." : erroDeConta("MISSING_PASSWORD")); return; }
+    if (modo === "criar" && !(marcas[0] && marcas[1])) { setMsg("Para criar a conta, leia e aceite os Termos de Uso: marque as duas caixas logo acima do botão."); return; }
+    setIndo(true);
+    try {
+      const j = modo === "criar" ? await contaApi.criar(em, senha) : await contaApi.entrar(em, senha);
+      const s = sessaoDeResposta(j, { nome: modo === "criar" ? nome.trim().slice(0, 60) : "" });
+      gravarSessaoConta(s);
+      try { localStorage.setItem(CHAVE_EMAIL_CONTA, em); } catch (x) {}
+      if (modo === "criar" && ehEmailDono(em)) { try { await contaApi.confirmarEmail(s.idToken); } catch (x) {} }
+      if (modo === "criar") gravarAceiteTermos(Date.now(), "cadastro");
+      onEntrou();
+    } catch (x) {
+      // e-mail já cadastrado no "Criar": leva para o Entrar com o e-mail pronto
+      if (/EMAIL_EXISTS/.test(x.message)) { setModo("entrar"); setSenha(""); }
+      if (/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(x.message)) setErrou(true);
+      setMsg(erroDeConta(x.message));
+    }
+    setIndo(false);
+  };
+  const campo = (rot, val, set, props, dica) => (
+    <label style={{ display: "block", marginBottom: 12 }}>
+      <span style={{ fontSize: 13, fontWeight: 800 }}>{rot}</span>
+      <input value={val} onChange={(e) => set(e.target.value)} {...props} style={{ ...S.input, marginTop: 5, fontSize: 16 }} />
+      {dica}
+    </label>
+  );
+  const link = (txt, onClick) => (
+    <button type="button" onClick={onClick} style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 800, cursor: "pointer", fontSize: 14, padding: "6px 4px" }}>{txt}</button>
+  );
+  const titulo = modo === "criar" ? "Crie a sua conta grátis" : modo === "esqueci" ? "Criar uma senha nova" : "Bem-vindo de volta";
+  const sub = modo === "criar" ? "Leva 30 segundos. Depois é só esperar a liberação do criador do app."
+    : modo === "esqueci" ? "Digite o seu e-mail: mandamos um link para você criar outra senha."
+    : "Entre com o e-mail e a senha da sua conta.";
+  return (
+    <CaixaConta>
+      <div style={{ textAlign: "center", margin: "6px 0 16px" }}>
+        <div style={{ fontSize: 20, fontWeight: 900 }}>{titulo}</div>
+        <div style={{ color: "var(--cinza)", fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>{sub}</div>
+      </div>
+      {modo === "criar" && (
+        <div style={{ display: "flex", justifyContent: "space-around", gap: 6, fontSize: 12, color: "var(--cinza)", textAlign: "center", marginBottom: 12 }}>
+          <div><div style={{ fontSize: 22 }} aria-hidden="true">📚</div>Sua estante</div>
+          <div><div style={{ fontSize: 22 }} aria-hidden="true">📖</div>Vira como livro</div>
+          <div><div style={{ fontSize: 22 }} aria-hidden="true">🔎</div>Toque para Ler</div>
+        </div>
+      )}
+      {google && modo !== "esqueci" && (
+        <div style={{ marginBottom: 12 }}>
+          <div ref={googleRef} style={{ display: "flex", justifyContent: "center", minHeight: 44 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--cinza)", fontSize: 12.5, marginTop: 10 }}>
+            <span style={{ flex: 1, height: 1, background: "var(--borda2)" }} />ou com e-mail e senha<span style={{ flex: 1, height: 1, background: "var(--borda2)" }} />
+          </div>
+        </div>
+      )}
+      <form onSubmit={enviar} style={{ ...S.card }} noValidate>
+        {modo === "criar" && campo("Seu nome", nome, setNome, { autoComplete: "name", autoCapitalize: "words", placeholder: "Como você quer ser chamado", autoFocus: true, enterKeyHint: "next" })}
+        {campo("E-mail", email, setEmail, { type: "email", inputMode: "email", autoComplete: "email", autoCapitalize: "none", autoCorrect: "off", spellCheck: false, placeholder: "seuemail@gmail.com", enterKeyHint: modo === "esqueci" ? "send" : "next", autoFocus: modo !== "criar" && !emailSalvo },
+          sugestao ? (
+            <button type="button" onClick={() => setEmail(sugestao)} style={{ display: "block", marginTop: 6, background: "none", border: "none", padding: 0, color: "var(--marca)", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              Você quis dizer <u>{sugestao}</u>? Toque para corrigir.
+            </button>
+          ) : null)}
+        {modo !== "esqueci" && (
+          <div style={{ marginBottom: 12 }}>
+            {/* o botão Mostrar fica fora do rótulo: dentro, o nome do campo virava "Senha Mostrar" */}
+            <label htmlFor="conta-senha" style={{ fontSize: 13, fontWeight: 800 }}>{modo === "criar" ? "Crie uma senha" : "Senha"}</label>
+            <div style={{ position: "relative", marginTop: 5 }}>
+              <input id="conta-senha" value={senha} onChange={(e) => setSenha(e.target.value)} type={verSenha ? "text" : "password"} autoFocus={modo === "entrar" && !!emailSalvo}
+                autoComplete={modo === "criar" ? "new-password" : "current-password"} enterKeyHint="go"
+                placeholder={modo === "criar" ? "Pelo menos 6 caracteres" : ""} style={{ ...S.input, fontSize: 16, paddingRight: 70 }} />
+              <button type="button" onClick={() => setVerSenha((v) => !v)} aria-label={verSenha ? "Esconder a senha" : "Mostrar a senha"}
+                style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--marca)", fontWeight: 800, fontSize: 13, cursor: "pointer", padding: "6px 8px" }}>
+                {verSenha ? "Esconder" : "Mostrar"}
+              </button>
+            </div>
+          </div>
+        )}
+        {modo === "criar" && (
+          <div style={{ border: "1px solid var(--borda2)", borderRadius: 14, padding: "10px 12px", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 800 }}>📜 Termos de Uso</span>
+              <button type="button" onClick={() => setLendoTermos(true)} style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 800, fontSize: 13, cursor: "pointer", padding: "4px 0" }}>Ler os termos</button>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--cinza)", lineHeight: 1.45, margin: "2px 0 4px" }}>
+              Acesso liberado pelo criador · só arquivos seus ou autorizados · a sua estante fica no seu aparelho.
+            </div>
+            <CaixasAceite marcas={marcas} setMarcas={(m) => { setMarcas(m); if (m[0] && m[1] && /Termos/.test(msg)) setMsg(""); }} />
+          </div>
+        )}
+        {msg && <div role="alert" style={{ color: "var(--perigo)", fontSize: 14, lineHeight: 1.5, marginBottom: 12 }}>{msg}</div>}
+        {errou && modo === "entrar" && (
+          <button type="button" disabled={indo} onClick={mandarLink}
+            style={{ ...S.btnGhost, width: "100%", marginBottom: 12, color: "var(--marca)", borderColor: "var(--marca)", fontWeight: 800 }}>
+            🔑 Esqueci a senha: mandar o link para {email.trim().toLowerCase()}
+          </button>
+        )}
+        {ok && <div role="status" style={{ color: "var(--ok)", fontSize: 14, lineHeight: 1.5, marginBottom: 12 }}>{ok}</div>}
+        <button type="submit" disabled={indo} style={{ ...S.btn, width: "100%", fontSize: 16, padding: "14px 10px", opacity: indo ? 0.6 : 1 }}>
+          {indo ? "Aguarde…" : modo === "criar" ? "Criar minha conta" : modo === "esqueci" ? "Mandar o link" : "Entrar"}
+        </button>
+        <div style={{ textAlign: "center", marginTop: 10, fontSize: 14, color: "var(--cinza)" }}>
+          {modo === "criar" && <>Já tem conta? {link("Entrar", () => trocar("entrar"))}</>}
+          {modo === "entrar" && <>Primeira vez aqui? {link("Criar conta", () => trocar("criar"))}<br />{link("🔑 Esqueci a senha", () => trocar("esqueci"))}</>}
+          {modo === "esqueci" && link("← Voltar para entrar", () => trocar("entrar"))}
+        </div>
+      </form>
+      <div style={{ fontSize: 12, color: "var(--cinza2)", textAlign: "center", lineHeight: 1.55, marginTop: 4 }}>
+        🔒 A conta guarda só o seu nome, o e-mail e quando você entra. A sua estante continua no seu aparelho.{" "}
+        <a href="privacidade.html" style={{ color: "var(--marca)" }}>Privacidade</a> ·{" "}
+        <button type="button" onClick={() => setLendoTermos(true)} style={{ background: "none", border: "none", padding: 0, color: "var(--marca)", textDecoration: "underline", fontSize: 12, cursor: "pointer" }}>Termos de Uso</button>
+      </div>
+      {lendoTermos && <JanelaTermos onFechar={() => setLendoTermos(false)} />}
+    </CaixaConta>
+  );
+}
+
+// A estante é de quem lê: quem ficou sem acesso (plano vencido,
+// bloqueado) baixa o backup sem precisar entrar no app.
+function baixarBackupLocal() {
+  try {
+    const dados = localStorage.getItem(STORAGE_KEY) || "{}";
+    const url = URL.createObjectURL(new Blob([dados], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = "super-hqs-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return true;
+  } catch (e) { return false; }
+}
+// O gerador de QR Code do Pix: só carrega na tela de planos (MIT, ver LICENSE)
+const QR_LIB = { url: "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js", sri: "sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" };
+// Os planos e o pagamento. "barrado": a cobrança está ligada e a pessoa não
+// tem plano (a tela fica no lugar do app e confere sozinha a cada 30 s);
+// sem ele, é a pessoa renovando por conta própria (abre por cima do app).
+function TelaAssinatura({ sessao, cob, barrado, onSair, onFechar, onConferir }) {
+  const c = cob || lerCobranca(null);
+  const planos = planosAtivos(c);
+  const [escolhido, setEscolhido] = useState(() => (planos.find((p) => p.id === "anual") || planos[0] || {}).id);
+  const [aceito, setAceito] = useState(false);
+  const [nota, setNota] = useState("");
+  const [meus, setMeus] = useState(null);
+  const [msg, setMsg] = useState("");
+  const [indo, setIndo] = useState(false);
+  const [qr, setQr] = useState("");
+  const [copiado, setCopiado] = useState(false);
+  const [backup, setBackup] = useState("");
+  // o código do pagamento fica o mesmo enquanto a tela está aberta: é ele que
+  // vai no Pix e no aviso, e é por ele que o dono acha o pagamento no extrato
+  const [emRef] = useState(() => Date.now());
+  const plano = planoPorId(c, escolhido);
+  const uid = sessao && sessao.uid;
+  const txid = txidPagamento(uid, emRef);
+  const temPix = !!(c.pix && c.pix.chave);
+  const copia = plano && temPix ? pixCopiaECola({ chave: c.pix.chave, nome: c.pix.nome, cidade: c.pix.cidade, valor: plano.preco, txid: txid }) : "";
+  const carregarMeus = async () => {
+    try { const s = await tokenValido(lerSessaoConta()); setMeus(ordenarPagamentos(await contaApi.meusPagamentos(s.uid, s.idToken))); }
+    catch (x) { setMeus([]); }
+  };
+  useEffect(() => { carregarMeus(); }, []);
+  useEffect(() => {
+    if (!barrado || !onConferir) return undefined;
+    const t = setInterval(() => { if (document.visibilityState === "visible") { onConferir(); carregarMeus(); } }, 30000);
+    return () => clearInterval(t);
+  }, [barrado]);
+  useEffect(() => {
+    setQr(""); setCopiado(false);
+    if (!copia) return undefined;
+    let vivo = true;
+    carregarScript(QR_LIB.url, QR_LIB.sri).then(() => {
+      if (!vivo || !window.qrcode) return;
+      const q = window.qrcode(0, "M"); q.addData(copia); q.make(); setQr(q.createDataURL(5, 2));
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, [copia]);
+  const pendente = (meus || []).find((p) => p.status === "informado");
+  const copiar = () => {
+    try { navigator.clipboard.writeText(copia).then(() => setCopiado(true), () => setCopiado(false)); } catch (x) {}
+  };
+  const informar = async (metodo) => {
+    if (!aceito) { setMsg("Marque que leu e aceita as condições da assinatura."); return; }
+    setIndo(true); setMsg("");
+    try {
+      const s = await tokenValido(lerSessaoConta());
+      const em = Date.now();
+      const campos = { conta: s.uid, email: s.email, nome: s.nome || "", plano: plano.id, planoNome: plano.nome, valor: plano.preco, dias: plano.dias,
+        metodo: metodo, txid: txid, nota: nota.trim().slice(0, 200), condicoes: CONDICOES_ASSINATURA.versao, status: "informado", em: em,
+        aparelho: aparelhoDe(navigator.userAgent, NO_APP_ANDROID), versaoApp: VERSAO_APP };
+      await contaApi.commit([contaApi.escrita("pagamentos/" + s.uid + "_" + em, campos, { existe: false, servidor: "servidorEm" })], s.idToken);
+      setMsg("✅ Pronto! O criador do app foi avisado. Assim que ele confirmar o pagamento, " + (barrado ? "o app abre sozinho aqui." : "o seu acesso é renovado."));
+      carregarMeus();
+    } catch (x) {
+      setMsg(erroDeConta(x.message) + (/PERMISSION/.test(x.message) ? " (O criador do app ainda precisa atualizar as regras do servidor.)" : ""));
+    }
+    setIndo(false);
+  };
+  const p = sessao && sessao.conta ? planoDaConta(sessao.conta, Date.now(), c) : null;
+  const porPeriodo = (pl) => pl.id === "vitalicio" ? "uma vez · para sempre" : pl.id === "mensal" ? "por mês" : pl.id === "anual" ? "por ano · " + precoTexto(pl.preco / 12) + " por mês"
+    : "uma vez · " + pl.dias + " dias de acesso";
+  const conteudo = (
+    <div>
+      <div style={{ textAlign: "center", margin: "6px 0 14px" }}>
+        <div style={{ fontSize: 38 }} aria-hidden="true">💪</div>
+        <div style={{ fontSize: 20, fontWeight: 900 }}>{barrado ? "Continue lendo no Super HQs" : "Planos e pagamento"}</div>
+        <div style={{ color: "var(--cinza)", fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>
+          {barrado ? (p && p.ate > 0 ? "O seu período gratuito terminou em " + new Date(p.ate).toLocaleDateString("pt-BR") + ". " : "O Super HQs agora é pago. ") : (p ? "Hoje: " + textoPlanoConta(p, c) + ". " : "")}
+          Escolha um plano: a sua estante continua toda no seu aparelho.
+        </div>
+      </div>
+      {pendente && (
+        <div style={{ ...S.card, borderColor: "var(--obs)" }}>
+          <div style={{ fontWeight: 900, fontSize: 15 }}>⏳ Pagamento informado</div>
+          <div style={{ fontSize: 13.5, color: "var(--cinza)", lineHeight: 1.5, marginTop: 4 }}>
+            {pendente.planoNome || pendente.plano} · {precoTexto(pendente.valor)} · {dataHora(pendente.em)}. Aguardando a confirmação do criador do app (normalmente em até 1 dia útil).
+            {barrado ? " Esta tela confere sozinha a cada 30 segundos." : ""}
+          </div>
+          {barrado && onConferir && <button onClick={() => { onConferir(); carregarMeus(); }} style={{ ...S.btnGhost, width: "100%", marginTop: 10 }}>🔄 Conferir agora</button>}
+        </div>
+      )}
+      {!planos.length && <div style={{ ...S.card, fontSize: 14, color: "var(--cinza)" }}>Nenhum plano disponível agora. Fale com o criador do app: Instagram @{INSTAGRAM}.</div>}
+      <div role="radiogroup" aria-label="Planos" style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+        {planos.map((pl) => (
+          <button key={pl.id} role="radio" aria-checked={escolhido === pl.id} onClick={() => setEscolhido(pl.id)}
+            style={{ ...S.card, marginBottom: 0, textAlign: "left", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
+              borderColor: escolhido === pl.id ? "var(--marca)" : undefined, borderWidth: escolhido === pl.id ? 2 : 1, color: "var(--texto)" }}>
+            <span>
+              <span style={{ display: "block", fontWeight: 900, fontSize: 15.5 }}>{escolhido === pl.id ? "◉ " : "○ "}{pl.nome}{pl.id === "anual" ? " ⭐" : ""}</span>
+              <span style={{ display: "block", fontSize: 12.5, color: "var(--cinza)", marginTop: 2 }}>{porPeriodo(pl)}</span>
+            </span>
+            <span style={{ fontWeight: 900, fontSize: 18, whiteSpace: "nowrap" }}>{precoTexto(pl.preco)}</span>
+          </button>
+        ))}
+      </div>
+      {plano && (
+        <div style={S.card}>
+          <div style={S.label}>1. Pague {precoTexto(plano.preco)}</div>
+          {temPix && (
+            <div style={{ textAlign: "center" }}>
+              {qr ? <img src={qr} alt="QR Code do Pix" style={{ width: 210, height: 210, imageRendering: "pixelated", background: "#fff", borderRadius: 10, margin: "8px auto" }} />
+                : <div style={{ fontSize: 12.5, color: "var(--cinza)", margin: "6px 0" }}>Use o código abaixo no app do seu banco (Pix › Copia e cola).</div>}
+              <textarea readOnly value={copia} rows={3} aria-label="Pix copia e cola" onFocus={(e) => e.target.select()}
+                style={{ ...S.input, fontSize: 12, fontFamily: "monospace", marginTop: 6, wordBreak: "break-all" }} />
+              <button onClick={copiar} style={{ ...S.btn, width: "100%", marginTop: 8 }}>{copiado ? "✓ Código copiado: cole no app do banco" : "📋 Copiar o código Pix"}</button>
+              <div style={{ fontSize: 12, color: "var(--cinza)", marginTop: 6, lineHeight: 1.5 }}>
+                O valor e o código do pagamento ({txid}) já vão dentro. Recebedor: {c.pix.nome || "o criador do app"}.
+              </div>
+            </div>
+          )}
+          {plano.link && (
+            <a href={plano.link} target="_blank" rel="noreferrer" style={{ ...(temPix ? S.btnGhost : S.btn), display: "block", textAlign: "center", textDecoration: "none", marginTop: 10, boxSizing: "border-box" }}>
+              {temPix ? "Ou pague pelo link (cartão ou boleto) ↗" : "💳 Pagar pelo link ↗"}
+            </a>
+          )}
+          {!temPix && !plano.link && (
+            <div style={{ fontSize: 13.5, color: "var(--cinza)", lineHeight: 1.5 }}>A forma de pagamento ainda não foi cadastrada. Fale com o criador do app: Instagram @{INSTAGRAM}.</div>
+          )}
+        </div>
+      )}
+      {plano && (temPix || plano.link) && (
+        <div style={S.card}>
+          <div style={S.label}>2. Avise que pagou</div>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 800, margin: "4px 0 10px" }}>
+            Observação (opcional: o nome de quem pagou, se for outra pessoa)
+            <input value={nota} onChange={(e) => setNota(e.target.value)} maxLength={200} style={{ ...S.input, marginTop: 5 }} />
+          </label>
+          <div style={{ border: "1px solid var(--borda2)", borderRadius: 12, padding: "8px 12px", fontSize: 12, color: "var(--cinza)", lineHeight: 1.5 }}>
+            <b style={{ color: "var(--texto)" }}>📜 Condições da assinatura</b>
+            {CONDICOES_ASSINATURA.itens.map((t, i) => <div key={i} style={{ marginTop: 4 }}>• {t}</div>)}
+          </div>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontSize: 13.5, lineHeight: 1.5, padding: "10px 0 4px" }}>
+            <input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} style={{ width: 22, height: 22, flex: "0 0 22px", marginTop: 1, accentColor: "var(--marca)" }} />
+            <span>Li e aceito as condições da assinatura e os Termos de Uso.</span>
+          </label>
+          <button disabled={indo} onClick={() => informar(temPix ? "pix" : "link")} style={{ ...S.btn, width: "100%", marginTop: 6, opacity: indo ? 0.6 : 1 }}>
+            {indo ? "Aguarde…" : "✅ Já paguei: avisar o criador do app"}
+          </button>
+          {msg && <div role="status" style={{ fontSize: 13.5, lineHeight: 1.5, marginTop: 8, color: /^✅/.test(msg) ? "var(--ok)" : "var(--perigo)" }}>{msg}</div>}
+        </div>
+      )}
+      {meus && meus.length > 0 && (
+        <div style={S.card}>
+          <div style={S.label}>Meus pagamentos</div>
+          {meus.map((m) => (
+            <div key={m.uid} style={{ fontSize: 13, lineHeight: 1.5, padding: "6px 0", borderTop: "1px solid var(--borda2)" }}>
+              {(STATUS_PAGAMENTO[m.status] || {}).icone} <b>{m.planoNome || m.plano}</b> · {precoTexto(m.valor)} · {dataHora(m.em)}
+              <span style={{ color: "var(--cinza)" }}> · {(STATUS_PAGAMENTO[m.status] || {}).nome || m.status}{m.motivo ? " (" + m.motivo + ")" : ""}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ textAlign: "center", fontSize: 13, color: "var(--cinza)", lineHeight: 1.6 }}>
+        Dúvidas: Instagram @{INSTAGRAM}<br />
+        <button onClick={() => setBackup(baixarBackupLocal() ? "Backup baixado: guarde o arquivo." : "Não consegui baixar neste navegador.")}
+          style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 800, cursor: "pointer", fontSize: 13, padding: "8px 0" }}>💾 Baixar a minha estante (backup)</button>
+        {backup && <div role="status">{backup}</div>}
+        {onSair && <div><button onClick={onSair} style={{ background: "none", border: "none", color: "var(--cinza)", fontWeight: 700, cursor: "pointer", fontSize: 13, padding: "6px 0" }}>Sair desta conta</button></div>}
+      </div>
+    </div>
+  );
+  if (barrado) return <CaixaConta>{conteudo}</CaixaConta>;
+  return (
+    <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px 16px 40px", color: "var(--texto)", fontFamily: S.app.fontFamily }}>
+      <button onClick={onFechar} style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 800, fontSize: 14, cursor: "pointer", padding: "4px 0 8px" }}>← Voltar ao app</button>
+      {conteudo}
+    </div>
+  );
+}
+
+function TelaEsperaConta({ fase, sessao, msg, onConferir, onConferirQuieto, onSair }) {
+  const email = sessao && sessao.email;
+  const primeiro = String((sessao && sessao.nome) || "").trim().split(" ")[0];
+  const [reenviado, setReenviado] = useState("");
+  // Aguardando: o app confere sozinho a cada 30 s com a tela aberta. Liberou,
+  // entra sem ninguém precisar tocar em nada.
+  useEffect(() => {
+    if (fase !== "aguardando" || !onConferirQuieto) return undefined;
+    const t = setInterval(() => { if (document.visibilityState === "visible") onConferirQuieto(); }, 30000);
+    return () => clearInterval(t);
+  }, [fase]);
+  const textos = {
+    conferindo: ["⏳", "Conferindo o seu acesso…", null],
+    aguardando: ["🎉", (primeiro ? "Pronto, " + primeiro + "!" : "Pronto!") + " Cadastro enviado",
+      "O seu pedido de acesso chegou ao criador do app. Assim que ele liberar, o Super HQs abre sozinho aqui (pode deixar esta tela aberta) ou na próxima vez que você abrir o app."],
+    bloqueado: ["⛔", "Acesso bloqueado", "O seu acesso ao Super HQs foi bloqueado." + (sessao && sessao.motivo ? " Motivo: " + sessao.motivo + "." : "") + " Para falar com o criador do app: Instagram @" + INSTAGRAM + "."],
+    vencido: ["⌛", "O seu acesso venceu", "O prazo do seu acesso terminou" + (sessao && sessao.ate ? " em " + new Date(sessao.ate).toLocaleDateString("pt-BR") : "") + ". A sua estante continua guardada no aparelho. Para renovar, fale com o criador do app: Instagram @" + INSTAGRAM + ". Assim que ele renovar, toque em Conferir agora."],
+    verificar: ["✉️", "Confirme o seu e-mail", "Mandamos um link para " + email + ". Abra o e-mail, toque no link e volte aqui. (Só a conta do dono precisa disto: é o que protege o painel.)"],
+    semRede: ["📵", "Sem internet", "Para conferir o seu acesso, o app precisa de internet desta vez. Conecte e toque em Conferir agora."],
+    erro: ["⚠️", "Não deu para conferir", msg || "Tente de novo em instantes."],
+  };
+  const t = textos[fase] || textos.conferindo;
+  return (
+    <CaixaConta>
+      <div style={{ ...S.card, textAlign: "center", marginTop: 18 }}>
+        <div style={{ fontSize: 42 }} aria-hidden="true">{t[0]}</div>
+        <div style={{ fontSize: 19, fontWeight: 900, margin: "6px 0 8px" }}>{t[1]}</div>
+        {t[2] && <div style={{ fontSize: 14, color: "var(--cinza)", lineHeight: 1.55 }}>{t[2]}</div>}
+        {fase === "aguardando" && (
+          <div style={{ border: "1px solid var(--borda2)", borderRadius: 12, padding: "10px 12px", marginTop: 14, textAlign: "left", fontSize: 13.5, lineHeight: 1.55 }}>
+            <b>Enquanto isso:</b> siga o criador do app no Instagram. É por lá que saem as novidades do app.
+            <a href={LINK_INSTAGRAM} target="_blank" rel="noreferrer" style={{ ...S.btn, display: "block", textAlign: "center", textDecoration: "none", marginTop: 10, boxSizing: "border-box" }}>Seguir @{INSTAGRAM}</a>
+          </div>
+        )}
+        {email && fase !== "conferindo" && <div style={{ fontSize: 12.5, color: "var(--cinza2)", marginTop: 10 }}>Conta: {email}</div>}
+        {fase === "verificar" && (
+          <button onClick={async () => {
+            try { const s = await tokenValido(lerSessaoConta()); await contaApi.confirmarEmail(s.idToken); setReenviado("Link mandado de novo. Confira o spam também."); }
+            catch (x) { setReenviado(erroDeConta(x.message)); }
+          }} style={{ ...S.btnGhost, width: "100%", marginTop: 14 }}>Mandar o link de novo</button>
+        )}
+        {reenviado && <div style={{ fontSize: 12.5, color: "var(--cinza)", marginTop: 8 }}>{reenviado}</div>}
+        {(fase === "vencido" || fase === "bloqueado") && (
+          <button onClick={() => setReenviado(baixarBackupLocal() ? "Backup baixado: guarde o arquivo." : "Não consegui baixar neste navegador.")}
+            style={{ ...S.btnGhost, width: "100%", marginTop: 14 }}>💾 Baixar a minha estante (backup)</button>
+        )}
+        {fase !== "conferindo" && fase !== "bloqueado" && (
+          <button onClick={onConferir} style={{ ...(fase === "aguardando" ? S.btnGhost : S.btn), width: "100%", marginTop: 14 }}>{fase === "verificar" ? "Já confirmei" : "Conferir agora"}</button>
+        )}
+        {fase !== "conferindo" && (
+          <button onClick={onSair} style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 700, cursor: "pointer", fontSize: 13.5, marginTop: 14 }}>Sair desta conta</button>
+        )}
+      </div>
+    </CaixaConta>
+  );
+}
+
+// Os termos nos Ajustes: quando foram aceitos, e o texto a um toque
+function CartaoTermos() {
+  const [lendo, setLendo] = useState(false);
+  const a = lerAceiteTermos();
+  return (
+    <div style={S.card}>
+      <div style={S.label}>Termos de Uso</div>
+      <div style={{ fontSize: 13.5, color: "var(--cinza)", lineHeight: 1.5 }}>
+        {a && a.v === TERMOS_USO.versao
+          ? "✅ Você aceitou em " + new Date(a.em).toLocaleDateString("pt-BR") + " (versão de " + new Date(TERMOS_USO.versao + "T12:00:00").toLocaleDateString("pt-BR") + ")."
+          : "As regras do app: conteúdo, conta, dados e direitos."}
+      </div>
+      <button onClick={() => setLendo(true)} style={{ ...S.btnGhost, width: "100%", marginTop: 10 }}>📜 Ler os Termos de Uso</button>
+      {lendo && <JanelaTermos onFechar={() => setLendo(false)} />}
+    </div>
+  );
+}
+
+// O cartão da conta nos Ajustes: quem está dentro, trocar a senha, sair,
+// apagar a conta e, só para o dono, o painel
+function CartaoConta({ onPainel }) {
+  const c = CONTA_ATUAL;
+  const [aviso, setAviso] = useState("");
+  const [apagando, setApagando] = useState(false);
+  if (!c) return null;
+  const trocarSenha = async () => {
+    setAviso("Mandando…");
+    try { await contaApi.esqueci(c.email); setAviso("Mandamos para " + c.email + " um link para criar uma senha nova. Olhe também o spam."); }
+    catch (x) { setAviso(erroDeConta(x.message)); }
+  };
+  // LGPD: a pessoa apaga a própria conta sem precisar pedir a ninguém. A
+  // estante fica no aparelho.
+  const apagar = async () => {
+    if (!apagando) { setApagando(true); return; }
+    setAviso("Apagando…");
+    try {
+      const s = await tokenValido(lerSessaoConta());
+      try { await contaApi.apagarDoc(s.uid, s.idToken); } catch (x) {}
+      await contaApi.apagarConta(s.idToken);
+      try { localStorage.removeItem(CHAVE_EMAIL_CONTA); } catch (x) {}
+      c.sair();
+    } catch (x) { setAviso(erroDeConta(x.message)); setApagando(false); }
+  };
+  return (
+    <div style={S.card}>
+      <div style={S.label}>{c.dono ? "👑 Sua conta (dono do app)" : "👤 Sua conta"}</div>
+      <div style={{ fontSize: 14, margin: "6px 0 10px" }}>{c.nome ? <b>{c.nome}</b> : null}{c.nome ? " · " : ""}{c.email}</div>
+      {c.ate > 0 && <div style={{ fontSize: 13, color: "var(--cinza)", marginBottom: 10 }}>Acesso liberado até {new Date(c.ate).toLocaleDateString("pt-BR")}.</div>}
+      {!c.dono && c.plano && ((c.cob && c.cob.ligada) || ["pago", "vitalicio", "cortesia"].indexOf(c.plano.tipo) >= 0) && (
+        <div style={{ border: "1px solid var(--borda2)", borderRadius: 12, padding: "10px 12px", marginBottom: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>Seu plano: {textoPlanoConta(c.plano, c.cob)}</div>
+          {c.cob && c.cob.ligada && c.assinar && (
+            <button onClick={c.assinar} style={{ ...S.btnGhost, width: "100%", marginTop: 8 }}>{c.plano.tipo === "vitalicio" ? "💳 Meus pagamentos" : "💳 Planos, renovar e meus pagamentos"}</button>
+          )}
+        </div>
+      )}
+      {c.dono && onPainel && (
+        <button onClick={onPainel} style={{ ...S.btn, width: "100%", marginBottom: 8 }}>👥 Painel de usuários</button>
+      )}
+      <button onClick={trocarSenha} style={{ ...S.btnGhost, width: "100%", marginBottom: 8 }}>🔑 Trocar minha senha</button>
+      {aviso && <div role="status" style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.5, marginBottom: 8 }}>{aviso}</div>}
+      <button onClick={c.sair} style={{ ...S.btnGhost, width: "100%", marginBottom: 8 }}>Sair da conta</button>
+      {!c.dono && (
+        <button onClick={apagar} style={{ background: "none", border: "none", color: apagando ? "var(--perigo)" : "var(--cinza2)", fontWeight: 700, cursor: "pointer", fontSize: 12.5, width: "100%", padding: "6px 0" }}>
+          {apagando ? "Toque de novo para apagar a conta de vez (a estante fica no aparelho)" : "Apagar minha conta"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function quandoAcessou(ms, agora) {
+  if (!ms) return "nunca";
+  const d = agora - ms;
+  if (d < 60000) return "agora";
+  if (d < 3600000) return "há " + Math.floor(d / 60000) + " min";
+  if (d < 864e5) return "há " + Math.floor(d / 3600000) + " h";
+  if (d < 30 * 864e5) return "há " + Math.floor(d / 864e5) + " " + plural(Math.floor(d / 864e5), "dia", "dias");
+  return new Date(ms).toLocaleDateString("pt-BR");
+}
+
+// O recado do dono, mostrado uma vez por cima do app
+function RecadoDoDono({ texto, onOk }) {
+  return (
+    <div role="dialog" aria-label="Recado do criador do app" style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ ...S.card, maxWidth: 360, width: "100%", marginBottom: 0 }}>
+        <div style={S.label}>📩 Recado do criador do app</div>
+        <div style={{ fontSize: 15, lineHeight: 1.6, margin: "10px 0 16px", whiteSpace: "pre-line" }}>{texto}</div>
+        <button onClick={onOk} style={{ ...S.btn, width: "100%" }}>Entendi</button>
+      </div>
+    </div>
+  );
+}
+
+// O painel: só o dono chega aqui, e só ele consegue ler a lista (as regras do
+// Firestore recusam qualquer outra conta, mesmo que alguém abra esta tela).
+// O histórico de aceites dos termos (só o dono lê: as regras garantem). É o
+// registro para o dono se defender: quem aceitou, qual versão, quando (pelo
+// servidor), onde e de que aparelho. Ninguém altera nem apaga pelo app.
+function HistoricoAceites({ onVoltar, buscaInicial }) {
+  const [lista, setLista] = useState(null);
+  const [erro, setErro] = useState("");
+  const [busca, setBusca] = useState(buscaInicial || "");
+  const [aberto, setAberto] = useState(null);
+  const carregar = async () => {
+    setErro("");
+    try { setLista(ordenarAceites(await contaApi.listarAceites((await tokenValido(lerSessaoConta())).idToken))); }
+    catch (x) { setErro(erroDeConta(x.message) + (/PERMISSION/.test(x.message) ? " Publique as regras novas do Firebase (versão 4, firebase/firestore.rules)." : "")); setLista([]); }
+  };
+  useEffect(() => { carregar(); }, []);
+  const b = semAcento(busca.trim().toLowerCase());
+  const mostrar = (lista || []).filter((a) => !b || semAcento(((a.nome || "") + " " + (a.email || "")).toLowerCase()).indexOf(b) >= 0);
+  const baixar = () => {
+    const blob = new Blob([csvAceites(lista || [])], { type: "text/csv;charset=utf-8" });
+    const el = document.createElement("a");
+    el.href = URL.createObjectURL(blob);
+    el.download = "aceites-termos-super-hqs-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(el); el.click(); el.remove();
+    setTimeout(() => URL.revokeObjectURL(el.href), 4000);
+  };
+  return (
+    <div>
+      <button onClick={onVoltar} style={{ display: "block", background: "none", border: "none", color: "var(--marca)", fontWeight: 800, fontSize: 14, cursor: "pointer", padding: "4px 0 12px" }}>← Voltar ao painel</button>
+      <div style={S.card}>
+        <div style={S.label}>📜 Histórico de aceites dos termos</div>
+        <div style={{ fontSize: 12.5, color: "var(--cinza)", margin: "4px 0 8px", lineHeight: 1.55 }}>
+          Só a sua conta vê esta lista. Cada aceite é um registro que ninguém altera nem apaga pelo app (nem você), e que
+          continua aqui mesmo se a pessoa apagar a conta. A hora "do servidor" é a do Google, não a do celular.
+          Baixe a planilha de vez em quando e guarde uma cópia.
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={carregar} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13 }}>🔄 Atualizar</button>
+          <button onClick={baixar} disabled={!lista || !lista.length} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13 }}>📥 Baixar (planilha)</button>
+        </div>
+      </div>
+      {erro && <div role="alert" style={{ ...S.card, color: "var(--perigo)", fontSize: 13.5 }}>{erro}</div>}
+      <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nome ou e-mail" aria-label="Buscar aceites por nome ou e-mail" style={{ ...S.input, marginBottom: 10 }} />
+      {lista === null && <div style={{ ...S.card, color: "var(--cinza)" }}>Carregando…</div>}
+      {lista && !mostrar.length && !erro && <div style={{ ...S.card, color: "var(--cinza)", fontSize: 13.5 }}>Nenhum aceite {busca ? "com essa busca" : "registrado ainda"}.</div>}
+      {mostrar.map((a) => (
+        <div key={a.uid} style={S.card}>
+          <div style={{ fontWeight: 900, fontSize: 15 }}>{a.nome || "(sem nome)"}</div>
+          <div style={{ fontSize: 13, color: "var(--cinza)", wordBreak: "break-all" }}>{a.email}</div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.65, marginTop: 6 }}>
+            ✅ Aceitou os termos de {a.termos ? new Date(a.termos + "T12:00:00").toLocaleDateString("pt-BR") : "?"}{a.termos !== TERMOS_USO.versao ? " (versão antiga)" : ""}
+            <br />🕒 Servidor: <b>{dataHora(a.servidorEm) || "—"}</b> · celular: {dataHora(a.em)}
+            <br />📍 {ONDE_ACEITE[a.de] || "Onde: não registrado"} · {a.aparelho || "aparelho ?"} · app {a.versaoApp || "?"}
+          </div>
+          <button onClick={() => setAberto(aberto === a.uid ? null : a.uid)} style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 800, fontSize: 12.5, cursor: "pointer", padding: "6px 0 0" }}>
+            {aberto === a.uid ? "▴ Menos" : "▾ Ver tudo o que foi registrado"}
+          </button>
+          {aberto === a.uid && (
+            <div style={{ fontSize: 12, color: "var(--cinza)", lineHeight: 1.6, marginTop: 6, wordBreak: "break-word" }}>
+              <b>Caixas marcadas:</b> {(a.caixas || "").split(" | ").map((c, i) => <div key={i}>☑ {c}</div>)}
+              <b>Conta (id):</b> {a.conta}<br />
+              <b>Navegador:</b> {a.navegador || "—"}<br />
+              <b>Impressão digital do texto (SHA-256):</b> {a.hash || "—"}<br />
+              <span style={{ fontSize: 11.5 }}>O texto exato está no repositório, em termos-versoes/{a.termos}.txt: a impressão digital dele tem de ser esta.</span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// A cobrança no painel do dono: a chave grátis/pago, os planos e o Pix, e os
+// pagamentos que esperam confirmação.
+function CartaoCobranca({ cob, carregado, lista, agora, semPlano, pagamentos, salvarCfg, pedirConfirmacao, cortesiaParaTodos, onVerPagamentos, onConfirmar, onRecusar, mexendo }) {
+  const [editando, setEditando] = useState(false);
+  const [recusando, setRecusando] = useState(null);
+  if (!carregado) return null;
+  const pend = (pagamentos || []).filter((p) => p.status === "informado");
+  const rp = resumoPagamentos(pagamentos || [], agora);
+  const temForma = !!cob.pix.chave || cob.planos.some((p) => p.ativo && p.link);
+  const nSemPlano = lista.filter(semPlano).length;
+  const fimTeste = fimDoDia(agora + cob.testeDias * 864e5);
+  const ligar = () => pedirConfirmacao({ labelSim: "Ligar a cobrança",
+    msg: "Ligar a cobrança no app inteiro?\n\n" +
+      "• " + nSemPlano + " " + plural(nSemPlano, "conta liberada não tem", "contas liberadas não têm") + " plano nem cortesia.\n" +
+      (cob.testeDias > 0 ? "• Todos ganham " + cob.testeDias + " dias de teste a partir de hoje: ninguém é barrado antes de " + new Date(fimTeste).toLocaleDateString("pt-BR") + ".\n" : "• Sem período de teste: quem não tem plano é barrado na próxima vez que abrir o app.\n") +
+      "• Depois disso, quem não tiver plano, vitalício ou cortesia vê a tela de planos. Você continua entrando sempre.\n" +
+      "• Dá para desligar quando quiser, e tudo volta a ser grátis na hora." +
+      (temForma ? "" : "\n\n⚠ Você ainda não cadastrou a chave Pix nem um link de pagamento: ninguém vai conseguir pagar. Toque em Cancelar e cadastre em \"Planos, preços e Pix\".") },
+    () => salvarCfg({ cobranca: true, cobrancaDesde: Date.now() }));
+  const desligar = () => pedirConfirmacao({ positivo: true, labelSim: "Desligar", msg: "Desligar a cobrança?\n\nO app volta a ser grátis para todos na próxima vez que cada um abrir (ou em até 15 minutos). Os planos pagos e as cortesias continuam guardados." },
+    () => salvarCfg({ cobranca: false }));
+  return (
+    <React.Fragment>
+      <div style={{ ...S.card, borderColor: cob.ligada ? "var(--marca)" : undefined }}>
+        <div style={S.label}>💰 Cobrança</div>
+        <div style={{ fontSize: 15, fontWeight: 900, margin: "6px 0 4px" }}>{cob.ligada ? "Hoje: PAGO para todos" : "Hoje: GRÁTIS para todos"}</div>
+        <div style={{ fontSize: 12.5, color: "var(--cinza)", lineHeight: 1.5 }}>
+          {cob.ligada ? "Ligada desde " + new Date(cob.desde || agora).toLocaleDateString("pt-BR") + (cob.testeDias ? ", com " + cob.testeDias + " dias de teste para cada um." : ".") + " Entram quem tem plano, vitalício ou cortesia."
+            : "Ninguém paga nada. Ligue a chave quando quiser que o app passe a ser pago: antes, confira os planos e o Pix."}
+        </div>
+        <button onClick={cob.ligada ? desligar : ligar} style={{ ...(cob.ligada ? S.btnGhost : S.btn), width: "100%", marginTop: 10 }}>
+          {cob.ligada ? "Desligar a cobrança (voltar a ser grátis)" : "💰 Ligar a cobrança"}
+        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+          <button onClick={() => setEditando(!editando)} style={{ ...S.btnGhost, flex: "1 1 45%", padding: "9px 8px", fontSize: 13 }}>{editando ? "▴ Fechar" : "⚙ Planos, preços e Pix"}</button>
+          <button onClick={onVerPagamentos} style={{ ...S.btnGhost, flex: "1 1 45%", padding: "9px 8px", fontSize: 13 }}>💳 Pagamentos ({(pagamentos || []).length})</button>
+          {nSemPlano > 0 && (
+            <button onClick={() => pedirConfirmacao({ positivo: true, labelSim: "Dar cortesia",
+              msg: "Dar cortesia sem prazo para as " + nSemPlano + " contas liberadas que ainda não têm plano?\n\nÉ o jeito de quem já usava o app continuar de graça quando a cobrança for ligada. Dá para tirar de cada um depois." }, cortesiaParaTodos)}
+              style={{ ...S.btnGhost, flex: "1 1 100%", padding: "9px 8px", fontSize: 13 }}>🎁 Cortesia para quem já usa ({nSemPlano})</button>
+          )}
+        </div>
+        {(rp.confirmados > 0 || rp.aConfirmar > 0) && (
+          <div style={{ fontSize: 12.5, color: "var(--cinza)", marginTop: 10, lineHeight: 1.5 }}>
+            Recebido no mês: <b style={{ color: "var(--texto)" }}>{precoTexto(rp.mes)}</b> · no ano: {precoTexto(rp.ano)} · {rp.confirmados} {plural(rp.confirmados, "pagamento confirmado", "pagamentos confirmados")}
+          </div>
+        )}
+        {editando && <EditorCobranca cob={cob} salvarCfg={async (c) => { if (await salvarCfg(c)) setEditando(false); }} />}
+      </div>
+      {pend.length > 0 && (
+        <div style={{ ...S.card, borderColor: "var(--obs)" }}>
+          <div style={S.label}>💳 Pagamentos para confirmar ({pend.length})</div>
+          <div style={{ fontSize: 12.5, color: "var(--cinza)", lineHeight: 1.5, marginBottom: 6 }}>Confira no extrato do banco (o código do Pix aparece na transação) antes de confirmar.</div>
+          {pend.map((p) => (
+            <div key={p.uid} style={{ borderTop: "1px solid var(--borda2)", padding: "8px 0" }}>
+              <div style={{ fontWeight: 900, fontSize: 14 }}>{p.nome || p.email} · {precoTexto(p.valor)}</div>
+              <div style={{ fontSize: 12.5, color: "var(--cinza)", lineHeight: 1.5 }}>
+                {p.planoNome || p.plano} · {p.metodo === "link" ? "link de pagamento" : "Pix"} · {dataHora(p.servidorEm || p.em)}<br />
+                {p.email}{p.txid ? " · código " + p.txid : ""}{p.nota ? <><br />“{p.nota}”</> : null}
+              </div>
+              {recusando && recusando.uid === p.uid ? (
+                <div style={{ marginTop: 6 }}>
+                  <input value={recusando.motivo} onChange={(e) => setRecusando({ uid: p.uid, motivo: e.target.value })} placeholder="Motivo (a pessoa vê; ex.: pagamento não encontrado)" aria-label="Motivo da recusa" style={S.input} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <button onClick={() => setRecusando(null)} style={{ ...S.btnGhost, flex: 1, padding: "8px", fontSize: 13 }}>Cancelar</button>
+                    <button onClick={() => { onRecusar(p, recusando.motivo); setRecusando(null); }} style={{ ...S.btnGhost, flex: 1, padding: "8px", fontSize: 13, color: "var(--perigo)", borderColor: "var(--perigo)" }}>✖ Recusar</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                  <button disabled={mexendo === p.uid} onClick={() => onConfirmar(p)} style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>✅ Confirmar</button>
+                  <button onClick={() => setRecusando({ uid: p.uid, motivo: "" })} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>✖ Recusar</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+// Os planos, os preços, o teste e o Pix. O código Pix de exemplo serve para o
+// dono colar no app do banco e ver se o nome e a chave saem certos (o banco
+// mostra o recebedor antes de pagar: é só não confirmar).
+function EditorCobranca({ cob, salvarCfg }) {
+  const [planos, setPlanos] = useState(() => cob.planos.map((p) => Object.assign({}, p, { precoTxt: String(p.preco).replace(".", ",") })));
+  const [teste, setTeste] = useState(String(cob.testeDias));
+  const [pix, setPix] = useState(cob.pix);
+  const [salvando, setSalvando] = useState(false);
+  const mudar = (id, campos) => setPlanos((l) => l.map((p) => (p.id === id ? Object.assign({}, p, campos) : p)));
+  const num = (t) => Math.max(0, Math.round((parseFloat(String(t || "0").replace(",", ".")) || 0) * 100) / 100);
+  const exemplo = pix.chave ? pixCopiaECola({ chave: pix.chave, nome: pix.nome, cidade: pix.cidade, valor: num((planos[0] || {}).precoTxt), txid: "TESTE" }) : "";
+  const salvar = async () => {
+    setSalvando(true);
+    const limpos = planos.map((p) => ({ id: p.id, nome: String(p.nome || "").trim() || p.id, preco: num(p.precoTxt), dias: p.id === "vitalicio" ? 0 : Math.max(1, Math.round(+p.dias || 1)),
+      ativo: !!p.ativo, link: /^https:\/\//.test(String(p.link || "").trim()) ? String(p.link).trim() : "" }));
+    await salvarCfg({ planos: JSON.stringify(limpos), testeDias: Math.max(0, Math.min(60, Math.round(+teste || 0))),
+      pixChave: String(pix.chave || "").trim(), pixNome: String(pix.nome || "").trim(), pixCidade: String(pix.cidade || "").trim() });
+    setSalvando(false);
+  };
+  const campo = { ...S.input, padding: "8px 10px", fontSize: 14 };
+  return (
+    <div style={{ marginTop: 12, borderTop: "1px solid var(--borda2)", paddingTop: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 900, marginBottom: 6 }}>Planos</div>
+      {planos.map((p) => (
+        <div key={p.id} style={{ border: "1px solid var(--borda2)", borderRadius: 12, padding: 10, marginBottom: 8, opacity: p.ativo ? 1 : 0.6 }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+            <input type="checkbox" checked={p.ativo} onChange={(e) => mudar(p.id, { ativo: e.target.checked })} style={{ width: 20, height: 20, accentColor: "var(--marca)" }} />
+            Oferecer o plano {p.id === "vitalicio" ? "vitalício" : p.id === "unico" ? "de pagamento único" : p.id}
+          </label>
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <input value={p.nome} onChange={(e) => mudar(p.id, { nome: e.target.value })} maxLength={40} aria-label="Nome do plano" style={{ ...campo, flex: 2 }} />
+            <input value={p.precoTxt} onChange={(e) => mudar(p.id, { precoTxt: e.target.value })} inputMode="decimal" aria-label="Preço em reais" style={{ ...campo, flex: 1 }} />
+            {p.id !== "vitalicio" && <input value={p.dias} onChange={(e) => mudar(p.id, { dias: e.target.value })} inputMode="numeric" aria-label="Dias de acesso" style={{ ...campo, flex: 1 }} />}
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--cinza)", marginTop: 4 }}>nome · preço (R$){p.id !== "vitalicio" ? " · dias de acesso" : " · para sempre"}</div>
+          <input value={p.link || ""} onChange={(e) => mudar(p.id, { link: e.target.value })} placeholder="Link de pagamento (opcional: Mercado Pago, PagSeguro, Stripe…)" aria-label="Link de pagamento"
+            style={{ ...campo, marginTop: 6, fontSize: 12.5 }} />
+        </div>
+      ))}
+      <label style={{ display: "block", fontSize: 13, fontWeight: 800, margin: "6px 0" }}>Dias de teste grátis (de cada cadastro, ou do dia em que a cobrança for ligada)
+        <input value={teste} onChange={(e) => setTeste(e.target.value)} inputMode="numeric" style={{ ...campo, marginTop: 4 }} />
+      </label>
+      <div style={{ fontSize: 13, fontWeight: 900, margin: "10px 0 6px" }}>Pix</div>
+      <input value={pix.chave} onChange={(e) => setPix(Object.assign({}, pix, { chave: e.target.value }))} placeholder="Chave Pix (e-mail, celular com +55, CPF/CNPJ ou aleatória)" aria-label="Chave Pix" style={{ ...campo, marginBottom: 6 }} />
+      <input value={pix.nome} onChange={(e) => setPix(Object.assign({}, pix, { nome: e.target.value }))} placeholder="Nome do recebedor (como no banco)" maxLength={25} aria-label="Nome do recebedor" style={{ ...campo, marginBottom: 6 }} />
+      <input value={pix.cidade} onChange={(e) => setPix(Object.assign({}, pix, { cidade: e.target.value }))} placeholder="Cidade" maxLength={15} aria-label="Cidade" style={campo} />
+      {exemplo && (
+        <div style={{ fontSize: 12, color: "var(--cinza)", marginTop: 8, lineHeight: 1.5 }}>
+          Para conferir: copie este código e cole no Pix copia e cola do seu banco. Ele mostra o recebedor e o valor; é só não confirmar.
+          <textarea readOnly value={exemplo} rows={3} aria-label="Código Pix de exemplo" onFocus={(e) => e.target.select()} style={{ ...campo, fontSize: 11.5, fontFamily: "monospace", marginTop: 4 }} />
+        </div>
+      )}
+      <button disabled={salvando} onClick={salvar} style={{ ...S.btn, width: "100%", marginTop: 10 }}>{salvando ? "Salvando…" : "Salvar planos e Pix"}</button>
+    </div>
+  );
+}
+
+// Todos os pagamentos (só o dono lê): confirmar, recusar, devolver, buscar e
+// baixar a planilha. É o livro-caixa do app.
+function HistoricoPagamentos({ lista, buscaInicial, onVoltar, onConfirmar, onRecusar, onDevolver, pedirConfirmacao }) {
+  const [busca, setBusca] = useState(buscaInicial || "");
+  const [filtro, setFiltro] = useState("todos");
+  const [motivo, setMotivo] = useState(null); // { uid, tipo, texto }
+  const agora = Date.now();
+  const todos = lista || [];
+  const b = semAcento(busca.trim().toLowerCase());
+  const mostrar = todos.filter((p) => (filtro === "todos" || p.status === filtro) && (!b || semAcento(((p.nome || "") + " " + (p.email || "") + " " + (p.txid || "")).toLowerCase()).indexOf(b) >= 0));
+  const rp = resumoPagamentos(todos, agora);
+  const baixar = () => {
+    const url = URL.createObjectURL(new Blob([csvPagamentos(todos)], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = "pagamentos-super-hqs-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  };
+  return (
+    <div>
+      <button onClick={onVoltar} style={{ display: "block", background: "none", border: "none", color: "var(--marca)", fontWeight: 800, fontSize: 14, cursor: "pointer", padding: "4px 0 12px" }}>← Voltar ao painel</button>
+      <div style={S.card}>
+        <div style={S.label}>💳 Pagamentos</div>
+        <div style={{ fontSize: 13.5, lineHeight: 1.6, margin: "6px 0" }}>
+          Recebido no mês: <b>{precoTexto(rp.mes)}</b> · no ano: <b>{precoTexto(rp.ano)}</b> · desde o começo: {precoTexto(rp.total)}<br />
+          {rp.aConfirmar} para confirmar · {rp.confirmados} {plural(rp.confirmados, "confirmado", "confirmados")}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--cinza)", lineHeight: 1.5 }}>Só a sua conta vê esta lista. Os pagamentos não são apagados pelo app: recusar ou devolver deixa a marca.</div>
+        <button onClick={baixar} disabled={!todos.length} style={{ ...S.btnGhost, width: "100%", marginTop: 8, fontSize: 13 }}>📥 Baixar (planilha)</button>
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+        {[["todos", "Todos"], ["informado", "⏳ A confirmar"], ["confirmado", "✅ Confirmados"], ["recusado", "✖ Recusados"], ["devolvido", "↩ Devolvidos"]].map((f) => (
+          <button key={f[0]} onClick={() => setFiltro(f[0])} aria-pressed={filtro === f[0]}
+            style={{ flex: "1 1 auto", padding: "8px", borderRadius: 10, cursor: "pointer", fontWeight: 800, fontSize: 12.5,
+              border: "1px solid " + (filtro === f[0] ? "var(--marca)" : "var(--borda2)"), background: filtro === f[0] ? "var(--marca)" : "transparent", color: filtro === f[0] ? "#fff" : "var(--texto)" }}>{f[1]}</button>
+        ))}
+      </div>
+      <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nome, e-mail ou código do Pix" aria-label="Buscar pagamentos" style={{ ...S.input, marginBottom: 10 }} />
+      {lista === null && <div style={{ ...S.card, color: "var(--cinza)" }}>Carregando…</div>}
+      {lista && !mostrar.length && <div style={{ ...S.card, color: "var(--cinza)", fontSize: 13.5 }}>Nenhum pagamento {busca || filtro !== "todos" ? "com esse filtro" : "ainda"}.</div>}
+      {mostrar.map((p) => {
+        const st = STATUS_PAGAMENTO[p.status] || STATUS_PAGAMENTO.informado;
+        const m = motivo && motivo.uid === p.uid ? motivo : null;
+        return (
+          <div key={p.uid} style={S.card}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ fontWeight: 900, fontSize: 15 }}>{p.nome || "(sem nome)"} · {precoTexto(p.valor)}</div>
+              <span style={{ fontSize: 12, fontWeight: 800, color: st.cor, whiteSpace: "nowrap" }}>{st.icone} {st.nome}</span>
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--cinza)", lineHeight: 1.6, marginTop: 4, wordBreak: "break-word" }}>
+              {p.email} · {p.planoNome || p.plano} · {p.metodo === "manual" ? "registrado por você" : p.metodo === "link" ? "link de pagamento" : "Pix"}<br />
+              Informado: {dataHora(p.servidorEm || p.em)}{p.confirmadoEm ? " · confirmado: " + dataHora(p.confirmadoEm) : ""}
+              {p.txid ? <><br />Código do Pix: {p.txid}</> : null}
+              {p.nota ? <><br />Observação: “{p.nota}”</> : null}
+              {p.motivo ? <><br />Motivo: {p.motivo}</> : null}
+              {p.condicoes ? <><br />Aceitou as condições da assinatura (versão {p.condicoes})</> : null}
+            </div>
+            {m ? (
+              <div style={{ marginTop: 8 }}>
+                <input value={m.texto} onChange={(e) => setMotivo(Object.assign({}, m, { texto: e.target.value }))} placeholder={m.tipo === "devolver" ? "Motivo (ex.: arrependimento em 7 dias)" : "Motivo (a pessoa vê)"} aria-label="Motivo" style={S.input} />
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                  <button onClick={() => setMotivo(null)} style={{ ...S.btnGhost, flex: 1, padding: "8px", fontSize: 13 }}>Cancelar</button>
+                  <button onClick={() => { (m.tipo === "devolver" ? onDevolver : onRecusar)(p, m.texto); setMotivo(null); }}
+                    style={{ ...S.btnGhost, flex: 1, padding: "8px", fontSize: 13, color: "var(--perigo)", borderColor: "var(--perigo)" }}>{m.tipo === "devolver" ? "↩ Marcar devolvido" : "✖ Recusar"}</button>
+                </div>
+              </div>
+            ) : p.status === "informado" ? (
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button onClick={() => onConfirmar(p)} style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>✅ Confirmar</button>
+                <button onClick={() => setMotivo({ uid: p.uid, tipo: "recusar", texto: "" })} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>✖ Recusar</button>
+              </div>
+            ) : p.status === "confirmado" ? (
+              <button onClick={() => setMotivo({ uid: p.uid, tipo: "devolver", texto: "" })} style={{ background: "none", border: "none", color: "var(--cinza)", fontWeight: 700, cursor: "pointer", fontSize: 12.5, padding: "8px 0 0" }}>↩ Devolvi o dinheiro (tira os dias deste pagamento)</button>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
+  const [verAceites, setVerAceites] = useState(null); // null | { busca }
+  const [verPagamentos, setVerPagamentos] = useState(null); // null | { busca }
+  const [cfgBruta, setCfgBruta] = useState(null);
+  const [pagamentos, setPagamentos] = useState(null);
+  const [acao, setAcao] = useState(null); // { uid, tipo: "cortesia" | "pagamento", ... }
+  const cob = lerCobranca(cfgBruta);
+  const [lista, setLista] = useState(null);
+  const [erro, setErro] = useState("");
+  const [filtro, setFiltro] = useState("todos");
+  const [busca, setBusca] = useState("");
+  const [mexendo, setMexendo] = useState(null);
+  const [avisos, setAvisos] = useState({});
+  const [aberto, setAberto] = useState(null);      // o "Mais opções" de qual conta
+  const [editando, setEditando] = useState(null);  // { uid, campo, valor }
+  const [escolhendoPrazo, setEscolhendoPrazo] = useState(null);
+  const [auto, setAuto] = useState(null);
+  const token = async () => (await tokenValido(lerSessaoConta())).idToken;
+  const avisar = (uid, t) => setAvisos((a) => Object.assign({}, a, { [uid]: t }));
+  const carregar = async () => {
+    setErro("");
+    try {
+      const t = await token();
+      const cfg0 = await contaApi.lerConfig(t).catch(() => null);
+      setCfgBruta(cfg0 || {});
+      setAuto(!!(cfg0 && cfg0.auto));
+      setLista(ordenarContas(await contaApi.listar(t), Date.now(), lerCobranca(cfg0)));
+      contaApi.listarPagamentos(t).then((l) => setPagamentos(ordenarPagamentos(l)), () => setPagamentos([]));
+    } catch (x) { setErro(erroDeConta(x.message)); if (!lista) setLista([]); }
+  };
+  useEffect(() => { carregar(); }, []);
+  // grava campos numa conta e reflete na lista sem recarregar tudo
+  const gravar = async (c, campos, msgOk) => {
+    setMexendo(c.uid);
+    try {
+      await contaApi.gravar(c.uid, campos, await token());
+      setLista((l) => ordenarContas(l.map((x) => (x.uid === c.uid ? Object.assign({}, x, campos) : x)), Date.now(), cob));
+      if (msgOk) avisar(c.uid, msgOk);
+      setMexendo(null);
+      return true;
+    } catch (x) { setErro(erroDeConta(x.message)); setMexendo(null); return false; }
+  };
+  const liberar = (c, dias) => {
+    setEscolhendoPrazo(null);
+    const ate = prazoAte(dias, Date.now());
+    gravar(c, { status: "liberado", ate: ate, motivo: "", decididoEm: Date.now() },
+      "✅ Liberado" + (ate ? " até " + new Date(ate).toLocaleDateString("pt-BR") : " sem prazo") + ".");
+  };
+  const resetarSenha = async (c) => {
+    setMexendo(c.uid);
+    try {
+      await contaApi.esqueci(c.email);
+      avisar(c.uid, "🔑 Link de senha nova mandado para " + c.email + ". Avise a pessoa para olhar o e-mail (e o spam).");
+      const agoraR = Date.now();
+      try { await contaApi.gravar(c.uid, { senhaLinkEm: agoraR }, await token()); setLista((l) => l.map((x) => (x.uid === c.uid ? Object.assign({}, x, { senhaLinkEm: agoraR }) : x))); } catch (x) {}
+    } catch (x) { avisar(c.uid, erroDeConta(x.message)); }
+    setMexendo(null);
+  };
+  const remover = async (c) => {
+    setMexendo(c.uid);
+    try {
+      await contaApi.apagarDoc(c.uid, await token());
+      setLista((l) => l.filter((x) => x.uid !== c.uid));
+    } catch (x) { setErro(erroDeConta(x.message)); }
+    setMexendo(null);
+  };
+  const salvarEdicao = async () => {
+    const e = editando;
+    const c = (lista || []).find((x) => x.uid === e.uid);
+    if (!c) { setEditando(null); return; }
+    const v = String(e.valor || "").trim().slice(0, 500);
+    let ok;
+    if (e.campo === "aviso") ok = await gravar(c, { aviso: v, avisoEm: v ? Date.now() : 0 }, v ? "📩 Recado guardado: a pessoa vê na próxima vez que abrir o app." : "Recado apagado.");
+    else if (e.campo === "bloquear") ok = await gravar(c, { status: "bloqueado", motivo: v, decididoEm: Date.now() }, "⛔ Bloqueado. A pessoa é barrada na próxima vez que abrir o app (ou em até 15 min).");
+    else ok = await gravar(c, { [e.campo]: v }, "📝 Nota guardada (só você vê).");
+    if (ok) setEditando(null);
+  };
+  const mudarAuto = async () => {
+    const novo = !auto;
+    try { await contaApi.gravarConfig({ auto: novo }, await token()); setAuto(novo); }
+    catch (x) { setErro(erroDeConta(x.message) + " (Publique as regras novas do Firebase: firebase/firestore.rules.)"); }
+  };
+  const liberarTodos = async () => {
+    const pend = (lista || []).filter((c) => situacaoConta(c, Date.now()) === "pendente");
+    for (const c of pend) await gravar(c, { status: "liberado", ate: 0, motivo: "", decididoEm: Date.now() });
+  };
+  const baixarCsv = () => {
+    const blob = new Blob([csvContas(lista || [], Date.now(), cob)], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "usuarios-super-hqs-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+  const agora = Date.now();
+  const r = resumoContas(lista || [], agora, cob);
+  const mostrar = filtrarContas(lista || [], filtro, busca, agora, cob);
+  // ---- a cobrança: as ações do dono ----
+  const salvarCfg = async (campos, msgOk) => {
+    try { await contaApi.gravarConfig(campos, await token()); setCfgBruta((c0) => Object.assign({}, c0 || {}, campos)); if (msgOk) setErro(""); return true; }
+    catch (x) { setErro(erroDeConta(x.message) + " (Publique as regras novas do Firebase: firebase/firestore.rules.)"); return false; }
+  };
+  const mudarPagamento = (id, campos) => setPagamentos((l) => ordenarPagamentos((l || []).map((p) => (p.uid === id ? Object.assign({}, p, campos) : p))));
+  // Confirmar: o pagamento e o acesso da conta numa gravação só (tudo ou nada).
+  // O período é o que a pessoa comprou (os dias gravados no pagamento), não o
+  // do plano de hoje, que o dono pode ter mudado depois.
+  const confirmarPagamento = async (p) => {
+    setMexendo(p.uid);
+    try {
+      const conta = (lista || []).find((c) => c.uid === p.conta);
+      const base = planoPorId(cob, p.plano) || { id: p.plano, dias: 30 };
+      const pl = Object.assign({}, base, { dias: p.plano === "vitalicio" ? 0 : p.dias > 0 ? p.dias : base.dias });
+      const ag = Date.now();
+      const campos = acessoPago(conta, pl, ag);
+      const escritas = [contaApi.escrita("pagamentos/" + p.uid, { status: "confirmado", confirmadoEm: ag, motivo: "" }, { existe: true })];
+      if (conta) escritas.push(contaApi.escrita("usuarios/" + conta.uid, campos, { existe: true }));
+      await contaApi.commit(escritas, await token());
+      mudarPagamento(p.uid, { status: "confirmado", confirmadoEm: ag, motivo: "" });
+      if (conta) setLista((l) => ordenarContas(l.map((x) => (x.uid === conta.uid ? Object.assign({}, x, campos) : x)), Date.now(), cob));
+      avisar(p.conta, "✅ Pagamento confirmado: " + (campos.vitalicio ? "acesso vitalício" : "acesso até " + new Date(campos.pagoAte).toLocaleDateString("pt-BR")) + ".");
+    } catch (x) { setErro(erroDeConta(x.message)); }
+    setMexendo(null);
+  };
+  const recusarPagamento = async (p, motivo) => {
+    try { await contaApi.commit([contaApi.escrita("pagamentos/" + p.uid, { status: "recusado", motivo: String(motivo || "").slice(0, 200) }, { existe: true })], await token()); mudarPagamento(p.uid, { status: "recusado", motivo: motivo || "" }); }
+    catch (x) { setErro(erroDeConta(x.message)); }
+  };
+  // Devolvido (o direito de arrependimento, ou um engano): o pagamento fica
+  // marcado e os dias que ele deu saem da conta
+  const devolverPagamento = async (p, motivo) => {
+    try {
+      const conta = (lista || []).find((c) => c.uid === p.conta);
+      const campos = !conta ? null : p.plano === "vitalicio" ? { vitalicio: false } : { pagoAte: Math.max(0, (conta.pagoAte || 0) - (p.dias || 0) * 864e5) };
+      const escritas = [contaApi.escrita("pagamentos/" + p.uid, { status: "devolvido", motivo: String(motivo || "").slice(0, 200) }, { existe: true })];
+      if (campos) escritas.push(contaApi.escrita("usuarios/" + conta.uid, campos, { existe: true }));
+      await contaApi.commit(escritas, await token());
+      mudarPagamento(p.uid, { status: "devolvido", motivo: motivo || "" });
+      if (campos) setLista((l) => ordenarContas(l.map((x) => (x.uid === conta.uid ? Object.assign({}, x, campos) : x)), Date.now(), cob));
+    } catch (x) { setErro(erroDeConta(x.message)); }
+  };
+  // O dono recebeu por fora (dinheiro, transferência): registra e já libera
+  const registrarPagamento = async (c, planoId, valor) => {
+    setMexendo(c.uid);
+    try {
+      const pl = planoPorId(cob, planoId);
+      const ag = Date.now();
+      const campos = acessoPago(c, pl, ag);
+      const pag = { conta: c.uid, email: c.email || "", nome: c.nome || "", plano: pl.id, planoNome: pl.nome, valor: Math.round((+valor || 0) * 100) / 100, dias: pl.dias,
+        metodo: "manual", txid: "", nota: "Registrado pelo dono", condicoes: "", status: "confirmado", em: ag, confirmadoEm: ag };
+      await contaApi.commit([contaApi.escrita("pagamentos/" + c.uid + "_" + ag, pag, { existe: false, servidor: "servidorEm" }),
+        contaApi.escrita("usuarios/" + c.uid, campos, { existe: true })], await token());
+      setPagamentos((l) => ordenarPagamentos([Object.assign({ uid: c.uid + "_" + ag }, pag)].concat(l || [])));
+      setLista((l) => ordenarContas(l.map((x) => (x.uid === c.uid ? Object.assign({}, x, campos) : x)), Date.now(), cob));
+      avisar(c.uid, "💳 Pagamento registrado: " + (campos.vitalicio ? "acesso vitalício" : "acesso até " + new Date(campos.pagoAte).toLocaleDateString("pt-BR")) + ".");
+      setAcao(null);
+    } catch (x) { setErro(erroDeConta(x.message)); }
+    setMexendo(null);
+  };
+  const darCortesia = async (c, dias, motivo) => {
+    const ok = await gravar(c, { cortesia: true, cortesiaAte: prazoAte(dias, Date.now()), cortesiaMotivo: String(motivo || "").slice(0, 120), cortesiaEm: Date.now() },
+      "🎁 Cortesia dada" + (dias ? " por " + dias + " dias" : " sem prazo") + ".");
+    if (ok) setAcao(null);
+  };
+  const semPlano = (c) => situacaoConta(c, agora) === "liberado" && !ehEmailDono(c.email) && planoDaConta(c, agora, Object.assign({}, cob, { ligada: false })).tipo === "gratis";
+  const cortesiaParaTodos = async () => {
+    for (const c of (lista || []).filter(semPlano)) await gravar(c, { cortesia: true, cortesiaAte: 0, cortesiaMotivo: "Usuário desde antes da cobrança", cortesiaEm: Date.now() });
+  };
+  const eu = CONTA_ATUAL && CONTA_ATUAL.uid;
+  const chip = (id, rot, n) => (
+    <button key={id} onClick={() => setFiltro(id)} aria-pressed={filtro === id}
+      style={{ flex: "1 1 auto", padding: "8px 8px", borderRadius: 10, cursor: "pointer", fontWeight: 800, fontSize: 12.5,
+        border: "1px solid " + (filtro === id ? "var(--marca)" : "var(--borda2)"), background: filtro === id ? "var(--marca)" : "transparent", color: filtro === id ? "#fff" : "var(--texto)" }}>{rot}{n ? " (" + n + ")" : ""}</button>
+  );
+  const numero = (n, rot, f) => (
+    <button onClick={() => setFiltro(f)} style={{ flex: "1 1 30%", textAlign: "center", padding: "8px 4px", background: "none", border: "none", color: "var(--texto)", cursor: "pointer" }}>
+      <div style={{ fontSize: 22, fontWeight: 900 }}>{n}</div>
+      <div style={{ fontSize: 11, color: "var(--cinza)" }}>{rot}</div>
+    </button>
+  );
+  const pequeno = { ...S.btnGhost, flex: "1 1 45%", padding: "8px 6px", fontSize: 12.5 };
+  if (verAceites) return <HistoricoAceites buscaInicial={verAceites.busca} onVoltar={() => setVerAceites(null)} />;
+  if (verPagamentos) return <HistoricoPagamentos lista={pagamentos} buscaInicial={verPagamentos.busca} onVoltar={() => setVerPagamentos(null)}
+    onConfirmar={confirmarPagamento} onRecusar={recusarPagamento} onDevolver={devolverPagamento} pedirConfirmacao={pedirConfirmacao} />;
+  return (
+    <div>
+      <button onClick={onVoltar} style={{ display: "block", background: "none", border: "none", color: "var(--marca)", fontWeight: 800, fontSize: 14, cursor: "pointer", padding: "4px 0 12px" }}>← Voltar</button>
+      <div style={S.card}>
+        <div style={S.label}>👥 Painel de usuários</div>
+        <div style={{ fontSize: 12.5, color: "var(--cinza)", margin: "4px 0 8px", lineHeight: 1.5 }}>Só a sua conta vê esta tela. Toque num número para ver a lista dele.</div>
+        <div style={{ display: "flex", flexWrap: "wrap" }}>
+          {numero(r.total, "contas", "todos")}
+          {numero(r.pendente, "aguardando", "pendente")}
+          {numero(r.online, "online agora", "online")}
+          {numero(r.hoje, "entraram hoje", "todos")}
+          {numero(r.ativos7, "ativas em 7 dias", "liberado")}
+          {numero(r.sumidos, "sumidas 30+ dias", "sumidos")}
+        </div>
+        <button onClick={carregar} style={{ ...S.btnGhost, width: "100%", marginTop: 6, fontSize: 13 }}>🔄 Atualizar a lista</button>
+      </div>
+
+      <CartaoCobranca cob={cob} carregado={cfgBruta !== null} lista={lista || []} agora={agora} semPlano={semPlano} pagamentos={pagamentos}
+        salvarCfg={salvarCfg} pedirConfirmacao={pedirConfirmacao} cortesiaParaTodos={cortesiaParaTodos}
+        onVerPagamentos={() => setVerPagamentos({ busca: "" })} onConfirmar={confirmarPagamento} onRecusar={recusarPagamento} mexendo={mexendo} />
+
+      <div style={S.card}>
+        <div style={S.label}>⚙ Como entram as contas novas</div>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 8, cursor: "pointer", fontSize: 13.5, lineHeight: 1.5 }}>
+          <input type="checkbox" checked={!!auto} disabled={auto === null} onChange={mudarAuto} style={{ marginTop: 3 }} />
+          <span><b>Aprovação automática.</b> {auto ? "Ligada: quem se cadastra já entra liberado. Você continua vendo todo mundo aqui e pode bloquear quando quiser." : "Desligada: quem se cadastra espera você liberar."}</span>
+        </label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+          {r.pendente > 0 && (
+            <button onClick={() => pedirConfirmacao({ positivo: true, labelSim: "Liberar todos", msg: "Liberar as " + r.pendente + " contas que estão aguardando, sem prazo?" }, liberarTodos)}
+              style={{ ...S.btn, flex: "1 1 100%", padding: "10px 8px", fontSize: 14 }}>✅ Liberar todos que aguardam ({r.pendente})</button>
+          )}
+          <button onClick={baixarCsv} disabled={!lista || !lista.length} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13 }}>📥 Baixar a lista (planilha)</button>
+          <button onClick={() => setVerAceites({ busca: "" })} style={{ ...S.btnGhost, flex: "1 1 100%", padding: "9px 8px", fontSize: 13 }}>📜 Histórico de aceites dos termos</button>
+        </div>
+      </div>
+
+      {erro && <div role="alert" style={{ ...S.card, color: "var(--perigo)", fontSize: 13.5 }}>{erro}</div>}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+        {chip("todos", "Todos")}
+        {chip("pendente", "⏳ Aguardando", r.pendente)}
+        {chip("liberado", "✅ Liberados")}
+        {chip("online", "🟢 Online", r.online)}
+        {chip("sumidos", "💤 Sumidos", r.sumidos)}
+        {chip("vencendo", "⌛ Prazo", r.vencendo)}
+        {chip("bloqueado", "⛔ Bloqueados", r.bloqueado)}
+        {(cob.ligada || r.pagantes > 0) && chip("pagantes", "💳 Pagantes", r.pagantes)}
+        {(cob.ligada || r.cortesia > 0) && chip("cortesia", "🎁 Cortesia", r.cortesia)}
+        {cob.ligada && chip("pagar", "Precisa pagar", r.pagar)}
+      </div>
+      <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nome ou e-mail" aria-label="Buscar por nome ou e-mail" style={{ ...S.input, marginBottom: 10 }} />
+      {lista === null && <div style={{ ...S.card, color: "var(--cinza)" }}>Carregando…</div>}
+      {lista && !mostrar.length && <div style={{ ...S.card, color: "var(--cinza)", fontSize: 13.5 }}>Nenhuma conta {filtro === "todos" ? "" : "nesta lista"} ainda.</div>}
+      {mostrar.map((c) => {
+        const sit = situacaoConta(c, agora, cob);
+        const pc = planoDaConta(c, agora, cob);
+        const ac = acao && acao.uid === c.uid ? acao : null;
+        const st = STATUS_CONTA[sit] || STATUS_CONTA.pendente;
+        const souEu = c.uid === eu;
+        const on = onlineAgora(c, agora);
+        const ed = editando && editando.uid === c.uid ? editando : null;
+        return (
+          <div key={c.uid} style={{ ...S.card, borderColor: sit === "pendente" ? "var(--obs)" : undefined }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 15 }}>{on ? "🟢 " : ""}{c.nome || "(sem nome)"}{souEu ? " · você" : ""}</div>
+                <div style={{ fontSize: 13, color: "var(--cinza)", wordBreak: "break-all" }}>{c.email}</div>
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 800, color: st.cor, whiteSpace: "nowrap" }}>{st.icone} {st.nome}</span>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--cinza)", lineHeight: 1.6, marginTop: 6 }}>
+              Cadastro: {c.criadoEm ? new Date(c.criadoEm).toLocaleDateString("pt-BR") : "—"} · Último acesso: {on ? "online agora" : quandoAcessou(c.ultimoAcesso, agora)}
+              <br />{c.acessos || 0} {plural(c.acessos || 0, "acesso", "acessos")}{c.aparelho ? " · " + c.aparelho : ""}{c.versao ? " · versão " + c.versao : ""}
+              {c.ate > 0 && <><br />{sit === "vencido" ? "Prazo venceu em " : "Liberado até "}{new Date(c.ate).toLocaleDateString("pt-BR")}</>}
+              {sit === "bloqueado" && c.motivo ? <><br />Motivo do bloqueio: {c.motivo}</> : null}
+              {c.aviso ? <><br />📩 Recado: “{c.aviso}” {(c.avisoVisto || 0) >= (c.avisoEm || 0) ? "(visto)" : "(ainda não visto)"}</> : null}
+              {c.senhaLinkEm ? <><br />Último link de senha nova: {quandoAcessou(c.senhaLinkEm, agora)}</> : null}
+              <br />{c.termos ? "📜 Termos aceitos em " + new Date(c.termosEm || 0).toLocaleDateString("pt-BR") + (c.termos !== TERMOS_USO.versao ? " (versão antiga)" : "") : "📜 Aceite dos termos não registrado na conta"}{" "}
+              <button onClick={() => setVerAceites({ busca: c.email || "" })} style={{ background: "none", border: "none", padding: 0, color: "var(--marca)", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>ver o histórico</button>
+              {(cob.ligada || pc.tipo !== "gratis") && <><br /><b style={{ color: "var(--texto)" }}>{textoPlanoConta(pc, cob)}</b></>}
+            </div>
+            {ac && ac.tipo === "cortesia" && (
+              <div style={{ marginTop: 10, border: "1px solid var(--borda2)", borderRadius: 12, padding: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>🎁 Cortesia: usa o app sem pagar, mesmo com a cobrança ligada</div>
+                <input value={ac.motivo || ""} onChange={(e) => setAcao(Object.assign({}, ac, { motivo: e.target.value }))} maxLength={120} placeholder="Motivo (só você vê; ex.: amigo, parceria, aluno)"
+                  aria-label="Motivo da cortesia" style={{ ...S.input, marginBottom: 8 }} />
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {PRAZOS_ACESSO.map((pz) => (
+                    <button key={pz.dias} disabled={mexendo === c.uid} onClick={() => darCortesia(c, pz.dias, ac.motivo)} style={{ ...(pz.dias ? S.btnGhost : S.btn), flex: "1 1 30%", padding: "9px 6px", fontSize: 13 }}>{pz.nome}</button>
+                  ))}
+                  <button onClick={() => setAcao(null)} style={{ background: "none", border: "none", color: "var(--cinza)", cursor: "pointer", fontSize: 13, flex: "1 1 100%", padding: 6 }}>Cancelar</button>
+                </div>
+              </div>
+            )}
+            {ac && ac.tipo === "pagamento" && (
+              <div style={{ marginTop: 10, border: "1px solid var(--borda2)", borderRadius: 12, padding: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>💳 Registrar um pagamento recebido (já libera o acesso)</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                  {cob.planos.map((pl) => (
+                    <button key={pl.id} onClick={() => setAcao(Object.assign({}, ac, { plano: pl.id, valor: String(pl.preco).replace(".", ",") }))}
+                      style={{ ...(ac.plano === pl.id ? S.btn : S.btnGhost), flex: "1 1 45%", padding: "8px 6px", fontSize: 12.5 }}>{pl.nome}</button>
+                  ))}
+                </div>
+                <label style={{ fontSize: 12.5, fontWeight: 800 }}>Valor recebido (R$)
+                  <input value={ac.valor || ""} onChange={(e) => setAcao(Object.assign({}, ac, { valor: e.target.value }))} inputMode="decimal" style={{ ...S.input, marginTop: 4 }} />
+                </label>
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button onClick={() => setAcao(null)} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>Cancelar</button>
+                  <button disabled={!ac.plano || mexendo === c.uid} onClick={() => registrarPagamento(c, ac.plano, String(ac.valor || "0").replace(",", "."))}
+                    style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5, opacity: ac.plano ? 1 : 0.5 }}>Registrar</button>
+                </div>
+              </div>
+            )}
+            {c.nota ? <div style={{ fontSize: 12.5, color: "var(--obs)", fontStyle: "italic", marginTop: 6 }}>📝 {c.nota}</div> : null}
+
+            {!souEu && escolhendoPrazo !== c.uid && !ed && (
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                {sit !== "liberado" && (
+                  <button disabled={mexendo === c.uid} onClick={() => setEscolhendoPrazo(c.uid)} style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>
+                    ✅ {sit === "bloqueado" ? "Desbloquear" : sit === "vencido" ? "Renovar" : "Liberar"}
+                  </button>
+                )}
+                {sit !== "bloqueado" && (
+                  <button disabled={mexendo === c.uid} onClick={() => setEditando({ uid: c.uid, campo: "bloquear", valor: "" })}
+                    style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13.5, color: "var(--perigo)", borderColor: "var(--perigo)" }}>⛔ Bloquear</button>
+                )}
+              </div>
+            )}
+            {escolhendoPrazo === c.uid && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Liberar por quanto tempo?</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {PRAZOS_ACESSO.map((p) => (
+                    <button key={p.dias} onClick={() => liberar(c, p.dias)} style={{ ...(p.dias ? S.btnGhost : S.btn), flex: "1 1 30%", padding: "9px 6px", fontSize: 13 }}>{p.nome}</button>
+                  ))}
+                  <button onClick={() => setEscolhendoPrazo(null)} style={{ background: "none", border: "none", color: "var(--cinza)", cursor: "pointer", fontSize: 13, flex: "1 1 100%", padding: 6 }}>Cancelar</button>
+                </div>
+              </div>
+            )}
+            {ed && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>
+                  {ed.campo === "bloquear" ? "Motivo do bloqueio (opcional: a pessoa vê)" : ed.campo === "aviso" ? "Recado para a pessoa (aparece uma vez quando ela abrir o app)" : "Nota sobre esta conta (só você vê)"}
+                </div>
+                <textarea value={ed.valor} onChange={(e) => setEditando(Object.assign({}, ed, { valor: e.target.value }))} rows={3} maxLength={500}
+                  aria-label="Texto" style={{ ...S.input, minHeight: 70, fontFamily: "inherit" }} />
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button onClick={() => setEditando(null)} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>Cancelar</button>
+                  <button disabled={mexendo === c.uid} onClick={salvarEdicao}
+                    style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5, background: ed.campo === "bloquear" ? "#ED4956" : GRAD }}>
+                    {ed.campo === "bloquear" ? "⛔ Bloquear" : "Salvar"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button onClick={() => setAberto(aberto === c.uid ? null : c.uid)} aria-expanded={aberto === c.uid}
+              style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 800, cursor: "pointer", fontSize: 13, padding: "8px 0 0" }}>
+              {aberto === c.uid ? "▴ Menos opções" : "⋯ Mais opções"}
+            </button>
+            {aberto === c.uid && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                {!souEu && sit === "liberado" && <button onClick={() => setEscolhendoPrazo(c.uid)} style={pequeno}>⏳ Mudar o prazo</button>}
+                {!souEu && <button onClick={() => setEditando({ uid: c.uid, campo: "aviso", valor: c.aviso || "" })} style={pequeno}>📩 Mandar recado</button>}
+                {!souEu && (pc.tipo === "cortesia"
+                  ? <button onClick={() => pedirConfirmacao({ labelSim: "Tirar", msg: "Tirar a cortesia de " + (c.nome || c.email) + "?" + (cob.ligada ? "\n\nCom a cobrança ligada, a pessoa passa a precisar de um plano." : "") },
+                      () => gravar(c, { cortesia: false, cortesiaAte: 0 }, "Cortesia retirada."))} style={pequeno}>🎁 Tirar a cortesia</button>
+                  : <button onClick={() => setAcao({ uid: c.uid, tipo: "cortesia", motivo: "" })} style={pequeno}>🎁 Dar cortesia</button>)}
+                {!souEu && <button onClick={() => setAcao({ uid: c.uid, tipo: "pagamento", plano: "", valor: "" })} style={pequeno}>💳 Registrar pagamento</button>}
+                {(pagamentos || []).some((p) => p.conta === c.uid) && <button onClick={() => setVerPagamentos({ busca: c.email || "" })} style={pequeno}>💳 Ver pagamentos</button>}
+                <button onClick={() => setEditando({ uid: c.uid, campo: "nota", valor: c.nota || "" })} style={pequeno}>📝 Nota</button>
+                <button disabled={mexendo === c.uid} onClick={() => pedirConfirmacao({ positivo: true, labelSim: "Mandar o link",
+                  msg: "Resetar a senha de " + (c.nome || c.email) + "?\n\nChega no e-mail " + c.email + " um link para a pessoa criar uma senha nova. A senha atual continua valendo até ela criar a nova." }, () => resetarSenha(c))}
+                  style={pequeno}>🔑 Resetar a senha</button>
+                {!souEu && (
+                  <button disabled={mexendo === c.uid} onClick={() => pedirConfirmacao({ labelSim: "Remover",
+                    msg: "Remover " + (c.nome || c.email) + " da lista?\n\nSe a pessoa entrar de novo, ela volta como um cadastro novo. Para impedir que entre, use Bloquear. Para apagar a conta de vez (pedido dela), use o Firebase: Authentication › Usuários." }, () => remover(c))}
+                    style={{ ...pequeno, color: "var(--perigo)" }}>🗑 Remover da lista</button>
+                )}
+              </div>
+            )}
+            {avisos[c.uid] && <div role="status" style={{ fontSize: 12.5, color: "var(--cinza)", lineHeight: 1.5, marginTop: 6 }}>{avisos[c.uid]}</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+// ---------------- ABERTURA ----------------
+// A vinheta da marca, em vídeo, feita pelo dono (como a do Treino Livre).
+// Enquanto ele não mandar o arquivo, fica vazio e o app abre direto. Quando
+// chegar: abertura-v1.mp4, 720×1280, sem som. Vinheta nova entra com outro nome
+// (v2): o service worker guarda o vídeo num cache próprio, que sobrevive às
+// versões do app.
+const VIDEO_ABERTURA = "";
+
+// Só o vídeo. Vídeo que não começa em 5 s, ou que não abre, encerra a abertura
+// em vez de prender alguém numa tela preta. Um toque pula. Movimento reduzido:
+// sem abertura.
+function Abertura({ onFim }) {
+  const reduzido = useMemo(() => {
+    try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; }
+  }, []);
+  const [tocando, setTocando] = useState(false);
+  const tocandoRef = useRef(false);
+  const acabouRef = useRef(false);
+  const videoRef = useRef(null);
+  const fim = () => { if (acabouRef.current) return; acabouRef.current = true; try { videoRef.current && videoRef.current.pause(); } catch (e) {} onFim(); };
+  useEffect(() => {
+    if (reduzido || !VIDEO_ABERTURA) { fim(); return; }
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    const p = v.play();
+    if (p && p.catch) p.catch(() => {});
+    const espera = setTimeout(() => { if (!tocandoRef.current) fim(); }, 5000);
+    const t = setTimeout(fim, 18000);
+    return () => { clearTimeout(espera); clearTimeout(t); };
+  }, []);
+  if (reduzido || !VIDEO_ABERTURA) return null;
+  return (
+    <div onClick={fim} role="img" aria-label="Super HQs"
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "#0B0B0F", overflow: "hidden", cursor: "pointer" }}>
+      <video ref={videoRef} src={VIDEO_ABERTURA} playsInline muted preload="auto"
+        poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        onPlaying={() => { tocandoRef.current = true; setTocando(true); }}
+        onEnded={fim} onError={() => { if (!tocandoRef.current) fim(); }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+          background: "#0B0B0F", opacity: tocando ? 1 : 0, transition: "opacity 0.25s" }} />
+      {tocando && (
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: "calc(18px + env(safe-area-inset-bottom))", zIndex: 2,
+          textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, letterSpacing: 1, pointerEvents: "none", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+          toque para pular
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------- COMO INSTALAR ----------------
+// "Baixar" um PWA é adicionar à tela de início. O iPhone nunca oferece isso
+// sozinho: sem o passo a passo, a pessoa conclui que não dá para instalar.
+const EH_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || "") ||
+  (/Mac/.test(navigator.userAgent || "") && navigator.maxTouchPoints > 1);
+const EH_ANDROID = /Android/i.test(navigator.userAgent || "");
+
+function ComoInstalar({ onFechar, onCopiarLink }) {
+  const passos = NAVEGADOR_INAPP
+    ? ["Toque nos ⋮ (ou ···) no canto desta tela.",
+       "Escolha “Abrir no navegador” ou “Abrir no Chrome”.",
+       "Lá dentro, toque em instalar quando o app oferecer."]
+    : EH_IOS
+      ? ["Toque no botão de compartilhar (o quadrado com a seta para cima), embaixo da tela.",
+         "Role a lista e escolha “Adicionar à Tela de Início”.",
+         "Confirme em “Adicionar”. Pronto: o ícone fica junto dos outros apps."]
+      : EH_ANDROID
+        ? ["Toque nos ⋮ no canto do Chrome.",
+           "Escolha “Instalar aplicativo” (ou “Adicionar à tela inicial”).",
+           "Confirme. O ícone aparece junto dos outros apps."]
+        : ["Na barra de endereço, procure o ícone de instalar (uma telinha com uma seta).",
+           "Clique nele e confirme em “Instalar”.",
+           "O app abre em janela própria, sem as abas do navegador."];
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 95,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={onFechar}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ ...S.card, maxWidth: 400, width: "100%", margin: 0, maxHeight: "86vh", overflowY: "auto" }}>
+        <div style={S.label}>📲 Instalar no seu aparelho</div>
+        <div style={{ fontSize: 14.5, fontWeight: 800, margin: "8px 0 4px" }}>
+          {EH_IOS ? "No iPhone é em dois toques" : "É rápido, e não ocupa quase nada"}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.6, marginBottom: 14 }}>
+          Instalado, ele abre em tela cheia, lê sem internet o que você já guardou e protege a sua
+          estante melhor do que uma aba perdida no navegador.
+        </div>
+        {passos.map((p, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
+            <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 11, background: "var(--marca)",
+              color: "#FFFFFF", fontSize: 12, fontWeight: 900, textAlign: "center", lineHeight: "22px" }}>{i + 1}</span>
+            <span style={{ fontSize: 13.5, lineHeight: 1.55 }}>{p}</span>
+          </div>
+        ))}
+        {onCopiarLink && (
+          <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={onCopiarLink}>📋 Copiar o link do app</button>
+        )}
+        <button style={{ ...S.btn, marginTop: 8 }} onClick={onFechar}>Entendi</button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------- O APP ----------------
+// As cinco abas do prompt (Início, Biblioteca, Buscar, Minhas leituras e
+// Ajustes). Por enquanto só os Ajustes têm conteúdo: a fundação é a conta, a
+// cobrança e a instalação. As outras dizem em que etapa entram.
+const ABAS = [
+  ["inicio", "🏠", "Início"],
+  ["biblioteca", "📚", "Biblioteca"],
+  ["buscar", "🔎", "Buscar"],
+  ["leituras", "🔖", "Minhas leituras"],
+  ["ajustes", "⚙", "Ajustes"],
+];
+const EM_BREVE = {
+  inicio: ["Continuar lendo, Descoberta do dia e Adicionadas recentemente.", "Etapa 2"],
+  biblioteca: ["Estantes, HQs, Mangás, Manhwas, Coleções, Arcos, Personagens e Pastas. Abrir os seus arquivos PDF, CBZ e CBR.", "Etapa 1"],
+  buscar: ["Buscar por coleção, personagem, ano, formato e categoria, sem se preocupar com acento.", "Etapa 1"],
+  leituras: ["Fila, Favoritos, Lidas, Histórico, Calendário e Downloads para ler sem internet.", "Etapa 4"],
+};
+
+function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
+  const [abertura, setAbertura] = useState(true);
+  const [aba, setAba] = useState("inicio");
+  const [tema, setTema] = useState(() => { try { return (JSON.parse(store.get(STORAGE_KEY) || "{}").tema) || "escuro"; } catch (e) { return "escuro"; } });
+  const [modal, setModal] = useState(null);
+  const [versaoNova, setVersaoNova] = useState(null);
+  const [comoInstalar, setComoInstalar] = useState(false);
+  const [promptInstalar, setPromptInstalar] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-tema", tema);
+    try {
+      const d = JSON.parse(store.get(STORAGE_KEY) || "{}");
+      d.tema = tema;
+      store.set(STORAGE_KEY, JSON.stringify(d));
+    } catch (e) {}
+  }, [tema]);
+
+  const pedirConfirmacao = (msg, onSim) => setModal(msg && typeof msg === "object" ? { ...msg, onSim } : { msg, onSim });
+
+  // Fechar com Esc, como em qualquer caixa de diálogo
+  useEffect(() => {
+    if (!modal) return;
+    const aoTeclar = (e) => { if (e.key === "Escape") setModal(null); };
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [modal]);
+
+  // Confere se há versão nova. O "no-store" e o carimbo de tempo existem porque
+  // o GitHub Pages manda max-age=600 e o navegador devolveria a cópia velha.
+  useEffect(() => {
+    let vivo = true;
+    const conferir = () => {
+      fetch("versao.json?t=" + Date.now(), { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => { if (vivo && j && j.versao && j.versao !== VERSAO_APP) setVersaoNova(j.versao); })
+        .catch(() => {});
+    };
+    const t = setTimeout(conferir, 2500);
+    const aoVoltar = () => { if (document.visibilityState === "visible") conferir(); };
+    document.addEventListener("visibilitychange", aoVoltar);
+    return () => { vivo = false; clearTimeout(t); document.removeEventListener("visibilitychange", aoVoltar); };
+  }, []);
+
+  // Limpa o que o navegador guardou e recarrega: pedir "recarregar" à pessoa
+  // não vence um cache de service worker. Os caches da estante e da vinheta ficam.
+  const atualizarApp = useCallback(async () => {
+    try {
+      const ks = await caches.keys();
+      await Promise.all(ks.filter((k) => k !== "superhqs-midia" && k !== "superhqs-acervo").map((k) => caches.delete(k)));
+    } catch (e) {}
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.update().catch(() => {})));
+    } catch (e) {}
+    try { window.location.replace(window.location.pathname + "?v=" + Date.now()); }
+    catch (e) { window.location.reload(); }
+  }, []);
+
+  // O navegador avisa quando o app pode ser instalado. O convite é guardado
+  // para o botão "Instalar", em vez de a pessoa caçar a opção no menu.
+  useEffect(() => {
+    const aoPoderInstalar = (e) => { e.preventDefault(); setPromptInstalar(e); };
+    const aoInstalar = () => { setPromptInstalar(null); registrarEvento("app-instalado"); };
+    window.addEventListener("beforeinstallprompt", aoPoderInstalar);
+    window.addEventListener("appinstalled", aoInstalar);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", aoPoderInstalar);
+      window.removeEventListener("appinstalled", aoInstalar);
+    };
+  }, []);
+  const baixarApp = async () => {
+    if (promptInstalar) {
+      try { promptInstalar.prompt(); await promptInstalar.userChoice; } catch (e) {}
+      setPromptInstalar(null);
+      return;
+    }
+    registrarEvento("como-instalar");
+    setComoInstalar(true);
+  };
+  const copiarLink = async () => {
+    try { await navigator.clipboard.writeText(LINK_APP); setCopiado(true); setTimeout(() => setCopiado(false), 2500); } catch (e) {}
+  };
+
+  if (abertura) return <Abertura onFim={() => setAbertura(false)} />;
+
+  const titulo = (ABAS.find((a) => a[0] === aba) || [0, 0, "Painel de usuários"])[2];
+  return (
+    <div style={S.app}>
+      <div style={S.header}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={S.logo}>Super HQs</div>
+            <div style={{ fontSize: 13, color: "var(--cinza)", fontWeight: 700 }}>{titulo}</div>
+          </div>
+          <button onClick={() => setTema(tema === "escuro" ? "claro" : "escuro")} aria-label={tema === "escuro" ? "Usar o tema claro" : "Usar o tema escuro"}
+            style={{ background: "none", border: "1px solid var(--borda2)", borderRadius: 12, color: "var(--texto)", fontSize: 18, width: 42, height: 42, cursor: "pointer" }}>
+            {tema === "escuro" ? "☀" : "☾"}
+          </button>
+        </div>
+        <div style={S.faixa} />
+      </div>
+
+      <div style={{ padding: "14px 16px 0" }}>
+        {(contaPendentes > 0 || contaPagamentos > 0) && aba !== "painelUsuarios" && (
+          <button onClick={() => { if (onContaVista) onContaVista(); setAba("painelUsuarios"); }} style={{ ...S.btn, width: "100%", marginBottom: 12, padding: "12px 10px" }}>
+            {contaPendentes > 0 ? "👥 " + contaPendentes + " " + plural(contaPendentes, "cadastro esperando", "cadastros esperando") + " a sua liberação" : ""}
+            {contaPendentes > 0 && contaPagamentos > 0 ? " · " : ""}
+            {contaPagamentos > 0 ? "💳 " + contaPagamentos + " " + plural(contaPagamentos, "pagamento", "pagamentos") + " para confirmar" : ""} ▶
+          </button>
+        )}
+
+        {EM_BREVE[aba] && (
+          <div style={S.card}>
+            <div style={S.label}>{EM_BREVE[aba][1]} · em construção</div>
+            <div style={{ fontSize: 15, lineHeight: 1.6, marginTop: 8 }}>{EM_BREVE[aba][0]}</div>
+          </div>
+        )}
+
+        {aba === "painelUsuarios" && CONTA_ATUAL && CONTA_ATUAL.dono && (
+          <TelaPainelUsuarios onVoltar={() => setAba("ajustes")} pedirConfirmacao={pedirConfirmacao} />
+        )}
+
+        {aba === "ajustes" && (
+          <React.Fragment>
+            <div id="aj-conta"><CartaoConta onPainel={() => setAba("painelUsuarios")} /></div>
+            {!JA_INSTALADO && (
+              <div style={S.card}>
+                <div style={S.label}>📲 Instalar o app</div>
+                <div style={{ fontSize: 13.5, color: "var(--cinza)", lineHeight: 1.55, margin: "6px 0 12px" }}>
+                  Na tela de início, ele abre em tela cheia e guarda a sua estante com mais segurança.
+                </div>
+                <button style={S.btn} onClick={baixarApp}>Instalar o Super HQs</button>
+                <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={copiarLink}>{copiado ? "✓ Link copiado" : "📋 Copiar o link do app"}</button>
+              </div>
+            )}
+            <div style={S.card}>
+              <div style={S.label}>📚 O que você abre no app</div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.6, marginTop: 6 }}>{AVISO_CONTEUDO.curto}</div>
+            </div>
+            <div id="aj-termos"><CartaoTermos /></div>
+            <div style={S.card}>
+              <div style={S.label}>Créditos</div>
+              <div style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.6, marginTop: 6 }}>
+                Criado por Carlos Jr. ·{" "}
+                <a href={LINK_INSTAGRAM} target="_blank" rel="noopener" style={{ color: "var(--marca)", fontWeight: 800 }}>@{INSTAGRAM}</a>
+                <br />© 2026 Carlos Jr. Todos os direitos reservados.
+                <br />React e ReactDOM (MIT), Babel (MIT), qrcode-generator (MIT).
+                <br />Versão {VERSAO_APP} · <a href="privacidade.html" style={{ color: "var(--marca)" }}>Privacidade</a>
+              </div>
+            </div>
+          </React.Fragment>
+        )}
+      </div>
+
+      <nav aria-label="Navegação principal" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 20, background: "var(--barra)",
+        boxShadow: "var(--barra-sombra)", borderTop: "1px solid var(--borda)", display: "flex",
+        paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}>
+        {ABAS.map(([id, ic, nome]) => (
+          <button key={id} onClick={() => setAba(id)} aria-current={aba === id ? "page" : undefined}
+            style={{ flex: 1, background: "none", border: "none", padding: "10px 2px 8px", cursor: "pointer",
+              color: aba === id ? "var(--marca)" : "var(--cinza)", fontWeight: aba === id ? 800 : 600, fontSize: 10.5 }}>
+            <div style={{ fontSize: 20, lineHeight: 1.1 }} aria-hidden="true">{ic}</div>{nome}
+          </button>
+        ))}
+      </nav>
+
+      {modal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+          onClick={() => setModal(null)}>
+          <div role="dialog" aria-modal="true" aria-label={String(modal.msg || "Aviso").split("\n")[0]}
+            style={{ ...S.card, width: "100%", maxWidth: 340, marginBottom: 0, borderColor: "var(--borda2)", maxHeight: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 16, whiteSpace: "pre-line", overflowY: "auto", minHeight: 48, flex: "0 1 auto" }}>{modal.msg}</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              {modal.onSim ? (
+                <React.Fragment>
+                  <button style={{ ...S.btnGhost, flex: 1 }} onClick={() => { const f = modal.onNao; setModal(null); if (f) f(); }}>{modal.labelNao || "Cancelar"}</button>
+                  <button style={{ ...S.btn, flex: 1, background: modal.positivo ? GRAD : "#ED4956" }}
+                    onClick={() => { const f = modal.onSim; setModal(null); f(); }}>{modal.labelSim || "Confirmar"}</button>
+                </React.Fragment>
+              ) : (
+                <button style={{ ...S.btn, flex: 1 }} onClick={() => setModal(null)}>OK</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {comoInstalar && <ComoInstalar onFechar={() => setComoInstalar(false)} onCopiarLink={copiarLink} />}
+
+      {versaoNova && (
+        <div role="status" style={{ position: "fixed", left: 12, right: 12, zIndex: 47, top: "calc(10px + env(safe-area-inset-top))" }}>
+          <div style={{ background: "var(--card)", border: "1px solid var(--marca)", borderRadius: 14, padding: "12px 14px",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.5)", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1.4 }}>Tem versão nova do app</div>
+              <div style={{ fontSize: 11.5, color: "var(--cinza)", marginTop: 2 }}>Esta é a {VERSAO_APP}. Disponível: {versaoNova}.</div>
+            </div>
+            <button onClick={atualizarApp} style={{ background: GRAD, color: "#FFFFFF", border: "none", borderRadius: 10,
+              padding: "10px 14px", fontWeight: 900, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>Atualizar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Porteiro><SuperHQs /></Porteiro>);
+
+// Modo offline: depois da primeira visita, o app abre mesmo sem internet.
+// (localhost entra na lista para dar para testar o modo offline antes de publicar)
+const ehLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+if ("serviceWorker" in navigator && (location.protocol === "https:" || ehLocal)) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

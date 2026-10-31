@@ -1,0 +1,98 @@
+# O app Android (pasta android/): monta o APK e o publica como versão
+# ("Release") no GitHub:
+#   https://github.com/carlosjr81/Super-HQs/releases/latest/download/super-hqs.apk
+#
+# Isto não é etapa de build do SITE: o GitHub Pages continua servindo o
+# index.html do jeito que está. Veio do Treino Livre.
+#
+# A chave que assina o APK: o segredo ANDROID_KEYSTORE_B64 (o .jks em base64)
+# com ANDROID_KEYSTORE_PASS. Sem o segredo, uma chave é gerada e guardada no
+# cache do Actions, que expira depois de 7 dias sem uso (o manter-chave.yml
+# cuida disso). Chave diferente obriga a desinstalar o app antigo.
+name: App Android
+
+on:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      TEM_SEGREDO: ${{ secrets.ANDROID_KEYSTORE_B64 != '' && 'sim' || 'nao' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Chave guardada no cache (quando não há segredo)
+        if: ${{ env.TEM_SEGREDO != 'sim' }}
+        uses: actions/cache@v4
+        with:
+          path: android/app/superhqs.jks
+          key: chave-superhqs-v1
+
+      - name: Preparar a chave
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > android/app/superhqs.jks
+            echo "SH_STORE_PASS=$KEYSTORE_PASS" >> "$GITHUB_ENV"
+          else
+            if [ ! -f android/app/superhqs.jks ]; then
+              keytool -genkeypair -v -keystore android/app/superhqs.jks -alias superhqs \
+                -keyalg RSA -keysize 2048 -validity 10000 -storepass superhqs -keypass superhqs \
+                -dname "CN=Super HQs, O=Super HQs, C=BR"
+            fi
+            echo "SH_STORE_PASS=superhqs" >> "$GITHUB_ENV"
+          fi
+          echo "SH_KEYSTORE=$PWD/android/app/superhqs.jks" >> "$GITHUB_ENV"
+
+      - name: Montar o APK
+        env:
+          SH_VERSAO_CODIGO: ${{ github.run_number }}
+          SH_VERSAO_NOME: "1.${{ github.run_number }}"
+        run: gradle -p android assembleRelease --no-daemon --stacktrace
+
+      # A impressão digital da chave (pública): vai no assetlinks.json da raiz
+      # do domínio (repositório carlosjr81.github.io), e é o que faz o Chrome
+      # esconder a barra de endereço.
+      - name: Impressão digital da chave
+        run: |
+          DIGITAL=$(keytool -list -v -keystore "$SH_KEYSTORE" -storepass "$SH_STORE_PASS" -alias superhqs | grep -m1 "SHA256:" | sed 's/.*SHA256: *//')
+          echo "### Impressão digital SHA-256 da chave do APK" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$DIGITAL\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Renomear
+        run: cp android/app/build/outputs/apk/release/app-release.apk super-hqs.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: super-hqs-apk
+          path: super-hqs.apk
+
+      - name: Publicar a versão (só do main)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-${{ github.run_number }}
+          name: App Android ${{ github.run_number }}
+          make_latest: "true"
+          files: super-hqs.apk
+          body: |
+            O app Android do Super HQs: o mesmo app do site, em tela cheia.
+            Baixe o super-hqs.apk abaixo no celular, abra e permita instalar.
