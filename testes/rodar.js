@@ -13,6 +13,7 @@ const SUITES = [
   ["teste-acesso", "login com aprovação, termos, cobrança e o painel do dono"],
   ["teste-estante", "a estante: tipo pelos bytes, páginas do CBZ, título, busca e leitura"],
   ["teste-conectores", "a sincronização do acervo: paginação, retomada, duplicatas, direitos e falhas"],
+  ["teste-leitor", "o leitor: toque x arraste, virada da folha e o Toque para Ler achando o balão"],
 ];
 
 console.log("app: " + caminhoDoApp() + "\n");

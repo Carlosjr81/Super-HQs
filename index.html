@@ -258,7 +258,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31e";
+const VERSAO_APP = "2026-10-31f";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -2420,6 +2420,126 @@ function tamanhoTexto(bytes) {
 }
 // ---------------- FIM DAS CONTAS DA ESTANTE ----------------
 
+// ---------------- LEITOR: AS CONTAS ----------------
+// A virada de folha e o Toque para Ler, só as contas (o teste-leitor.js
+// recorta este trecho e roda no Node, com imagens sintéticas).
+
+// Onde a página aparece dentro da tela, com object-fit: contain (faixas pretas
+// em cima e embaixo, ou dos lados).
+function retanguloContido(caixaL, caixaA, imgL, imgA) {
+  if (!(imgL > 0 && imgA > 0)) return { x: 0, y: 0, l: caixaL, a: caixaA };
+  const e = Math.min(caixaL / imgL, caixaA / imgA);
+  const l = imgL * e, a = imgA * e;
+  return { x: (caixaL - l) / 2, y: (caixaA - a) / 2, l: l, a: a };
+}
+// Um ponto da tela (relativo à caixa) vira um ponto da imagem, ou null se
+// caiu na faixa preta, fora da página.
+function telaParaImagem(px, py, ret, imgL, imgA) {
+  const u = (px - ret.x) / ret.l, v = (py - ret.y) / ret.a;
+  if (u < 0 || v < 0 || u > 1 || v > 1) return null;
+  return { x: u * imgL, y: v * imgA };
+}
+// Toque, arraste ou nada: até 10 px e 350 ms é toque; arraste é o que anda
+// mais na horizontal que na vertical. A pinça e a rolagem não viram página.
+function classificarGesto(dx, dy, ms) {
+  const d = Math.hypot(dx, dy);
+  if (d <= 10 && ms <= 350) return "toque";
+  if (Math.abs(dx) > 10 && Math.abs(dx) >= Math.abs(dy) * 1.2) return "arraste";
+  return "nada";
+}
+// Soltou a folha: vira se passou de 35% do caminho, ou se foi um puxão rápido
+// no sentido certo (velocidade em fração da página por segundo).
+function decidirVirada(progresso, velocidade) {
+  return progresso >= 0.35 || (progresso > 0.08 && velocidade > 1.2);
+}
+
+// O Toque para Ler acha o balão a partir do ponto tocado: começa num pixel
+// claro perto do dedo (o dedo pode cair numa letra) e expande pela área clara
+// até o contorno. As letras viram "buracos" dentro da área, e a caixa em volta
+// é o balão. Serve para balão branco, cinza-claro ou creme, de qualquer forma.
+// Recusa (devolve { motivo }) o que não parece balão: área clara grande demais
+// (o fundo ou as calhas entre os quadros), pequena demais, ou encostada nas
+// bordas da página. Aí o app oferece a seleção manual: nunca inventa texto.
+// `dados`: RGBA da página reduzida (largura l, altura a); (sx, sy) no mesmo
+// sistema. Devolve a caixa { x, y, l, a } nesse sistema.
+function acharBalao(dados, l, a, sx, sy) {
+  const lum = (i) => 0.299 * dados[i] + 0.587 * dados[i + 1] + 0.114 * dados[i + 2];
+  const sat = (i) => Math.max(dados[i], dados[i + 1], dados[i + 2]) - Math.min(dados[i], dados[i + 1], dados[i + 2]);
+  const x0 = Math.round(sx), y0 = Math.round(sy);
+  if (x0 < 0 || y0 < 0 || x0 >= l || y0 >= a) return { motivo: "fora da página" };
+  // a semente: o pixel claro mais perto do toque
+  const raio = Math.max(6, Math.round(l * 0.025));
+  let semente = -1, claroSemente = 0;
+  for (let r = 0; r <= raio && semente < 0; r++) {
+    for (let dy = -r; dy <= r && semente < 0; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const x = x0 + dx, y = y0 + dy;
+        if (x < 0 || y < 0 || x >= l || y >= a) continue;
+        const i = (y * l + x) * 4;
+        if (lum(i) >= 170 && sat(i) <= 70) { semente = y * l + x; claroSemente = lum(i); break; }
+      }
+    }
+  }
+  if (semente < 0) return { motivo: "sem área clara perto do toque" };
+  const limiar = Math.max(150, claroSemente - 55);
+  const maxArea = l * a * 0.2;
+  const visto = new Uint8Array(l * a);
+  const pilha = [semente];
+  visto[semente] = 1;
+  let area = 0, minX = l, minY = a, maxX = 0, maxY = 0;
+  while (pilha.length) {
+    const p = pilha.pop();
+    const x = p % l, y = (p - x) / l;
+    area++;
+    if (area > maxArea) return { motivo: "área clara grande demais (fundo ou calha)" };
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+    const viz = [x > 0 ? p - 1 : -1, x < l - 1 ? p + 1 : -1, y > 0 ? p - l : -1, y < a - 1 ? p + l : -1];
+    for (const q of viz) {
+      if (q < 0 || visto[q]) continue;
+      const i = q * 4;
+      if (lum(i) >= limiar && sat(i) <= 70) { visto[q] = 1; pilha.push(q); }
+    }
+  }
+  const cl = maxX - minX + 1, ca = maxY - minY + 1;
+  if (area < l * a * 0.0012) return { motivo: "área clara pequena demais" };
+  const bordas = (minX <= 1) + (minY <= 1) + (maxX >= l - 2) + (maxY >= a - 2);
+  if (bordas >= 2) return { motivo: "encostada nas bordas da página" };
+  if ((cl / ca > 14 || ca / cl > 14) && area / (cl * ca) < 0.35) return { motivo: "faixa fina (calha entre quadros)" };
+  // folga em volta, para o contorno do balão aparecer inteiro
+  const fx = Math.round(cl * 0.06) + 3, fy = Math.round(ca * 0.06) + 3;
+  const x = Math.max(0, minX - fx), y = Math.max(0, minY - fy);
+  return { x: x, y: y, l: Math.min(l, maxX + fx + 1) - x, a: Math.min(a, maxY + fy + 1) - y };
+}
+// O dedo erra por alguns milímetros: se no ponto exato não há balão, tenta em
+// volta (até ~4% da largura da página, em 8 direções) e fica com o achado mais
+// perto do toque.
+function acharBalaoPerto(dados, l, a, sx, sy) {
+  const r0 = acharBalao(dados, l, a, sx, sy);
+  if (!r0.motivo) return r0;
+  let melhor = null, dist = Infinity;
+  for (const raio of [l * 0.02, l * 0.04]) {
+    for (let k = 0; k < 8; k++) {
+      const ang = (Math.PI / 4) * k;
+      const b = acharBalao(dados, l, a, sx + raio * Math.cos(ang), sy + raio * Math.sin(ang));
+      if (b.motivo) continue;
+      const cx = Math.min(Math.max(sx, b.x), b.x + b.l), cy = Math.min(Math.max(sy, b.y), b.y + b.a);
+      const d = Math.hypot(cx - sx, cy - sy);
+      if (d < dist) { dist = d; melhor = b; }
+    }
+    if (melhor) return melhor;
+  }
+  return r0;
+}
+// A caixa da seleção manual, quando a detecção não acha nada: centrada no
+// toque, metade da largura e um quinto da altura da página, sem sair dela.
+function caixaManual(x, y, imgL, imgA) {
+  const l = imgL * 0.5, a = imgA * 0.2;
+  return { x: Math.min(Math.max(0, x - l / 2), imgL - l), y: Math.min(Math.max(0, y - a / 2), imgA - a), l: l, a: a };
+}
+// ---------------- FIM DAS CONTAS DO LEITOR ----------------
+
 // ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------
 // Duas gavetas: "obras" (a ficha, leve, com a capa reduzida) e "arquivos" (o
 // arquivo original, pesado). A lista da estante lê só as fichas. O id é o
@@ -2799,23 +2919,172 @@ function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
   );
 }
 
-// O leitor: página simples, a imagem inteira na tela. Tocar à direita avança,
-// à esquerda volta, no meio mostra ou esconde os controles; setas e Esc no
-// teclado. Guarda a página a cada virada. Fica com a página atual e as
-// vizinhas prontas, e solta as outras (não decodifica o arquivo inteiro).
-// A virada de livro (Etapa 3) e o Toque para Ler (Etapa 2) entram aqui.
+// O leitor. A página fica parada na tela; por cima dela acontecem duas coisas:
+// - a VIRADA DE FOLHA: arrastar a página faz a folha girar presa pela lombada
+//   (à esquerda), acompanhando o dedo, com o verso de papel e sombra na página
+//   de baixo. Soltar antes de 35% (ou sem puxão) devolve a folha; depois vira.
+//   As setas, o teclado e (com o Toque para Ler desligado) as bordas da tela
+//   viram com a mesma animação. Movimento reduzido: troca sem animação.
+// - o TOQUE PARA LER: tocar num balão abre só o recorte dele, ampliado, numa
+//   camada por cima. A página de trás não muda de tamanho, posição nem página.
+//   Sem balão achado, a seleção manual (um retângulo ajustável) amplia na hora.
+// Fica com a página atual e as vizinhas prontas e solta as outras.
+const CHAVE_TOQUE_LER = "superhqs:toqueParaLer";
+const CHAVE_DICA_LEITOR = "superhqs:dicaLeitor";
+const MOVIMENTO_REDUZIDO = (() => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } })();
+const DURACAO_VIRADA = 320;
+
+function carregarImagem(url) {
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("a imagem não abriu")); i.src = url; });
+}
+// A página reduzida para a busca do balão (700 px de largura bastam e são
+// rápidos); `k` converte da imagem original para a reduzida.
+async function analisarPagina(url) {
+  const img = await carregarImagem(url);
+  const l = Math.min(700, img.naturalWidth), k = l / img.naturalWidth, a = Math.max(1, Math.round(img.naturalHeight * k));
+  const c = document.createElement("canvas");
+  c.width = l; c.height = a;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, l, a);
+  return { img: img, l: l, a: a, k: k, dados: ctx.getImageData(0, 0, l, a).data };
+}
+// O recorte sai da imagem na resolução em que a página foi aberta (a maior
+// que o app tem), sem filtro nem cor nova: é a arte original.
+function recortar(img, caixa) {
+  const c = document.createElement("canvas");
+  const esc = Math.min(1, 2400 / Math.max(caixa.l, caixa.a));
+  c.width = Math.max(1, Math.round(caixa.l * esc)); c.height = Math.max(1, Math.round(caixa.a * esc));
+  c.getContext("2d").drawImage(img, caixa.x, caixa.y, caixa.l, caixa.a, 0, 0, c.width, c.height);
+  return new Promise((r) => c.toBlob((b) => r({ url: URL.createObjectURL(b), l: c.width, a: c.height }), "image/png"));
+}
+
+// A camada do Toque para Ler: só o recorte, ampliado até 92% da largura útil,
+// com ampliação própria e rolagem interna. Fecha por ✕, toque fora, Esc e o
+// Voltar do aparelho (uma entrada no histórico enquanto está aberta).
+function CamadaBalao({ recorte, onFechar, onAjustar }) {
+  const [zoom, setZoom] = useState(1);
+  const fechar = useRef(null);
+  useEffect(() => {
+    const ant = document.activeElement;
+    if (fechar.current) fechar.current.focus();
+    return () => { try { ant && ant.focus && ant.focus(); } catch (e) {} };
+  }, []);
+  const larguraUtil = Math.min(window.innerWidth * 0.92, 900) - 24;
+  const base = Math.min(larguraUtil, recorte.l * 3) / recorte.l;
+  const btn = { minWidth: 44, minHeight: 44, borderRadius: 12, border: "1px solid #2B3954", background: "#172139", color: "#F5F7FF", fontSize: 16, fontWeight: 600, cursor: "pointer", padding: "0 12px" };
+  return (
+    <div onClick={onFechar} style={{ position: "fixed", inset: 0, zIndex: 95, background: "rgba(3,5,12,0.62)", display: "flex", alignItems: "center", justifyContent: "center", padding: "calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))" }}>
+      <div role="dialog" aria-modal="true" aria-label="Texto ampliado" onClick={(e) => e.stopPropagation()}
+        style={{ background: "#111A30", border: "1px solid #2B3954", borderRadius: 16, padding: 12, maxWidth: "92vw", boxShadow: "0 18px 50px rgba(0,0,0,0.55)", animation: MOVIMENTO_REDUZIDO ? "none" : "surge 160ms ease-out both" }}>
+        <div style={{ maxWidth: larguraUtil, maxHeight: "72vh", overflow: "auto", borderRadius: 10, background: "#FFFFFF", WebkitOverflowScrolling: "touch" }}>
+          <img src={recorte.url} alt="Recorte ampliado da página" draggable={false}
+            style={{ display: "block", width: Math.round(recorte.l * base * zoom), height: "auto", maxWidth: "none" }} />
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={btn} aria-label="Diminuir" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.25).toFixed(2)))}>−</button>
+            <button style={btn} aria-label="Aumentar" onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))}>+</button>
+            <button style={btn} onClick={onAjustar} aria-label="Ajustar a área à mão">✂ Ajustar</button>
+          </div>
+          <button ref={fechar} style={{ ...btn, background: "#6F8CFF", color: "#090F21", border: "none" }} onClick={onFechar} aria-label="Fechar o texto ampliado">✕</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// A seleção manual: um retângulo sobre a página, que se move arrastando o
+// meio e muda de tamanho pelos cantos (alças de 44 px). "Ampliar" abre na hora.
+function SelecaoManual({ caixa, ret, natL, onMudar, onAmpliar, onCancelar }) {
+  const e = ret.l / natL;
+  const tela = { x: ret.x + caixa.x * e, y: ret.y + caixa.y * e, l: caixa.l * e, a: caixa.a * e };
+  const arrastar = (modo) => (ev) => {
+    ev.stopPropagation(); ev.preventDefault();
+    const x0 = ev.clientX, y0 = ev.clientY, c0 = Object.assign({}, caixa);
+    const natA = ret.a / e, min = 30 / e;
+    const mover = (m) => {
+      const dx = (m.clientX - x0) / e, dy = (m.clientY - y0) / e;
+      let c = Object.assign({}, c0);
+      if (modo === "mover") { c.x = Math.min(Math.max(0, c0.x + dx), natL - c0.l); c.y = Math.min(Math.max(0, c0.y + dy), natA - c0.a); }
+      else {
+        if (modo.indexOf("e") >= 0) { c.x = Math.min(Math.max(0, c0.x + dx), c0.x + c0.l - min); c.l = c0.l + (c0.x - c.x); }
+        if (modo.indexOf("d") >= 0) c.l = Math.min(Math.max(min, c0.l + dx), natL - c0.x);
+        if (modo.indexOf("c") >= 0) { c.y = Math.min(Math.max(0, c0.y + dy), c0.y + c0.a - min); c.a = c0.a + (c0.y - c.y); }
+        if (modo.indexOf("b") >= 0) c.a = Math.min(Math.max(min, c0.a + dy), natA - c0.y);
+      }
+      onMudar(c);
+    };
+    const soltar = () => { window.removeEventListener("pointermove", mover); window.removeEventListener("pointerup", soltar); };
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", soltar);
+  };
+  const alca = (modo, st) => (
+    <div onPointerDown={arrastar(modo)} aria-hidden="true"
+      style={Object.assign({ position: "absolute", width: 44, height: 44, marginLeft: -22, marginTop: -22, touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center" }, st)}>
+      <div style={{ width: 16, height: 16, borderRadius: 8, background: "#FFFFFF", border: "3px solid #6F8CFF" }} />
+    </div>
+  );
+  const btn = { minHeight: 44, borderRadius: 12, border: "none", fontWeight: 700, fontSize: 15, padding: "0 16px", cursor: "pointer" };
+  const abaixo = tela.y + tela.a + 64 < (ret.y + ret.a + 120);
+  return (
+    <div onPointerDown={(ev) => ev.stopPropagation()} style={{ position: "absolute", inset: 0, zIndex: 6 }}>
+      <div onPointerDown={arrastar("mover")} role="group" aria-label="Área do texto: arraste para mover, use os cantos para ajustar"
+        style={{ position: "absolute", left: tela.x, top: tela.y, width: tela.l, height: tela.a, border: "2px solid #6F8CFF",
+          boxShadow: "0 0 0 9999px rgba(3,5,12,0.55)", touchAction: "none", cursor: "move", borderRadius: 4 }}>
+        {alca("ce", { left: 0, top: 0 })}{alca("cd", { left: "100%", top: 0 })}
+        {alca("be", { left: 0, top: "100%" })}{alca("bd", { left: "100%", top: "100%" })}
+      </div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: abaixo ? tela.y + tela.a + 16 : Math.max(8, tela.y - 60), display: "flex", gap: 8, justifyContent: "center" }}>
+        <button style={{ ...btn, background: "#172139", color: "#F5F7FF", border: "1px solid #2B3954" }} onClick={onCancelar}>Cancelar</button>
+        <button style={{ ...btn, background: "#6F8CFF", color: "#090F21" }} onClick={onAmpliar} autoFocus>🔍 Ampliar</button>
+      </div>
+    </div>
+  );
+}
+
 function Leitor({ obra, inicio, onFechar, onProgresso }) {
-  const [pagina, setPagina] = useState(Math.min(Math.max(0, inicio || 0), obra.paginas - 1));
+  const total = obra.paginas;
+  const [pagina, setPagina] = useState(Math.min(Math.max(0, inicio || 0), total - 1));
   const [urls, setUrls] = useState({});
+  const [dims, setDims] = useState({});
   const [erro, setErro] = useState("");
   const [controles, setControles] = useState(true);
   const [fim, setFim] = useState(false);
+  const [folha, setFolha] = useState(null);        // { dir, p, animando }
+  const [palco, setPalco] = useState({ l: window.innerWidth || 375, a: window.innerHeight || 700 });
+  const [toqueLer, setToqueLer] = useState(() => store.get(CHAVE_TOQUE_LER) !== "0");
+  const [camada, setCamada] = useState(null);      // recorte aberto { url, l, a }
+  const [manual, setManual] = useState(null);      // caixa da seleção manual
+  const [aviso, setAviso] = useState(null);        // { texto, ponto? }
   const abridor = useRef(null);
   const pedidas = useRef({});
   const urlsRef = useRef({});
-  // Os controles aparecem ao abrir e somem sozinhos: a arte ocupa a tela, e um
-  // toque no meio os traz de volta.
+  const analises = useRef({});
+  const palcoRef = useRef(null);
+  const gesto = useRef(null);
+  const virando = useRef(false);
+  const historico = useRef(false);
+
   useEffect(() => { const t = setTimeout(() => setControles(false), 2500); return () => clearTimeout(t); }, []);
+  // a dica de primeiro contato, nas três primeiras aberturas
+  useEffect(() => {
+    let n = 0; try { n = +(store.get(CHAVE_DICA_LEITOR) || 0); } catch (e) {}
+    if (n >= 3) return;
+    store.set(CHAVE_DICA_LEITOR, String(n + 1));
+    setAviso({ texto: "Toque num balão para ampliar · arraste a página para virar" });
+  }, []);
+  useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(null), 3800); return () => clearTimeout(t); }, [aviso]);
+
+  // o tamanho da área da página (gira o aparelho: recalcula, mesma página)
+  useEffect(() => {
+    const el = palcoRef.current;
+    if (!el) return;
+    const medir = () => setPalco({ l: el.clientWidth, a: el.clientHeight });
+    medir();
+    let ro = null;
+    try { ro = new ResizeObserver(medir); ro.observe(el); } catch (e) { window.addEventListener("resize", medir); }
+    return () => { if (ro) ro.disconnect(); else window.removeEventListener("resize", medir); };
+  }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -2830,13 +3099,12 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
     };
   }, [obra.id]);
 
-  // a janela: a página atual, a próxima e a anterior
+  // a janela: a página atual, as vizinhas (a virada precisa delas prontas)
   useEffect(() => {
     const ab = abridor.current;
     if (!ab) return;
     const largura = Math.round(Math.min(2400, (window.innerWidth || 800) * (window.devicePixelRatio || 1)));
-    const janela = [pagina, pagina + 1, pagina - 1, pagina + 2].filter((i) => i >= 0 && i < obra.paginas);
-    janela.forEach((i) => {
+    [pagina, pagina + 1, pagina - 1, pagina + 2].filter((i) => i >= 0 && i < total).forEach((i) => {
       if (urlsRef.current[i] || pedidas.current[i]) return;
       pedidas.current[i] = true;
       ab.imagem(i, largura).then((b) => {
@@ -2846,65 +3114,230 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
       }).catch(() => { delete pedidas.current[i]; if (i === pagina) setErro("a página " + (i + 1) + " não abriu"); });
     });
     Object.keys(urlsRef.current).forEach((k) => {
-      if (Math.abs(k - pagina) > 3) { URL.revokeObjectURL(urlsRef.current[k]); delete urlsRef.current[k]; }
+      if (Math.abs(k - pagina) > 3) { URL.revokeObjectURL(urlsRef.current[k]); delete urlsRef.current[k]; delete analises.current[k]; }
     });
     onProgresso(obra, pagina);
   }, [pagina, urls === null, abridor.current]);
 
-  const ir = useCallback((d) => {
+  const aoCarregar = (i) => (ev) => {
+    const im = ev.currentTarget;
+    if (!dims[i] || dims[i].l !== im.naturalWidth) setDims((d) => Object.assign({}, d, { [i]: { l: im.naturalWidth, a: im.naturalHeight } }));
+  };
+  const dimAtual = dims[pagina] || dims[pagina + 1] || dims[pagina - 1] || { l: 2, a: 3 };
+  const ret = retanguloContido(palco.l, palco.a, dimAtual.l, dimAtual.a);
+
+  // ---- a virada
+  const terminarVirada = (dir, vira) => {
+    setFolha({ dir: dir, p: vira ? 1 : 0, animando: true });
+    setTimeout(() => {
+      if (vira) setPagina((p) => Math.min(total - 1, Math.max(0, p + dir)));
+      setFolha(null);
+      virando.current = false;
+    }, DURACAO_VIRADA);
+  };
+  const virar = useCallback((dir) => {
+    if (virando.current) return;           // cliques rápidos não pulam páginas
     setFim(false);
-    setPagina((p) => {
-      const n = p + d;
-      if (n >= obra.paginas) { setFim(true); return p; }
-      return Math.max(0, n);
-    });
-  }, [obra.paginas]);
+    if (dir > 0 && pagina >= total - 1) { setFim(true); return; }
+    if (dir < 0 && pagina <= 0) return;
+    if (MOVIMENTO_REDUZIDO) { setPagina((p) => p + dir); return; }
+    virando.current = true;
+    setFolha({ dir: dir, p: 0, animando: false });
+    setTimeout(() => terminarVirada(dir, true), 20);
+  }, [pagina, total]);
+
+  // ---- a camada do Toque para Ler, com o Voltar do aparelho
+  const abrirCamada = (rec) => {
+    setManual(null);
+    setCamada((c) => { if (c) URL.revokeObjectURL(c.url); return rec; });
+    if (!historico.current) { try { history.pushState({ superhqsCamada: 1 }, ""); historico.current = true; } catch (e) {} }
+  };
+  const fecharCamada = useCallback(() => {
+    setCamada((c) => { if (c) URL.revokeObjectURL(c.url); return null; });
+    setManual(null);
+    if (historico.current) { historico.current = false; try { history.back(); } catch (e) {} }
+  }, []);
+  useEffect(() => {
+    const voltar = () => { if (historico.current) { historico.current = false; setCamada((c) => { if (c) URL.revokeObjectURL(c.url); return null; }); setManual(null); } };
+    window.addEventListener("popstate", voltar);
+    return () => window.removeEventListener("popstate", voltar);
+  }, []);
+
+  const analise = async (i) => {
+    if (!analises.current[i]) analises.current[i] = analisarPagina(urlsRef.current[i]);
+    return analises.current[i];
+  };
+  const tocarParaLer = async (x, y) => {
+    const pt = telaParaImagem(x, y, ret, dimAtual.l, dimAtual.a);
+    if (!pt || !urlsRef.current[pagina]) { setControles((c) => !c); return; }
+    try {
+      const an = await analise(pagina);
+      const b = acharBalaoPerto(an.dados, an.l, an.a, pt.x * an.k, pt.y * an.k);
+      if (b.motivo) { setControles(true); setAviso({ texto: "Não achei um balão aqui", ponto: pt }); return; }
+      abrirCamada(await recortar(an.img, { x: b.x / an.k, y: b.y / an.k, l: b.l / an.k, a: b.a / an.k }));
+    } catch (e) { setAviso({ texto: "Não consegui ampliar esta página", ponto: pt }); }
+  };
+  const abrirManual = (pt) => {
+    const p = pt || { x: dimAtual.l / 2, y: dimAtual.a / 2 };
+    setAviso(null); setControles(false);
+    setManual(caixaManual(p.x, p.y, dimAtual.l, dimAtual.a));
+  };
+  const ampliarManual = async () => {
+    try { const an = await analise(pagina); abrirCamada(await recortar(an.img, manual)); }
+    catch (e) { setAviso({ texto: "Não consegui ampliar esta página" }); }
+  };
+
+  // ---- os gestos sobre a página
+  const caixaDoPalco = () => palcoRef.current.getBoundingClientRect();
+  const aoTocarBaixo = (ev) => {
+    if (camada || manual || virando.current) return;
+    const c = caixaDoPalco();
+    gesto.current = { x0: ev.clientX, y0: ev.clientY, t0: Date.now(), x: ev.clientX - c.left, y: ev.clientY - c.top, rastro: [[ev.clientX, Date.now()]], dir: 0 };
+    try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+  };
+  const aoMover = (ev) => {
+    const g = gesto.current;
+    if (!g) return;
+    const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
+    g.rastro.push([ev.clientX, Date.now()]);
+    if (g.rastro.length > 6) g.rastro.shift();
+    if (!g.dir) {
+      if (classificarGesto(dx, dy, Date.now() - g.t0) !== "arraste") return;
+      const dir = dx < 0 ? 1 : -1;
+      if ((dir > 0 && pagina >= total - 1) || (dir < 0 && pagina <= 0) || MOVIMENTO_REDUZIDO) { g.dir = dir; g.semFolha = true; return; }
+      g.dir = dir;
+      virando.current = true;
+    }
+    if (g.semFolha) return;
+    const p = Math.min(1, Math.max(0, (g.dir > 0 ? -dx : dx) / Math.max(1, ret.l)));
+    setFolha({ dir: g.dir, p: p, animando: false });
+  };
+  const aoSoltar = (ev) => {
+    const g = gesto.current;
+    gesto.current = null;
+    if (!g) return;
+    const dx = ev.clientX - g.x0, dy = ev.clientY - g.y0;
+    if (!g.dir) {
+      if (classificarGesto(dx, dy, Date.now() - g.t0) !== "toque") return;
+      if (toqueLer) { tocarParaLer(g.x, g.y); return; }
+      const u = g.x / palco.l;
+      if (u < 0.25) virar(-1); else if (u > 0.75) virar(1); else setControles((c) => !c);
+      return;
+    }
+    if (g.semFolha) {
+      if (g.dir > 0 && pagina >= total - 1 && Math.abs(dx) > 40) setFim(true);
+      else if (MOVIMENTO_REDUZIDO && Math.abs(dx) > 40) setPagina((p) => Math.min(total - 1, Math.max(0, p + g.dir)));
+      return;
+    }
+    const r = g.rastro, a = r[0], b = r[r.length - 1];
+    const vel = b[1] > a[1] ? (Math.abs(b[0] - a[0]) / Math.max(1, ret.l)) / ((b[1] - a[1]) / 1000) : 0;
+    const sentidoCerto = g.dir > 0 ? b[0] <= a[0] : b[0] >= a[0];
+    const p = Math.min(1, Math.max(0, (g.dir > 0 ? -dx : dx) / Math.max(1, ret.l)));
+    terminarVirada(g.dir, decidirVirada(p, sentidoCerto ? vel : 0));
+  };
+  const aoCancelar = () => { const g = gesto.current; gesto.current = null; if (g && g.dir && !g.semFolha) terminarVirada(g.dir, false); };
+
   useEffect(() => {
     const tecla = (e) => {
-      if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); ir(1); }
-      else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); ir(-1); }
+      if (camada || manual) { if (e.key === "Escape") { e.preventDefault(); fecharCamada(); } return; }
+      if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); virar(1); }
+      else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); virar(-1); }
       else if (e.key === "Escape") onFechar();
     };
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);
-  }, [ir, onFechar]);
+  }, [virar, onFechar, camada, manual, fecharCamada]);
 
-  const tocar = (e) => {
-    const x = e.clientX / (window.innerWidth || 1);
-    if (x < 0.3) ir(-1);
-    else if (x > 0.7) ir(1);
-    else setControles((c) => !c);
-  };
-  const barra = { position: "absolute", left: 0, right: 0, zIndex: 2, background: "rgba(7,8,13,0.86)", color: "#F5F7FF", padding: "10px 14px",
-    display: "flex", alignItems: "center", gap: 10, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" };
+  const mudarToqueLer = () => setToqueLer((v) => { store.set(CHAVE_TOQUE_LER, v ? "0" : "1"); setAviso({ texto: v ? "Toque para Ler desligado: as bordas viram a página" : "Toque para Ler ligado: toque num balão" }); return !v; });
+
+  // ---- o desenho
+  const caixaImg = { position: "absolute", left: ret.x, top: ret.y, width: ret.l, height: ret.a };
+  const img = (i, extra) => urls[i]
+    ? <img src={urls[i]} alt={i === pagina ? "Página " + (i + 1) + " de " + total : ""} draggable={false} onLoad={aoCarregar(i)}
+        style={Object.assign({ width: "100%", height: "100%", objectFit: "contain", display: "block" }, extra)} />
+    : <div style={{ width: "100%", height: "100%", background: "#0D111C" }} />;
+  const base = folha && folha.dir > 0 ? pagina + 1 : pagina;
+  const giro = folha ? (folha.dir > 0 ? folha.p : 1 - folha.p) : 0;   // 0 = folha deitada à direita, 1 = virada à esquerda
+  const sombra = folha ? Math.sin(Math.PI * folha.p) : 0;
+  const barra = { position: "absolute", left: 0, right: 0, zIndex: 7, background: "rgba(7,8,13,0.86)", color: "#F5F7FF", padding: "10px 12px",
+    display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" };
+  const icone = { background: "none", border: "none", color: "#F5F7FF", fontSize: 20, cursor: "pointer", minWidth: 44, minHeight: 44, borderRadius: 12 };
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "var(--reader-canvas)", userSelect: "none", touchAction: "manipulation" }}>
-      <div onClick={tocar} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {urls[pagina]
-          ? <img src={urls[pagina]} alt={"Página " + (pagina + 1) + " de " + obra.paginas} draggable={false}
-              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
-          : <div style={{ color: "#A6A6B3", fontSize: 14, padding: 24, textAlign: "center" }}>{erro || "Abrindo a página " + (pagina + 1) + "…"}</div>}
+    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "var(--reader-canvas)", userSelect: "none", WebkitUserSelect: "none" }}>
+      <div ref={palcoRef} tabIndex={-1} onPointerDown={aoTocarBaixo} onPointerMove={aoMover} onPointerUp={aoSoltar} onPointerCancel={aoCancelar}
+        style={{ position: "absolute", inset: 0, touchAction: "pinch-zoom", perspective: 2200, perspectiveOrigin: (ret.x) + "px 50%", outline: "none", overflow: "hidden" }}>
+        {urls[pagina] || folha ? (
+          <React.Fragment>
+            <div style={caixaImg}>{img(base)}</div>
+            {folha && (
+              <React.Fragment>
+                {/* a sombra que a folha projeta na página de baixo */}
+                <div style={Object.assign({}, caixaImg, { pointerEvents: "none", background: "linear-gradient(to right, rgba(0,0,0," + (0.55 * sombra).toFixed(3) + ") 0%, rgba(0,0,0," + (0.18 * sombra).toFixed(3) + ") 45%, rgba(0,0,0,0) 100%)" })} />
+                <div style={Object.assign({}, caixaImg, { transformOrigin: "left center", transformStyle: "preserve-3d",
+                  transform: "rotateY(" + (-180 * giro).toFixed(2) + "deg)", transition: folha.animando ? "transform " + DURACAO_VIRADA + "ms cubic-bezier(.3,.7,.4,1)" : "none", willChange: "transform", zIndex: 3 })}>
+                  {/* frente: a página que vira */}
+                  <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", overflow: "hidden" }}>
+                    {img(folha.dir > 0 ? pagina : pagina - 1)}
+                    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(to left, rgba(0,0,0," + (0.35 * sombra).toFixed(3) + "), rgba(255,255,255," + (0.12 * sombra).toFixed(3) + ") 30%, rgba(0,0,0,0) 70%)" }} />
+                  </div>
+                  {/* verso: o papel do outro lado da folha (não espelha a arte) */}
+                  <div style={{ position: "absolute", inset: 0, transform: "rotateY(180deg)", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden",
+                    background: "linear-gradient(to right, #CFC8B8 0%, #EEE9DE 18%, #F7F3EA 55%, #E4DED0 100%)",
+                    boxShadow: "inset 0 0 40px rgba(0,0,0," + (0.25 * sombra).toFixed(3) + ")" }} />
+                </div>
+              </React.Fragment>
+            )}
+          </React.Fragment>
+        ) : <div style={{ color: "#A6A6B3", fontSize: 14, padding: 24, textAlign: "center", position: "absolute", left: 0, right: 0, top: "45%" }}>{erro || "Abrindo a página " + (pagina + 1) + "…"}</div>}
+        {/* as páginas vizinhas já decodificadas, escondidas, para a virada não piscar */}
+        <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0, pointerEvents: "none" }} aria-hidden="true">
+          {[pagina - 1, pagina + 1].filter((i) => urls[i]).map((i) => <img key={i} src={urls[i]} alt="" onLoad={aoCarregar(i)} />)}
+        </div>
+        {manual && (
+          <SelecaoManual caixa={manual} ret={ret} natL={dimAtual.l} onMudar={setManual} onAmpliar={ampliarManual}
+            onCancelar={() => { setManual(null); if (historico.current) { historico.current = false; try { history.back(); } catch (e) {} } }} />
+        )}
       </div>
-      {controles && (
+
+      {controles && !manual && (
         <React.Fragment>
-          <div style={{ ...barra, top: 0, paddingTop: "calc(10px + env(safe-area-inset-top))" }}>
-            <button onClick={onFechar} aria-label="Voltar à estante" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 22, cursor: "pointer", padding: "2px 6px" }}>✕</button>
-            <div style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{obra.titulo}</div>
+          <div style={{ ...barra, top: 0, paddingTop: "calc(8px + env(safe-area-inset-top))" }}>
+            <button onClick={onFechar} aria-label="Voltar à estante" style={icone}>✕</button>
+            <div style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{obra.titulo}</div>
+            <button onClick={mudarToqueLer} aria-pressed={toqueLer} aria-label="Toque para Ler"
+              style={{ ...icone, fontSize: 15, fontWeight: 600, padding: "0 10px", background: toqueLer ? "#17244C" : "none", color: toqueLer ? "#8EA5FF" : "#BAC3D9" }}>💬 Toque para Ler</button>
+            <button onClick={() => abrirManual()} aria-label="Selecionar texto manualmente" style={icone}>✂</button>
           </div>
-          <div style={{ ...barra, bottom: 0, paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
-            <button onClick={() => ir(-1)} aria-label="Página anterior" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 20, cursor: "pointer" }}>‹</button>
-            <input type="range" min={1} max={obra.paginas} value={pagina + 1} aria-label="Ir à página"
+          <div style={{ ...barra, bottom: 0, paddingBottom: "calc(8px + env(safe-area-inset-bottom))" }}>
+            <button onClick={() => virar(-1)} aria-label="Página anterior" style={icone}>‹</button>
+            <input type="range" min={1} max={total} value={pagina + 1} aria-label="Ir à página"
               onChange={(e) => { setFim(false); setPagina(+e.target.value - 1); }} style={{ flex: 1, accentColor: "#6F8CFF", minHeight: 44 }} />
-            <span style={{ fontSize: 12.5, minWidth: 64, textAlign: "center" }}>{pagina + 1} / {obra.paginas}</span>
-            <button onClick={() => ir(1)} aria-label="Próxima página" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 20, cursor: "pointer" }}>›</button>
+            <span style={{ fontSize: 13, minWidth: 92, textAlign: "center" }}>{pagina + 1} / {total} · {Math.round(100 * (pagina + 1) / total)}%</span>
+            <button onClick={() => virar(1)} aria-label="Próxima página" style={icone}>›</button>
           </div>
         </React.Fragment>
       )}
+
+      {aviso && !camada && (
+        <div role="status" style={{ position: "absolute", left: 12, right: 12, bottom: "calc(86px + env(safe-area-inset-bottom))", zIndex: 8, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+          <div style={{ background: "rgba(17,26,48,0.96)", color: "#F5F7FF", border: "1px solid #2B3954", borderRadius: 999, padding: "8px 8px 8px 16px", fontSize: 14, display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
+            <span>{aviso.texto}</span>
+            {aviso.ponto && <button onClick={() => abrirManual(aviso.ponto)} style={{ minHeight: 36, borderRadius: 999, border: "none", background: "#6F8CFF", color: "#090F21", fontWeight: 700, padding: "0 12px", cursor: "pointer" }}>✂ Selecionar texto</button>}
+          </div>
+        </div>
+      )}
+
+      {camada && <CamadaBalao recorte={camada} onFechar={fecharCamada} onAjustar={() => {
+        const c = camada;
+        setCamada(null); URL.revokeObjectURL(c.url);
+        abrirManual(null);
+      }} />}
+
       {fim && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 3, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 9, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ ...S.card, maxWidth: 340, width: "100%", textAlign: "center" }}>
-            <div style={{ fontSize: 13, letterSpacing: 2, color: "var(--cinza)", fontWeight: 800 }}>FIM</div>
-            <div style={{ fontSize: 17, fontWeight: 900, margin: "6px 0 16px" }}>{obra.titulo}</div>
+            <div style={{ fontSize: 13, letterSpacing: 2, color: "var(--cinza)", fontWeight: 700 }}>FIM</div>
+            <div style={{ fontSize: 17, fontWeight: 700, margin: "6px 0 16px" }}>{obra.titulo}</div>
             <button style={S.btn} onClick={onFechar}>Voltar à estante</button>
             <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={() => { setFim(false); setPagina(0); }}>Ler desde o início</button>
             <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={() => setFim(false)}>Ficar na última página</button>
