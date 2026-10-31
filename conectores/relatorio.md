@@ -1,10 +1,10 @@
 # Relatório da sincronização do acervo
 
-Gerado em 2026-10-31T15:06:42.761Z. Gravado a cada execução por `conectores/rodar.js`.
+Gerado em 2026-10-31T15:13:31.895Z. Gravado a cada execução por `conectores/rodar.js`.
 
 | Fonte | Situação | Mudança | Na fonte | Publicadas | Em revisão |
 |---|---|---|---|---|---|
-| Little Nemo in Slumberland — 1907 | ok | alterada | 52 | 52 | 0 |
+| Little Nemo in Slumberland — 1908 | ok | alterada | 52 | 52 | 0 |
 
 No catálogo: 4 obras publicadas, 0 indisponíveis, 163 páginas, 0 itens esperando revisão.
 
@@ -14,17 +14,13 @@ No catálogo: 4 obras publicadas, 0 indisponíveis, 163 páginas, 0 itens espera
 
 | Fonte | Largura mediana do original | Páginas trocadas por versão maior |
 |---|---|---|
-| Little Nemo in Slumberland — 1907 | 1752 px | 0 |
+| Little Nemo in Slumberland — 1908 | 1748 px | 1 |
 
-Outros arquivos em **Little Nemo in Slumberland — 1907** (fora do padrão, os maiores primeiro):
+Outros arquivos em **Little Nemo in Slumberland — 1908** (fora do padrão, os maiores primeiro):
 
-- Winsor McCay, Little Nemo in Slumberland - Climbing the Great North Pole, 1907, NGA 142154.jpg — 3208×4000 (image/jpeg)
-- Nemo012707.jpg — 1220×1592 (image/jpeg)
-- Nemo120107.jpg — 1202×1571 (image/jpeg)
-- Nemo-pl1.jpg — 811×1043 (image/jpeg)
-- Little Nemo in the forest.jpg — 968×631 (image/jpeg)
-- Little Nemo Palace.jpg — 675×549 (image/jpeg)
-- Little Nemo snow.jpg — 693×357 (image/jpeg)
-- Little Nemo snow 4.jpg — 263×637 (image/jpeg)
-- Little Nemo snow 2.jpg — 260×610 (image/jpeg)
-- Little Nemo snow 3.jpg — 260×610 (image/jpeg)
+- Little nemo the walking bed.jpg — 800×1033 (image/jpeg)
+- Little Nemo Walking Bed detail.jpg — 550×964 (image/jpeg)
+- Little Nemo Stripes.jpg — 610×800 (image/jpeg)
+- Little Nemo army.jpg — 496×647 (image/jpeg)
+- Little Nemo walking bed detail colour.jpg — 241×799 (image/jpeg)
+- Little Nemo walking bed detail.jpg — 175×569 (image/jpeg)
