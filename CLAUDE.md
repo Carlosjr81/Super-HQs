@@ -124,6 +124,12 @@ no projeto** (o próprio documento dele pede isso).
   própria página. É desenhado já no tamanho da tela × densidade, com
   suavização alta e teto de 3000 px (`pixelsDoRecorte`). Só a página atual
   guarda o original na memória. Sem rede, cai para a página aberta.
+  Por cima vai um **realce de nitidez** (`realcarNitidez`: máscara de
+  nitidez só na luminância, os três canais por igual, então o tom não muda;
+  textura abaixo do limiar fica como está), só no balão ampliado, nunca na
+  página. O botão "Original" mostra sem realce (fica lembrado em
+  `superhqs:balaoOriginal`). Escaneamento antigo de jornal tem limite: o
+  realce firma a borda da letra, não inventa detalhe.
 - Cartões com raio 16 e sombra suave só no claro; no escuro, borda.
 
 ## O acervo sincronizado (`conectores/`, `catalogo/acervo.json`)

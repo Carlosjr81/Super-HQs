@@ -263,7 +263,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31i";
+const VERSAO_APP = "2026-10-31j";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -2586,6 +2586,39 @@ function pixelsDoRecorte(rl, ra, larguraUtil, alturaTela, dpr) {
   esc = Math.min(esc, 3000 / Math.max(rl, ra));
   return { l: Math.max(1, Math.round(rl * esc)), a: Math.max(1, Math.round(ra * esc)) };
 }
+// O realce do balão ampliado: máscara de nitidez (unsharp mask) só na
+// luminância. Soma a cada pixel a diferença entre o brilho dele e o brilho
+// borrado em volta (raio `raio`), vezes `forca`, nos três canais por igual:
+// a borda da letra fica mais firme e a cor do papel e da tinta não muda de
+// tom. Diferenças menores que `limiar` (textura do papel, ruído do JPEG) não
+// são realçadas. Mexe em `dados` (RGBA) e devolve o mesmo vetor.
+function realcarNitidez(dados, l, a, raio, forca, limiar) {
+  const n = l * a, lum = new Float32Array(n), tmp = new Float32Array(n);
+  for (let i = 0; i < n; i++) lum[i] = 0.299 * dados[i * 4] + 0.587 * dados[i * 4 + 1] + 0.114 * dados[i * 4 + 2];
+  // desfoque de caixa (média móvel), três passadas em cada direção ~ gaussiano
+  const r = Math.max(1, Math.round(raio));
+  const caixa = (de, para, horizontal) => {
+    const linhas = horizontal ? a : l, comp = horizontal ? l : a;
+    for (let y = 0; y < linhas; y++) {
+      const idx = (k) => horizontal ? y * l + k : k * l + y;
+      let soma = 0;
+      for (let k = -r; k <= r; k++) soma += de[idx(Math.min(comp - 1, Math.max(0, k)))];
+      for (let k = 0; k < comp; k++) {
+        para[idx(k)] = soma / (2 * r + 1);
+        soma += de[idx(Math.min(comp - 1, k + r + 1))] - de[idx(Math.max(0, k - r))];
+      }
+    }
+  };
+  let borrado = Float32Array.from(lum);
+  for (let p = 0; p < 3; p++) { caixa(borrado, tmp, true); caixa(tmp, borrado, false); }
+  for (let i = 0; i < n; i++) {
+    const d = lum[i] - borrado[i];
+    if (Math.abs(d) < limiar) continue;
+    const soma = d * forca;
+    for (let c = 0; c < 3; c++) { const v = dados[i * 4 + c] + soma; dados[i * 4 + c] = v < 0 ? 0 : v > 255 ? 255 : v; }
+  }
+  return dados;
+}
 // ---------------- FIM DAS CONTAS DO LEITOR ----------------
 
 // ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------
@@ -3095,8 +3128,10 @@ const larguraDaCamada = () => Math.min((window.innerWidth || 375) * 0.92, 900) -
 // do acervo ou o PDF redesenhado; sem ela, a página aberta). `caixa` vem nas
 // coordenadas de `img`, a página aberta. Sem filtro nem cor nova: é a arte
 // original, desenhada já no tamanho da tela com a suavização mais alta (o
-// navegador, esticando por CSS, borra mais).
-function recortar(img, caixa, fonte) {
+// navegador, esticando por CSS, borra mais). Saem duas: a realçada (bordas
+// das letras mais firmes, ver realcarNitidez) e a original, e a camada troca
+// entre elas pelo botão "Original"/"Nítido".
+async function recortar(img, caixa, fonte) {
   const f = fonte && fonte.naturalWidth ? fonte : img;
   const k = f.naturalWidth / img.naturalWidth;
   const x = Math.max(0, Math.round(caixa.x * k)), y = Math.max(0, Math.round(caixa.y * k));
@@ -3108,14 +3143,28 @@ function recortar(img, caixa, fonte) {
   const ctx = c.getContext("2d");
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
   ctx.drawImage(f, x, y, rl, ra, 0, 0, c.width, c.height);
-  return new Promise((r) => c.toBlob((b) => r({ url: URL.createObjectURL(b), l: c.width, a: c.height, rl: rl, ra: ra }), "image/png"));
+  const blob = () => new Promise((r) => c.toBlob(r, "image/png"));
+  const original = await blob();
+  // o realce acompanha o quanto o recorte foi esticado: mais ampliado, raio maior
+  const esc = c.width / rl;
+  try {
+    const img2 = ctx.getImageData(0, 0, c.width, c.height);
+    realcarNitidez(img2.data, c.width, c.height, Math.max(1, esc * 0.9), 1.4, 3);
+    ctx.putImageData(img2, 0, 0);
+  } catch (e) { /* sem realce, fica o original */ }
+  const realcado = await blob();
+  return { url: URL.createObjectURL(realcado), urlOriginal: URL.createObjectURL(original), l: c.width, a: c.height, rl: rl, ra: ra };
 }
+function soltarRecorte(c) { if (c) { URL.revokeObjectURL(c.url); if (c.urlOriginal) URL.revokeObjectURL(c.urlOriginal); } }
 
 // A camada do Toque para Ler: só o recorte, ampliado até 92% da largura útil,
 // com ampliação própria e rolagem interna. Fecha por ✕, toque fora, Esc e o
 // Voltar do aparelho (uma entrada no histórico enquanto está aberta).
+const CHAVE_BALAO_ORIGINAL = "superhqs:balaoOriginal";
 function CamadaBalao({ recorte, onFechar, onAjustar }) {
   const [zoom, setZoom] = useState(1);
+  const [semRealce, setSemRealce] = useState(() => store.get(CHAVE_BALAO_ORIGINAL) === "1");
+  const trocarRealce = () => setSemRealce((v) => { store.set(CHAVE_BALAO_ORIGINAL, v ? "0" : "1"); return !v; });
   const fechar = useRef(null);
   useEffect(() => {
     const ant = document.activeElement;
@@ -3130,14 +3179,16 @@ function CamadaBalao({ recorte, onFechar, onAjustar }) {
       <div role="dialog" aria-modal="true" aria-label="Texto ampliado" onClick={(e) => e.stopPropagation()}
         style={{ background: "#111A30", border: "1px solid #2B3954", borderRadius: 16, padding: 12, maxWidth: "92vw", boxShadow: "0 18px 50px rgba(0,0,0,0.55)", animation: MOVIMENTO_REDUZIDO ? "none" : "surge 160ms ease-out both" }}>
         <div style={{ maxWidth: larguraUtil, maxHeight: "72vh", overflow: "auto", borderRadius: 10, WebkitOverflowScrolling: "touch" }}>
-          <img src={recorte.url} alt="Recorte ampliado da página" draggable={false}
+          <img src={semRealce && recorte.urlOriginal ? recorte.urlOriginal : recorte.url} alt="Recorte ampliado da página" draggable={false}
             style={{ display: "block", margin: "0 auto", borderRadius: 10, width: Math.round(t.l * zoom), height: Math.round(t.a * zoom), maxWidth: "none" }} />
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button style={btn} aria-label="Diminuir" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.25).toFixed(2)))}>−</button>
             <button style={btn} aria-label="Aumentar" onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))}>+</button>
-            <button style={btn} onClick={onAjustar} aria-label="Ajustar a área à mão">✂ Ajustar</button>
+            <button style={btn} onClick={onAjustar} aria-label="Ajustar a área à mão" title="Ajustar a área">✂</button>
+            {recorte.urlOriginal && <button style={btn} onClick={trocarRealce} aria-pressed={!semRealce}
+              aria-label={semRealce ? "Mostrar com as letras realçadas" : "Mostrar o recorte original, sem realce"}>{semRealce ? "Nítido" : "Original"}</button>}
           </div>
           <button ref={fechar} style={{ ...btn, background: "#6F8CFF", color: "#090F21", border: "none" }} onClick={onFechar} aria-label="Fechar o texto ampliado">✕</button>
         </div>
@@ -3305,16 +3356,16 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
   // ---- a camada do Toque para Ler, com o Voltar do aparelho
   const abrirCamada = (rec) => {
     setManual(null);
-    setCamada((c) => { if (c) URL.revokeObjectURL(c.url); return rec; });
+    setCamada((c) => { soltarRecorte(c); return rec; });
     if (!historico.current) { try { history.pushState({ superhqsCamada: 1 }, ""); historico.current = true; } catch (e) {} }
   };
   const fecharCamada = useCallback(() => {
-    setCamada((c) => { if (c) URL.revokeObjectURL(c.url); return null; });
+    setCamada((c) => { soltarRecorte(c); return null; });
     setManual(null);
     if (historico.current) { historico.current = false; try { history.back(); } catch (e) {} }
   }, []);
   useEffect(() => {
-    const voltar = () => { if (historico.current) { historico.current = false; setCamada((c) => { if (c) URL.revokeObjectURL(c.url); return null; }); setManual(null); } };
+    const voltar = () => { if (historico.current) { historico.current = false; setCamada((c) => { soltarRecorte(c); return null; }); setManual(null); } };
     window.addEventListener("popstate", voltar);
     return () => window.removeEventListener("popstate", voltar);
   }, []);
@@ -3509,7 +3560,7 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
 
       {camada && <CamadaBalao recorte={camada} onFechar={fecharCamada} onAjustar={() => {
         const c = camada;
-        setCamada(null); URL.revokeObjectURL(c.url);
+        setCamada(null); soltarRecorte(c);
         abrirManual(null);
       }} />}
 

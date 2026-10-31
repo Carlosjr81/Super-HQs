@@ -9,7 +9,7 @@ function pedaco(de, ate) {
   return html.slice(i, f);
 }
 eval(pedaco("// ---------------- LEITOR: AS CONTAS", "// ---------------- FIM DAS CONTAS DO LEITOR") +
-  "\nglobalThis.L = { retanguloContido, telaParaImagem, classificarGesto, decidirVirada, acharBalao, acharBalaoPerto, caixaManual, tamanhoNaCamada, pixelsDoRecorte };");
+  "\nglobalThis.L = { retanguloContido, telaParaImagem, classificarGesto, decidirVirada, acharBalao, acharBalaoPerto, caixaManual, tamanhoNaCamada, pixelsDoRecorte, realcarNitidez };");
 
 let ok = 0, mal = 0;
 function teste(nome, esperado, obtido) {
@@ -87,6 +87,25 @@ teste("balão pequeno é desenhado na densidade da tela (sem esticar por CSS)", 
 teste("recorte do original grande não é reduzido além do preciso", { l: 1445, a: 1926 }, L.pixelsDoRecorte(600, 800, 321, 812, 3));
 teste("nunca passa de 3000 px no lado maior", true, Math.max(L.pixelsDoRecorte(2000, 2600, 900, 2000, 3).l, L.pixelsDoRecorte(2000, 2600, 900, 2000, 3).a) <= 3000);
 teste("nunca encolhe abaixo do recorte original (até o teto)", { l: 2000, a: 1000 }, L.pixelsDoRecorte(2000, 1000, 321, 812, 1));
+
+console.log("\n--- o realce das letras ---");
+// faixa 40x1: papel creme (250,240,200) e tinta escura (40,30,20), com a borda em rampa
+function faixa() {
+  const d = new Uint8ClampedArray(40 * 4);
+  for (let x = 0; x < 40; x++) {
+    const t = x < 18 ? 0 : x > 22 ? 1 : (x - 18) / 4;
+    d[x * 4] = 250 - 210 * t; d[x * 4 + 1] = 240 - 210 * t; d[x * 4 + 2] = 200 - 180 * t; d[x * 4 + 3] = 255;
+  }
+  return d;
+}
+const lumi = (d, x) => 0.299 * d[x * 4] + 0.587 * d[x * 4 + 1] + 0.114 * d[x * 4 + 2];
+const f0 = faixa(), f1 = L.realcarNitidez(faixa(), 40, 1, 2, 1.1, 3);
+teste("a borda da letra fica mais firme (mais contraste dos dois lados)", true, lumi(f1, 17) > lumi(f0, 17) && lumi(f1, 23) < lumi(f0, 23));
+teste("o papel longe da letra não muda", [250, 240, 200], [f1[2 * 4], f1[2 * 4 + 1], f1[2 * 4 + 2]]);
+teste("a tinta longe da borda não muda", [40, 30, 20], [f1[37 * 4], f1[37 * 4 + 1], f1[37 * 4 + 2]]);
+teste("o tom não muda: os três canais andam por igual", true, (f1[19 * 4] - f0[19 * 4]) === (f1[19 * 4 + 2] - f0[19 * 4 + 2]) || Math.abs((f1[19 * 4] - f0[19 * 4]) - (f1[19 * 4 + 2] - f0[19 * 4 + 2])) <= 1);
+const ruido = new Uint8ClampedArray(40 * 4).map((v, i) => (i % 4 === 3 ? 255 : 200 + ((i >> 2) % 2)));
+teste("textura fina do papel (abaixo do limiar) não é realçada", Array.from(ruido), Array.from(L.realcarNitidez(Uint8ClampedArray.from(ruido), 40, 1, 2, 1.1, 3)));
 
 console.log("\n" + ok + " passou / " + mal + " falhou");
 process.exit(mal ? 1 : 0);
