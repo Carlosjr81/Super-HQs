@@ -82,6 +82,65 @@ quadrinistas, editoras pequenas), Creative Commons compatível com o uso (as
 também pode abrir os **próprios arquivos** (PDF e CBZ), que ficam só no
 aparelho dele.
 
+### 3.1 A dificuldade com os acervos do Ink e do Comixfy
+
+**Os dois sites:**
+- **Ink**: https://www.ink.app.br/
+- **Comixfy**: https://app.comixfy.app/
+
+(Só os domínios públicos. O dono tem um link de acesso privado ao Comixfy;
+o trecho de acesso foi omitido de propósito: o repositório é público, e o
+próprio documento de requisitos do dono pede que esse link não entre no
+projeto.)
+
+**O que o dono quer:** que todo o acervo das duas plataformas (as revistas e
+as páginas, não só a lista de títulos) apareça no Super HQs para os usuários
+lerem, atualizado sozinho quando sair edição nova.
+
+**Por que isso não andou, ponto a ponto:**
+
+1. **Direitos (o bloqueio principal).** O conteúdo das duas plataformas é de
+   editoras e autores que as licenciaram para leitura **dentro delas**. A
+   assinatura do dono dá direito de ler, não de copiar nem de republicar em
+   outro app. Para o Super HQs oferecer essas obras, cada titular (editora ou
+   autor) teria de licenciar ao dono. Nenhuma licença assim foi apresentada.
+2. **"Autorização do dono" não resolve.** Outra IA (Codex, PR #1) chegou a
+   escrever no `CLAUDE.md` que o dono "autorizou copiar e reutilizar o
+   acervo Ink/Comixfy". Esse trecho foi retirado na integração: o dono do app
+   não é o titular das obras, então não pode autorizar a cópia delas.
+3. **Acesso técnico.** Não há API pública nem exportação para esse uso. Os
+   caminhos que sobram (entrar com o login do dono, raspar as páginas,
+   contornar proteção de cópia) violam os termos das plataformas e, no caso de
+   proteção técnica, também a lei. O Claude não usa senha de terceiros nem
+   raspa conteúdo, e isso está registrado como regra no `CLAUDE.md`.
+4. **Risco para o projeto inteiro.** Publicar esse conteúdo sem licença expõe
+   o dono a ação por violação de direito autoral (Lei 9.610/98; art. 184 do
+   Código Penal, agravado por cobrar assinatura) e permite que o Google
+   suspenda o projeto Firebase (levando login, contas e pagamentos) e que o
+   GitHub tire o site do ar.
+5. **Ligar o Firebase Storage (plano Blaze) não muda isso.** O Storage
+   resolve onde guardar os arquivos, não o direito de publicá-los.
+
+**O que já está pronto e funcionaria com conteúdo autorizado:**
+- Envio pelo painel do dono, com registro de direitos por edição (seção 2,
+  versão m), assim que o Storage for ligado.
+- "Conectar acervo" para um índice de edições servido por quem tiver os
+  direitos (versão l).
+- Cada leitor abre os **próprios arquivos** (PDF e CBZ que ele comprou ou
+  baixou legalmente), que ficam só no aparelho dele, sem passar pelo servidor.
+
+**Caminhos legítimos para ter um acervo grande:**
+- Licença direta com editoras, independentes ou quadrinistas: o registro de
+  direitos de cada edição já existe no app para isso.
+- Domínio público no Brasil (autor morto há mais de 70 anos) e Creative
+  Commons compatível com o uso (as "NC" não servem se o app for pago).
+- Procurar as próprias plataformas para uma parceria (por exemplo, link ou
+  integração oficial), se elas oferecerem.
+
+**Pergunta para a IA avaliadora:** existe algum caminho legal e técnico
+que não foi considerado para oferecer esse acervo no Super HQs, além da
+licença dos titulares?
+
 Outro pedido, recebido no fim da sessão, propunha uma arquitetura com API
 REST + PostgreSQL + CDN. O Claude entregou o desenho (pastas, esquema SQL,
 endpoint de listagem com paginação por cursor, componente de leitura), mas
