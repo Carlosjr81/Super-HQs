@@ -7,7 +7,7 @@ const ctx = { URL, Set, Map, Blob, crypto: webcrypto, AbortController, setTimeou
 vm.createContext(ctx);
 vm.runInContext(trecho("// ---------------- ESTANTE: AS CONTAS", "// ---------------- FIM DAS CONTAS DA ESTANTE") +
   trecho("// ---------------- CATALOGO: AS CONTAS", "// ---------------- FIM DAS CONTAS DO CATALOGO") +
-  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal};", ctx);
+  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal, caminhoNoArmazenamento, urlDoArmazenamento, direitosCompletos, colecaoDaTrilha, fichaDoAcervoApp, resumoDoEnvio};", ctx);
 let ok = 0, mal = 0;
 function teste(nome, esperado, obtido) {
   if (JSON.stringify(esperado) === JSON.stringify(obtido)) { ok++; console.log("  ok   " + nome); }
@@ -28,6 +28,27 @@ teste("rejeita hash ausente",true,recusa(d=>delete d.items[0].sha256));
 teste("rejeita edição sem páginas",true,recusa(d=>d.items[0].page_count=0));
 teste("rejeita tamanho negativo",true,recusa(d=>d.items[0].size_bytes=-1));
 teste("rejeita ausência de registro de direitos",true,recusa(d=>delete d.rights));
+// ---- o acervo do app (Storage + Firestore)
+const shaA = "b".repeat(64);
+teste("arquivo no Storage com o nome do SHA-256", ["acervo/"+shaA+".cbz","acervo/"+shaA+".pdf"], [F.caminhoNoArmazenamento(shaA,"zip"), F.caminhoNoArmazenamento(shaA,"pdf")]);
+teste("URL do Storage com o caminho codificado", "https://firebasestorage.googleapis.com/v0/b/super-hqs.firebasestorage.app/o/acervo%2F"+shaA+".cbz?alt=media", F.urlDoArmazenamento("super-hqs.firebasestorage.app","acervo/"+shaA+".cbz"));
+teste("direitos: titular, licença e origem obrigatórios", [true,false,false], [F.direitosCompletos({titular:"A",licenca:"B",origem:"C"}), F.direitosCompletos({titular:"A",licenca:" ",origem:"C"}), F.direitosCompletos(null)]);
+teste("a pasta vira a coleção", ["Turma", "", "Sub"], [F.colecaoDaTrilha("HQs/Turma/Edição 1.cbz"), F.colecaoDaTrilha("solta.cbz"), F.colecaoDaTrilha("A/B/Sub/x.pdf")]);
+const fichaA = F.fichaDoAcervoApp({uid:shaA, sha256:shaA, titulo:"Edição 1", tipo:"zip", paginas:24, tamanho:999, caminho:"acervo/"+shaA+".cbz", categoria:"manga", capa:"data:image/jpeg;base64,AAAA", titular:"T", licenca:"L", origem:"O", status:"publicada"}, "balde");
+teste("ficha do acervo vira edição da estante, privada e com direitos", [shaA, 24, "manga", true, "T", "data:image/jpeg;base64,AAAA"], [fichaA.id, fichaA.paginas, fichaA.categoria, fichaA.online.privado, fichaA.direitos.titular, fichaA.capaUrl]);
+teste("capa que não é JPEG em base64 é descartada (nada de script na capa)", "", F.fichaDoAcervoApp({uid:shaA, tipo:"pdf", paginas:1, caminho:"x", capa:"javascript:alert(1)"}, "b").capaUrl);
+teste("ficha sem caminho, sem páginas ou com tipo estranho não entra", [null,null,null], [F.fichaDoAcervoApp({uid:shaA,tipo:"zip",paginas:3},"b"), F.fichaDoAcervoApp({uid:shaA,tipo:"zip",paginas:0,caminho:"x"},"b"), F.fichaDoAcervoApp({uid:shaA,tipo:"rar",paginas:3,caminho:"x"},"b")]);
+teste("relatório do envio separa cada situação", {encontrados:5,integros:4,enviados:2,repetidos:1,erro:1,direitos:1},
+  F.resumoDoEnvio([{situacao:"enviado"},{situacao:"enviado"},{situacao:"repetido"},{situacao:"erro"},{situacao:"direitos"}]));
+const fsR = require("fs"), pathR = require("path");
+const regrasFs = fsR.readFileSync(pathR.join(__dirname,"..","firebase","firestore.rules"),"utf8");
+const regrasSt = fsR.readFileSync(pathR.join(__dirname,"..","firebase","storage.rules"),"utf8");
+teste("Firestore v6: acervo só o dono grava, com direitos e hora do servidor", true,
+  /match \/acervo\/\{sha\}/.test(regrasFs) && /allow create: if dono\(\) && sha\.matches/.test(regrasFs) && /enviadoEm == request\.time/.test(regrasFs) && /allow delete: if dono\(\);\s*\}\s*\n\s*\/\/ a regra das contas novas/.test(regrasFs));
+teste("Firestore v6: leitor só vê publicada e com conta liberada", true, /resource\.data\.status == 'publicada' && leitorLiberado\(\)/.test(regrasFs));
+teste("Storage: só o dono envia/apaga, arquivo imutável, leitor liberado lê", true,
+  /allow create: if dono\(\)/.test(regrasSt) && /allow update: if false;/.test(regrasSt) && /allow get: if dono\(\) \|\| \(request\.auth != null && leitorLiberado\(\)\)/.test(regrasSt) && /allow read, write: if false;/.test(regrasSt));
+teste("as duas regras usam a mesma conta de plano", true, ["cortesiaAte","vitalicio","pagoAte","testeDias","cobrancaDesde"].every((k)=>regrasFs.includes(k)&&regrasSt.includes(k)));
 teste("o catálogo nativo (versao/obras) não é aceito no lugar do índice", true, (()=>{try{F.converterIndiceGenerico({versao:1,obras:[]},url);return false;}catch(e){return /formato nativo/.test(e.message);}})());
 const fb="https://firebasestorage.googleapis.com/v0/b/super-hqs.appspot.com/o/acervo%2Fp1.jpg?alt=media&token=abc";
 teste("URL de outro provedor passa inteira (com os parâmetros)", [fb, fb], [F.urlNaLargura(fb,1280), F.urlDoOriginal(fb)]);

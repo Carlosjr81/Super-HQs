@@ -83,3 +83,31 @@ construído.
   a aprovação, os pagamentos e (no acervo) quem baixa cada edição.
 - Para apagar uma conta de vez (LGPD): Firebase › Authentication › Usuários › ⋮ ›
   Excluir, e Firestore › `usuarios` › o documento › Excluir.
+
+## O acervo do app (Storage) — quando o dono decidir ligar
+
+O app já tem o envio pronto (Perfil › Sua conta › 📦 Acervo do app), mas
+**nada pago é ligado sem o dono**. Os passos:
+
+1. Firebase › engrenagem › **Uso e faturamento** › **Modificar plano** › Blaze.
+   Logo em seguida: console.cloud.google.com › **Faturamento** ›
+   **Orçamentos e alertas** › criar orçamento (ex.: R$ 50/mês, alertas em 50%,
+   90% e 100%). O alerta avisa; ele **não** corta o serviço sozinho.
+2. Firebase › **Storage** › Começar › região `southamerica-east1` (São Paulo),
+   modo de produção.
+3. Storage › **Regras**: cole `firebase/storage.rules` inteiro › Publicar.
+4. Firestore › **Regras**: cole `firebase/firestore.rules` (versão 6) › Publicar.
+5. Mande ao Claude o nome do balde (topo da tela do Storage, algo como
+   `super-hqs.firebasestorage.app`). Ele entra em `FIREBASE_ARMAZENAMENTO`.
+6. Depois de publicado: `node testes/prova-regras-firebase.js` (prova que quem
+   não está liberado não lê o acervo).
+
+Custo de referência (preços públicos do Google, conferir na hora): guardar
+fica perto de US$ 0,026 por GB/mês; o que pesa é a **saída** (cada download de
+edição), perto de US$ 0,12 por GB. 1.000 leituras de uma edição de 50 MB são
+cerca de 50 GB, uns US$ 6. Como o app guarda a edição baixada no aparelho,
+cada pessoa baixa cada edição uma vez.
+
+Só entra obra própria, licenciada ao dono ou em domínio público no Brasil,
+com o registro de direitos (titular, licença, origem) que a tela exige.
+Acervo de outro serviço (Ink, Comixfy...) não entra, mesmo com assinatura.
