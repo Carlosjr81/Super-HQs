@@ -88,7 +88,11 @@ async function sincronizar(d) {
     }
   }
   catalogo.versao = 1;
-  catalogo.geradoEm = agora;
+  // A hora só muda quando o conteúdo muda: senão cada rodada agendada viraria
+  // um commit e uma republicação do site sem novidade nenhuma.
+  const conteudo = (c) => JSON.stringify([c && c.obras, c && c.revisao]);
+  if (!catalogo.geradoEm || conteudo(catalogo) !== conteudo(d.catalogo)) catalogo.geradoEm = agora;
+  resumo.rodou = resumo.fontes.some((f) => f.situacao !== "em dia" && f.situacao !== "pausada");
   return { catalogo, estado, resumo };
 }
 
@@ -129,7 +133,8 @@ async function principal() {
   });
   gravarJson(ARQ.catalogo, r.catalogo);
   gravarJson(ARQ.estado, r.estado);
-  fs.writeFileSync(ARQ.relatorio, relatorio(r.resumo, r.catalogo));
+  // o relatório é o da última rodada que consultou alguma fonte
+  if (r.resumo.rodou || !fs.existsSync(ARQ.relatorio)) fs.writeFileSync(ARQ.relatorio, relatorio(r.resumo, r.catalogo));
   for (const f of r.resumo.fontes) console.log((f.situacao + "").padEnd(8) + " " + f.id + (f.erro ? "  " + f.erro : "") + (f.publicadas != null ? "  publicadas " + f.publicadas + "/" + f.encontradas + ", revisão " + f.revisao + ", " + f.mudanca : ""));
   // erro numa fonte não reprova a execução: o Actions continua agendando, e o
   // relatório mostra o problema. Só reprova se TODAS falharem.

@@ -75,6 +75,8 @@ const dep = (extra) => Object.assign({ config: { fontes: [FONTE] }, conectores: 
   teste("rodar de novo com a mesma fonte não muda nada", ["nada", 1, 4], [r2.resumo.fontes[0].mudanca, r2.catalogo.obras.length, r2.catalogo.obras[0].paginas.length]);
   const rDia = await sincronizar(dep({ buscarJson: commonsFalso(BASE), catalogo: r1.catalogo, estado: r1.estado, forcar: false }));
   teste("dentro do intervalo, a fonte nem é consultada", "em dia", rDia.resumo.fontes[0].situacao);
+  teste("sem novidade, o catálogo fica idêntico (nem a hora muda: sem commit à toa)", [r1.catalogo.geradoEm, false],
+    [(await sincronizar(dep({ buscarJson: commonsFalso(BASE), catalogo: r1.catalogo, estado: r1.estado, agora: AGORA + 5000 }))).catalogo.geradoEm, rDia.resumo.rodou]);
 
   console.log("\n--- duplicatas ---");
   const dup = BASE.concat([arquivo("Nemo 4.jpg", "a2")]);
