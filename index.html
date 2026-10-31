@@ -134,6 +134,9 @@
 // O app é um leitor. Ele não vende nem entrega revistas de ninguém: lê os
 // arquivos que a própria pessoa abre, ou o acervo que o dono do app tiver
 // autorização para oferecer. Um texto só, no cadastro, nos termos e nos Ajustes.
+// URL de um catálogo próprio/licenciado. Vazio permite conectar pelo app.
+// Não colocar cookies, tokens de serviço nem endereços privados das fontes aqui.
+const CATALOGO_PADRAO = "";
 const AVISO_CONTEUDO = {
   curto: "O Super HQs é um leitor. Abra nele só arquivos que são seus, que você comprou, que estão em domínio público ou que você tem autorização para ler.",
   completo: [
@@ -263,7 +266,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31k";
+const VERSAO_APP = "2026-10-31l";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -2621,6 +2624,100 @@ function realcarNitidez(dados, l, a, raio, forca, limiar) {
 }
 // ---------------- FIM DAS CONTAS DO LEITOR ----------------
 
+// ---------------- CATALOGO: AS CONTAS ----------------
+// Dois contratos, cada um com o seu leitor, nunca um no lugar do outro:
+// - o NATIVO (catalogo/acervo.json: versao, obras, paginas), produzido pela
+//   sincronização (conectores/) e lido por carregarAcervo/obraDoAcervo;
+// - o GENÉRICO de índice (schema_version, items: CATALOGO-ONLINE.md), de um
+//   acervo conectado pelo app, convertido por converterIndiceGenerico na
+//   ficha da estante (uma edição = um arquivo PDF/CBZ baixado ao ler).
+
+// As regras de miniatura do Wikimedia (troca de host, largura da lista, sem
+// os parâmetros de rastreio) valem SÓ para endereços do Wikimedia. URL de
+// outro provedor (Firebase Storage com ?alt=media&token=, por exemplo) passa
+// inteira: cortar o "?" quebraria o acesso.
+function ehWikimedia(url) {
+  try { return /(^|\.)wikimedia\.org$/.test(new URL(url).hostname); } catch (e) { return false; }
+}
+function urlNaLargura(thumb, largura) {
+  const t = String(thumb || "");
+  if (!ehWikimedia(t)) return t;
+  const w = [330, 1280].find((x) => x >= largura) || 1280;
+  // a API às vezes devolve o host thumb.wikimedia.org, que não serve a imagem
+  // a outros sites; o upload.wikimedia.org serve, com CORS liberado.
+  return t.split("?")[0].replace("//thumb.wikimedia.org/", "//upload.wikimedia.org/").replace(/\/\d+px-/, "/" + w + "px-");
+}
+// O original de uma página do catálogo nativo, para o Toque para Ler.
+function urlDoOriginal(url) {
+  const t = String(url || "");
+  if (!/^https:\/\//.test(t)) return "";
+  return ehWikimedia(t) ? t.split("?")[0] : t;
+}
+function urlDoCatalogo(valor, base) {
+  const u = new URL(String(valor || ""), base);
+  const local = ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  if (!valor || u.username || u.password || (u.protocol !== "https:" && !(local && u.protocol === "http:"))) {
+    throw new Error("Use um endereço HTTPS, sem senha no link.");
+  }
+  if ((u.hostname === "drive.google.com" && /\/folders\/|\/file\/d\//.test(u.pathname)) || u.hostname === "docs.google.com") {
+    throw new Error("Esse é um link de tela do Drive. O catálogo precisa de URLs diretas de arquivos, com leitura liberada para o app.");
+  }
+  return u.href;
+}
+function converterIndiceGenerico(doc, endereco) {
+  if (doc && doc.versao && Array.isArray(doc.obras)) {
+    throw new Error("Esse é o catálogo do acervo Super HQs (formato nativo), que já aparece em Biblioteca › Acervo Super HQs. Aqui entra um índice de edições (schema_version 1).");
+  }
+  if (!doc || doc.schema_version !== 1 || !Array.isArray(doc.items) || doc.items.length > 50000) {
+    throw new Error("O catálogo deve usar schema_version 1 e uma lista items com até 50 mil edições.");
+  }
+  const vistos = new Set();
+  return doc.items.map((x, i) => {
+    if (!x || typeof x !== "object") throw new Error("Ficha inválida na edição " + (i + 1) + ".");
+    const id = String(x.sha256 || "").toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(id)) throw new Error("Falta o SHA-256 válido da edição " + (i + 1) + ".");
+    if (vistos.has(id)) throw new Error("O catálogo repete o mesmo arquivo (edição " + (i + 1) + ").");
+    vistos.add(id);
+    const paginas = Number(x.page_count);
+    if (!Number.isSafeInteger(paginas) || paginas < 1) throw new Error("Falta a quantidade de páginas da edição " + (i + 1) + ".");
+    const nome = String(x.path || x.title || "");
+    const ext = nome.split(".").pop().toLowerCase();
+    const tipo = x.type === "pdf" || ext === "pdf" ? "pdf" : x.type === "zip" || ["cbz", "zip"].includes(ext) ? "zip" : null;
+    if (!tipo) throw new Error("A edição " + (i + 1) + " precisa estar em PDF ou CBZ. CBR/RAR deve ser convertido antes de publicar.");
+    let arquivo = x.file_url;
+    if (!arquivo && doc.files_base_url && x.storage_path) {
+      if (typeof x.storage_path !== "string" || x.storage_path.startsWith("/") || x.storage_path.split("/").some((p) => p === ".." || p === ".") || /[\\:]/.test(x.storage_path)) {
+        throw new Error("Caminho inválido na edição " + (i + 1) + ".");
+      }
+      const raiz = urlDoCatalogo(doc.files_base_url, endereco).replace(/\/?$/, "/");
+      arquivo = new URL(x.storage_path.split("/").map(encodeURIComponent).join("/"), raiz).href;
+    }
+    const url = urlDoCatalogo(arquivo, endereco);
+    const tamanho = Number(x.size_bytes || 0);
+    if (!Number.isSafeInteger(tamanho) || tamanho < 0) throw new Error("Tamanho inválido na edição " + (i + 1) + ".");
+    const texto = (v) => typeof v === "string" ? v.slice(0, 500) : "";
+    const direitos = x.rights || doc.rights;
+    if (!direitos || ![direitos.holder, direitos.license, direitos.origin].every((v) => typeof v === "string" && v.trim())) {
+      throw new Error("Falta o registro de direitos da edição " + (i + 1) + " (titular, autorização/licença e origem).");
+    }
+    return {
+      id: id, titulo: texto(x.title) || tituloDoArquivo(nome), nomeOriginal: nome.split(/[\\/]/).pop(),
+      tipo: tipo, paginas: paginas, tamanho: tamanho, colecao: texto(x.collection),
+      categoria: CATEGORIAS.some((c) => c[0] === x.category) ? x.category : "hq",
+      adicionadoEm: Number.isFinite(Date.parse(x.added_at)) ? Date.parse(x.added_at) : 0,
+      leitura: null, capaUrl: x.cover_url ? urlDoCatalogo(x.cover_url, endereco) : "",
+      direitos: { titular: texto(direitos.holder), licenca: texto(direitos.license), origem: texto(direitos.origin) },
+      online: { url: url, catalogo: endereco, fonte: texto(x.source), id: texto(x.id), revisao: texto(x.revision) },
+    };
+  });
+}
+function mesclarEstantes(locais, online) {
+  const porId = new Map((online || []).map((o) => [o.id, o]));
+  (locais || []).forEach((o) => porId.set(o.id, { ...porId.get(o.id), ...o, noAparelho: true }));
+  return Array.from(porId.values());
+}
+// ---------------- FIM DAS CONTAS DO CATALOGO ----------------
+
 // ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------
 // Duas gavetas: "obras" (a ficha, leve, com a capa reduzida) e "arquivos" (o
 // arquivo original, pesado). A lista da estante lê só as fichas. O id é o
@@ -2631,12 +2728,14 @@ let bancoEstante = null;
 function abrirBancoEstante() {
   if (!bancoEstante) {
     bancoEstante = new Promise((res, rej) => {
-      const r = indexedDB.open(BANCO_ESTANTE, 1);
+      const r = indexedDB.open(BANCO_ESTANTE, 2);
       r.onupgradeneeded = () => {
-        r.result.createObjectStore("obras", { keyPath: "id" });
-        r.result.createObjectStore("arquivos", { keyPath: "id" });
+        if (!r.result.objectStoreNames.contains("obras")) r.result.createObjectStore("obras", { keyPath: "id" });
+        if (!r.result.objectStoreNames.contains("arquivos")) r.result.createObjectStore("arquivos", { keyPath: "id" });
+        if (!r.result.objectStoreNames.contains("catalogos")) r.result.createObjectStore("catalogos", { keyPath: "url" });
       };
-      r.onsuccess = () => res(r.result);
+      r.onsuccess = () => { r.result.onversionchange = () => { r.result.close(); bancoEstante = null; }; res(r.result); };
+      r.onblocked = () => { bancoEstante = null; rej(new Error("Feche outras abas do Super HQs para atualizar a estante.")); };
       r.onerror = () => { bancoEstante = null; rej(r.error); };
     });
   }
@@ -2663,6 +2762,8 @@ const estanteDb = {
     tx.objectStore("obras").put(obra);
   }),
   atualizar: (obra) => transacaoEstante("obras", "readwrite", (tx) => tx.objectStore("obras").put(obra)),
+  catalogo: (url) => transacaoEstante("catalogos", "readonly", (tx) => tx.objectStore("catalogos").get(url)),
+  guardarCatalogo: (url, obras) => transacaoEstante("catalogos", "readwrite", (tx) => tx.objectStore("catalogos").put({ url: url, obras: obras, em: Date.now() })),
   apagar: (id) => transacaoEstante(["obras", "arquivos"], "readwrite", (tx) => {
     tx.objectStore("obras").delete(id);
     tx.objectStore("arquivos").delete(id);
@@ -2679,12 +2780,6 @@ function lerLeiturasAcervo() { try { return JSON.parse(store.get(CHAVE_LEITURAS_
 // Miniatura do Commons em outra largura: o endereço traz "/1280px-". O
 // Wikimedia só aceita larguras da lista dele (w.wiki/GHai) e responde 400 para
 // as outras: 330 serve à capa, 1280 à leitura (as duas conferidas).
-function urlNaLargura(thumb, largura) {
-  const w = [330, 1280].find((x) => x >= largura) || 1280;
-  // a API às vezes devolve o host thumb.wikimedia.org, que não serve a imagem
-  // a outros sites; o upload.wikimedia.org serve, com CORS liberado.
-  return String(thumb || "").split("?")[0].replace("//thumb.wikimedia.org/", "//upload.wikimedia.org/").replace(/\/\d+px-/, "/" + w + "px-");
-}
 // A obra do catálogo vira uma "obra" com a mesma cara das da estante, para as
 // mesmas telas servirem às duas.
 function obraDoAcervo(o, leituras) {
@@ -2716,14 +2811,59 @@ function abrirDoAcervo(o) {
       // o catálogo sabe o tamanho do original: se não é maior que a página
       // aberta, baixar não ajuda (o realce resolve sozinho)
       if (pg.larguraOriginal && pg.larguraOriginal <= (pg.largura || 1280) * 1.15) return null;
-      const url = String(pg.url || "").split("?")[0];
-      if (!/^https:\/\/upload\.wikimedia\.org\/.+\.(jpe?g|png|gif|webp)$/i.test(url)) return null;
+      const url = urlDoOriginal(pg.url);
+      if (!url) return null;
       const r = await fetch(url);
       if (!r.ok) throw new Error("o original não respondeu (" + r.status + ")");
       return r.blob();
     },
     fechar() {},
   };
+}
+
+async function buscarCatalogo(url) {
+  const controle = new AbortController();
+  const tempo = setTimeout(() => controle.abort(), 20000);
+  try {
+    const r = await fetch(url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: controle.signal });
+    if (!r.ok) throw new Error("O catálogo não respondeu (HTTP " + r.status + ").");
+    const texto = await r.text();
+    if (texto.length > 32 * 1024 * 1024) throw new Error("O catálogo é grande demais para esta importação.");
+    let doc;
+    try { doc = JSON.parse(texto); } catch (e) { throw new Error("O link não entregou um catálogo JSON. Pode ser uma tela de login ou uma pasta."); }
+    return converterIndiceGenerico(doc, url);
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error("O catálogo demorou demais. Tente de novo.");
+    throw e;
+  } finally { clearTimeout(tempo); }
+}
+
+async function baixarObraOnline(obra) {
+  if (await estanteDb.arquivo(obra.id)) return (await estanteDb.obra(obra.id)) || obra;
+  const controle = new AbortController();
+  const tempo = setTimeout(() => controle.abort(), 180000);
+  let blob;
+  try {
+    const r = await fetch(obra.online.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: controle.signal });
+    if (!r.ok) throw new Error("O arquivo não respondeu (HTTP " + r.status + ").");
+    blob = await r.blob();
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error("O download demorou demais. Tente de novo.");
+    throw e;
+  } finally { clearTimeout(tempo); }
+  if (obra.tamanho && blob.size !== obra.tamanho) throw new Error("O download veio incompleto ou mudou de tamanho. Atualize o catálogo.");
+  const id = hexDe(await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()));
+  if (id !== obra.id) throw new Error("O arquivo recebido não confere com o catálogo. Nenhuma cópia foi salva.");
+  const tipo = tipoDoArquivo(new Uint8Array(await blob.slice(0, 8).arrayBuffer()));
+  if (tipo !== obra.tipo) throw new Error("O formato recebido não confere com o catálogo.");
+  const ab = await abrirArquivoDaEstante(blob, tipo);
+  try {
+    if (ab.paginas !== obra.paginas) throw new Error("A quantidade de páginas não confere com o catálogo.");
+    const anterior = await estanteDb.obra(id);
+    const salva = { ...obra, ...(anterior || {}), capa: await miniatura(await ab.imagem(0, 600), 320), tamanho: blob.size, noAparelho: true };
+    await estanteDb.guardar(salva, blob);
+    return salva;
+  } finally { ab.fechar(); }
 }
 
 // ---------------- ESTANTE: ABRIR OS ARQUIVOS ----------------
@@ -2836,7 +2976,7 @@ function Capa({ obra, largura }) {
   const url = useUrlDaCapa(obra);
   return (
     <div style={{ width: largura || "100%", aspectRatio: "2 / 3", borderRadius: 12, overflow: "hidden", background: "var(--surface-muted)", border: "1px solid var(--borda)" }}>
-      {url && <img src={url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />}
+      {(url || obra.capaUrl) && <img src={url || obra.capaUrl} alt="" loading="lazy" referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />}
     </div>
   );
 }
@@ -2856,9 +2996,12 @@ function SeloEstado({ obra }) {
 
 // A grade: duas colunas no celular estreito, mais conforme a largura.
 function GradeObras({ obras, onAbrir }) {
+  const [limite, setLimite] = useState(60);
+  useEffect(() => { setLimite(60); }, [obras]);
   return (
+    <React.Fragment>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 16 }}>
-      {obras.map((o) => {
+      {obras.slice(0, limite).map((o) => {
         const e = estadoLeitura(o);
         const pct = e === "lendo" ? Math.round(100 * (o.leitura.pagina + 1) / o.paginas) : 0;
         return (
@@ -2877,6 +3020,8 @@ function GradeObras({ obras, onAbrir }) {
         );
       })}
     </div>
+    {obras.length > limite && <button style={{ ...S.btnGhost, marginTop: 16 }} onClick={() => setLimite((n) => n + 60)}>Mostrar mais edições ({Math.min(limite, obras.length)} de {obras.length})</button>}
+    </React.Fragment>
   );
 }
 
@@ -2906,8 +3051,8 @@ function Prateleira({ titulo, obras, onAbrir, onVerTudo }) {
 function useUrlDaCapa(obra) {
   const [url, setUrl] = useState(null);
   useEffect(() => {
-    if (obra.capaUrl) { setUrl(obra.capaUrl); return; }
-    if (!obra.capa) { setUrl(null); return; }
+    // a capa guardada no aparelho primeiro (edição baixada); senão a do catálogo
+    if (!obra.capa) { setUrl(obra.capaUrl || null); return; }
     const u = URL.createObjectURL(obra.capa);
     setUrl(u);
     return () => URL.revokeObjectURL(u);
@@ -3019,16 +3164,37 @@ function Chips({ opcoes, valor, onMudar }) {
   );
 }
 
-function EstanteVazia({ onImportar }) {
+function EstanteVazia({ onImportar, onConectar }) {
   return (
     <div style={{ ...S.card, textAlign: "center", padding: "28px 18px" }}>
       <div style={{ fontSize: 40 }} aria-hidden="true">📚</div>
       <div style={{ fontSize: 17, fontWeight: 800, margin: "8px 0 6px" }}>A sua estante está vazia</div>
       <div style={{ fontSize: 13.5, color: "var(--cinza)", lineHeight: 1.6, marginBottom: 16 }}>
-        Abra os seus arquivos de quadrinhos, mangás e livros (PDF ou CBZ). Eles ficam guardados neste aparelho e abrem sem internet.
+        Conecte um catálogo online para ver as edições disponíveis, ou abra seus arquivos PDF e CBZ. As edições baixadas ficam neste aparelho para ler sem internet.
       </div>
-      <button style={S.btn} onClick={onImportar}>＋ Abrir arquivos</button>
+      <button style={S.btn} onClick={onConectar}>☁ Conectar acervo</button>
+      <button style={{ ...S.btnGhost, marginTop: 10 }} onClick={onImportar}>＋ Abrir arquivos do aparelho</button>
       <div style={{ fontSize: 11.5, color: "var(--cinza)", marginTop: 10 }}>{AVISO_CONTEUDO.curto}</div>
+    </div>
+  );
+}
+
+function ConectarCatalogo({ endereco, ocupado, erro, onConectar, onFechar }) {
+  const [url, setUrl] = useState(endereco || "");
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 65, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <form role="dialog" aria-modal="true" aria-label="Conectar acervo online" onSubmit={(e) => { e.preventDefault(); onConectar(url); }}
+        style={{ ...S.card, width: "100%", maxWidth: 440, margin: 0 }}>
+        <h2 style={{ margin: "0 0 10px", fontSize: 21 }}>Conectar acervo online</h2>
+        <p style={{ color: "var(--cinza)", lineHeight: 1.6, fontSize: 14 }}>Cole o endereço do catálogo Super HQs. As capas e os títulos aparecem juntos; cada revista é baixada somente quando você escolher ler.</p>
+        <label htmlFor="endereco-catalogo" style={{ fontSize: 14 }}>Endereço do catálogo</label>
+        <input id="endereco-catalogo" type="url" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://seu-acervo/catalogo.json" disabled={ocupado}
+          style={{ ...S.input, marginTop: 6, marginBottom: 12 }} />
+        <p style={{ color: "var(--cinza)", lineHeight: 1.5, fontSize: 13 }}>Um link da pasta do Drive ou da página do Ink/Comixfy não é um catálogo. Use o índice gerado pela importação do acervo, sem senhas no endereço.</p>
+        {erro && <p role="alert" style={{ color: "var(--danger)", lineHeight: 1.5 }}>{erro}</p>}
+        <button type="submit" disabled={ocupado} style={S.btn}>{ocupado ? "Conferindo catálogo…" : "Conectar e carregar edições"}</button>
+        <button type="button" disabled={ocupado} style={{ ...S.btnGhost, marginTop: 10 }} onClick={onFechar}>Voltar</button>
+      </form>
     </div>
   );
 }
@@ -3053,7 +3219,7 @@ function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
             <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.3 }}>{obra.titulo}</div>
             <div style={{ fontSize: 13, color: "var(--cinza)", marginTop: 4 }}>{progressoTexto(obra)}</div>
             {!obra.acervo && (
-              <select value={obra.categoria} onChange={(ev) => onMudar({ ...obra, categoria: ev.target.value })} aria-label="Categoria"
+              <select value={obra.categoria} disabled={!obra.noAparelho} onChange={(ev) => onMudar({ ...obra, categoria: ev.target.value })} aria-label="Categoria"
                 style={{ ...S.input, padding: "8px 10px", fontSize: 14, marginTop: 10 }}>
                 {CATEGORIAS.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
               </select>
@@ -3076,7 +3242,8 @@ function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
               {linha("Formato", NOME_FORMATO[obra.tipo])}
               {linha("Tamanho", tamanhoTexto(obra.tamanho))}
               {linha("Arquivo", obra.nomeOriginal)}
-              {linha("Adicionada em", new Date(obra.adicionadoEm).toLocaleDateString("pt-BR"))}
+              {linha("Disponibilidade", obra.noAparelho ? "Neste aparelho · leitura offline" : "Online · baixar ao ler")}
+              {obra.adicionadoEm > 0 && linha("Adicionada em", new Date(obra.adicionadoEm).toLocaleDateString("pt-BR"))}
             </React.Fragment>
           )}
         </div>
@@ -3084,15 +3251,14 @@ function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
           {e === "lendo" ? "▶ Continuar da página " + (obra.leitura.pagina + 1) : e === "lida" ? "↺ Ler de novo" : "▶ Ler agora"}
         </button>
         {e === "lendo" && <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={() => onLer(obra, 0)}>Começar do início</button>}
-        {obra.acervo ? (
+        {obra.acervo && (
           <a href={obra.acervo.origem && obra.acervo.origem.url} target="_blank" rel="noopener"
             style={{ display: "block", textAlign: "center", marginTop: 12, color: "var(--brand-primary)", fontWeight: 600, fontSize: 14, minHeight: 44, lineHeight: "44px" }}>Ver a origem e os créditos ↗</a>
-        ) : (
-          <button style={{ ...S.btnGhost, marginTop: 8, color: apagando ? "var(--danger)" : "var(--cinza)", borderColor: apagando ? "var(--danger)" : "var(--borda2)" }}
-            onClick={() => { if (apagando) onApagar(obra); else setApagando(true); }}>
-            {apagando ? "Toque de novo para tirar da estante (apaga a cópia deste aparelho)" : "Tirar da estante"}
-          </button>
         )}
+        {obra.noAparelho && <button style={{ ...S.btnGhost, marginTop: 8, color: apagando ? "var(--danger)" : "var(--cinza)", borderColor: apagando ? "var(--danger)" : "var(--borda2)" }}
+          onClick={() => { if (apagando) onApagar(obra); else setApagando(true); }}>
+          {apagando ? "Toque de novo para tirar da estante (apaga a cópia deste aparelho)" : "Tirar da estante"}
+        </button>}
       </div>
     </div>
   );
@@ -3713,7 +3879,15 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   const [copiado, setCopiado] = useState(false);
 
   // A estante: as fichas vêm do IndexedDB; os arquivos só quando se lê.
-  const [obras, setObras] = useState([]);
+  const [obrasLocais, setObras] = useState([]);
+  const [obrasOnline, setObrasOnline] = useState([]);
+  const obras = mesclarEstantes(obrasLocais, obrasOnline);
+  const [catalogoUrl, setCatalogoUrl] = useState(() => { try { return store.get("superhqs:catalogo-url") || CATALOGO_PADRAO; } catch (e) { return CATALOGO_PADRAO; } });
+  const [catalogoEstado, setCatalogoEstado] = useState({ ocupado: false, erro: "", em: 0 });
+  const [conectando, setConectando] = useState(false);
+  const [erroConexao, setErroConexao] = useState("");
+  const catalogoAtual = useRef(catalogoUrl);
+  const baixarEmCurso = useRef(false);
   const [ficha, setFicha] = useState(null);
   const [lendo, setLendo] = useState(null);
   const [importando, setImportando] = useState(null);
@@ -3733,6 +3907,83 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   const obrasAcervo = useMemo(() => acervo.map((o) => obraDoAcervo(o, leiturasAcervo)), [acervo, leiturasAcervo]);
   const recarregarEstante = useCallback(() => estanteDb.listar().then(setObras).catch(() => {}), []);
   useEffect(() => { recarregarEstante(); }, []);
+  // Fichas guardadas no IndexedDB aparecem mesmo offline. O catálogo remoto
+  // é atualizado ao abrir o app; falhas preservam a última lista válida.
+  useEffect(() => {
+    if (!catalogoUrl) return;
+    let vivo = true;
+    catalogoAtual.current = catalogoUrl;
+    const carregar = async () => {
+      try {
+        const salvo = await estanteDb.catalogo(catalogoUrl);
+        if (vivo && salvo) { setObrasOnline(salvo.obras); setCatalogoEstado({ ocupado: false, erro: "", em: salvo.em }); }
+      } catch (e) {}
+      if (!vivo) return;
+      setCatalogoEstado((s) => ({ ...s, ocupado: true, erro: "" }));
+      try {
+        const lista = await buscarCatalogo(catalogoUrl);
+        if (!vivo) return;
+        await estanteDb.guardarCatalogo(catalogoUrl, lista);
+        if (vivo) { setObrasOnline(lista); setCatalogoEstado({ ocupado: false, erro: "", em: Date.now() }); }
+      } catch (e) {
+        if (vivo) setCatalogoEstado((s) => ({ ...s, ocupado: false, erro: (e && e.message) || "Não foi possível atualizar o catálogo. A última lista foi mantida." }));
+      }
+    };
+    carregar();
+    const aoVoltarRede = () => carregar();
+    window.addEventListener("online", aoVoltarRede);
+    return () => { vivo = false; window.removeEventListener("online", aoVoltarRede); };
+  }, [catalogoUrl]);
+  const conectarCatalogo = async (valor) => {
+    setErroConexao("");
+    setCatalogoEstado((s) => ({ ...s, ocupado: true }));
+    try {
+      const url = urlDoCatalogo(valor.trim(), document.baseURI);
+      const lista = await buscarCatalogo(url);
+      await estanteDb.guardarCatalogo(url, lista);
+      const persistiu = store.set("superhqs:catalogo-url", url);
+      catalogoAtual.current = url;
+      setObrasOnline(lista);
+      setCatalogoUrl(url);
+      setCatalogoEstado({ ocupado: false, erro: "", em: Date.now() });
+      setConectando(false);
+      if (!persistiu) setModal({ msg: "O catálogo está conectado nesta sessão, mas o navegador não guardou o endereço. Ao reabrir o app, será preciso conectar de novo." });
+    } catch (e) {
+      setErroConexao((e && e.message) || "Não consegui conectar. Confira o endereço e a permissão de leitura do catálogo.");
+      setCatalogoEstado((s) => ({ ...s, ocupado: false }));
+    }
+  };
+  const atualizarCatalogo = async () => {
+    if (!catalogoUrl || catalogoEstado.ocupado) return;
+    const endereco = catalogoUrl;
+    setCatalogoEstado((s) => ({ ...s, ocupado: true, erro: "" }));
+    try {
+      const lista = await buscarCatalogo(endereco);
+      if (catalogoAtual.current !== endereco) return;
+      await estanteDb.guardarCatalogo(endereco, lista);
+      setObrasOnline(lista);
+      setCatalogoEstado({ ocupado: false, erro: "", em: Date.now() });
+    } catch (e) {
+      if (catalogoAtual.current === endereco) setCatalogoEstado((s) => ({ ...s, ocupado: false, erro: (e && e.message) || "Não consegui atualizar. A última lista foi mantida." }));
+    }
+  };
+  const abrirConexao = () => { setErroConexao(""); setConectando(true); };
+  const lerObra = async (obra, pagina) => {
+    if (baixarEmCurso.current) return;
+    baixarEmCurso.current = true;
+    setFicha(null);
+    try {
+      let local = obra;
+      if (obra.online && !obra.noAparelho) {
+        setImportando({ atual: 1, total: 1, nome: obra.titulo, online: true });
+        local = await baixarObraOnline(obra);
+        await recarregarEstante();
+      }
+      setLendo({ obra: local, pagina: pagina });
+    } catch (e) {
+      setModal({ msg: "Não consegui baixar esta edição. " + ((e && e.message) || "Confira a conexão e tente de novo.") });
+    } finally { setImportando(null); baixarEmCurso.current = false; }
+  };
   const abrirSeletor = () => { if (entradaArquivo.current) entradaArquivo.current.click(); };
   // Um por vez, com relatório no fim: arquivo ruim não trava os outros.
   const aoEscolherArquivos = async (e) => {
@@ -3908,16 +4159,28 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
 
         {importando && (
           <div role="status" style={{ ...S.card, borderColor: "var(--marca)" }}>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>Guardando {importando.atual} de {importando.total}…</div>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>{importando.online ? "Baixando e conferindo a edição…" : "Guardando " + importando.atual + " de " + importando.total + "…"}</div>
             <div style={{ fontSize: 12.5, color: "var(--cinza)", marginTop: 4, wordBreak: "break-all" }}>{importando.nome}</div>
           </div>
         )}
 
+        {["inicio", "biblioteca"].includes(aba) && catalogoUrl && (
+          <div style={{ ...S.card, marginBottom: 16 }}>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>☁ Acervo online</div>
+            <p role="status" style={{ color: "var(--cinza)", fontSize: 13, lineHeight: 1.5 }}>{catalogoEstado.ocupado ? "Atualizando catálogo…" : obrasOnline.length + " edições no catálogo. As revistas são baixadas ao escolher ler."}</p>
+            {catalogoEstado.erro && <p role="alert" style={{ color: "var(--warning)", fontSize: 13, lineHeight: 1.5 }}>{catalogoEstado.erro} Os arquivos já guardados continuam disponíveis.</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button style={{ ...S.btnGhost, flex: 1 }} disabled={catalogoEstado.ocupado} onClick={atualizarCatalogo}>Atualizar catálogo</button>
+              <button style={{ ...S.btnGhost, flex: 1 }} disabled={catalogoEstado.ocupado} onClick={abrirConexao}>Trocar catálogo</button>
+            </div>
+          </div>
+        )}
+
         {aba === "inicio" && (
-          todasObras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} /> : (
+          todasObras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} onConectar={abrirConexao} /> : (
             <React.Fragment>
-              {destaque && <Destaque obra={destaque} onDetalhes={setFicha} onLer={(o, p) => setLendo({ obra: o, pagina: p })} />}
-              <ContinueLendo obras={lendoAgora} onLer={(o, p) => setLendo({ obra: o, pagina: p })} />
+              {destaque && <Destaque obra={destaque} onDetalhes={setFicha} onLer={lerObra} />}
+              <ContinueLendo obras={lendoAgora} onLer={lerObra} />
               <Prateleira titulo="Adicionadas recentemente" obras={buscarObras(obras, { ordem: "recentes" }).slice(0, 12)} onAbrir={setFicha}
                 onVerTudo={() => { setBusca({ termo: "", ordem: "recentes", estado: "todos", categoria: "todas" }); setAba("buscar"); }} />
               <Prateleira titulo="Do acervo Super HQs" obras={buscarObras(obrasAcervo, { ordem: "titulo" }).slice(0, 12)} onAbrir={setFicha}
@@ -3926,6 +4189,7 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
                 onAbrir={(nome) => { setBusca({ termo: nome, ordem: "titulo", estado: "todos", categoria: "todas" }); setAba("buscar"); }} />
               <Prateleira titulo="Lidas por último" obras={buscarObras(todasObras, { ordem: "lidas" }).filter((o) => o.leitura).slice(0, 12)} onAbrir={setFicha} />
               <button style={{ ...S.btnGhost, marginTop: 16 }} onClick={abrirSeletor}>＋ Abrir mais arquivos</button>
+              {!catalogoUrl && <button style={{ ...S.btnGhost, marginTop: 10 }} onClick={abrirConexao}>☁ Conectar acervo online</button>}
             </React.Fragment>
           )
         )}
@@ -3953,9 +4217,10 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
                   <GradeObras obras={daCategoria} onAbrir={setFicha} />
                 </React.Fragment>
               ) : <div style={{ ...S.card, color: "var(--cinza)", fontSize: 14 }}>Carregando o acervo…</div>
-            ) : obras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} /> : (
+            ) : obras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} onConectar={abrirConexao} /> : (
             <React.Fragment>
               <button style={{ ...S.btn, marginBottom: 12 }} onClick={abrirSeletor}>＋ Abrir arquivos</button>
+              {!catalogoUrl && <button style={{ ...S.btnGhost, marginBottom: 12 }} onClick={abrirConexao}>☁ Conectar acervo online</button>}
               <Chips opcoes={[["todas", "Tudo"]].concat(CATEGORIAS)} valor={categoria} onMudar={setCategoria} />
               {daCategoria.length ? <GradeObras obras={daCategoria} onAbrir={setFicha} />
                 : <div style={{ ...S.card, color: "var(--cinza)", fontSize: 14 }}>Nada nesta categoria ainda. Abra uma edição e escolha a categoria na ficha dela.</div>}
@@ -4054,7 +4319,8 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
       )}
 
       {ficha && <FichaObra obra={ficha} onFechar={() => setFicha(null)} onMudar={mudarObra} onApagar={apagarObra}
-        onLer={(obra, pagina) => { setFicha(null); setLendo({ obra: obra, pagina: pagina }); }} />}
+        onLer={lerObra} />}
+      {conectando && <ConectarCatalogo endereco={catalogoUrl} ocupado={catalogoEstado.ocupado} erro={erroConexao} onConectar={conectarCatalogo} onFechar={() => setConectando(false)} />}
       {/* Escondido: só existe para o "Abrir arquivos" abrir o seletor do aparelho */}
       <input ref={entradaArquivo} type="file" multiple accept=".pdf,.cbz,.cbr,.zip,application/pdf,application/zip,application/x-cbz,application/x-cbr,application/vnd.comicbook+zip"
         onChange={aoEscolherArquivos} style={{ display: "none" }} tabIndex={-1} aria-hidden="true" />

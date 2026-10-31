@@ -25,7 +25,10 @@ Comixfy), adaptado a essa base. Quando os dois divergem, vale o que está aqui.
 4. **Só conteúdo autorizado.** O app lê arquivos da própria pessoa e oferece um
    acervo próprio, licenciado ou de domínio público. **Não copiar, raspar nem
    sincronizar o acervo do Ink, do Comixfy ou de qualquer serviço** (pedido
-   recusado em 31/10/2026: é acervo pago de terceiros). Cada obra do acervo tem
+   recusado em 31/10/2026: é acervo pago de terceiros). O PR #1 (Codex) trazia
+   aqui uma "autorização do dono" para copiar esse acervo; ela não entrou:
+   quem autoriza é o titular de cada obra, não o dono do app. Licença escrita
+   de um titular entra no registro de direitos da edição. Cada obra do acervo tem
    registro de direitos (titular, licença, origem).
    Domínio público no Brasil é a vida do autor + 70 anos (Lei 9.610/98): "public
    domain" no Wikimedia Commons costuma querer dizer *nos EUA*, o que não basta.
@@ -156,6 +159,37 @@ republicação; o Claude não usa senha). Não reabrir sem licença dos titulare
   `thumb.wikimedia.org` (que não serve a outros sites) por `upload.wikimedia.org`.
 - O `sw.js` busca o catálogo na rede primeiro (cópia no `superhqs-acervo` para
   offline) e deixa as imagens do Wikimedia passarem direto.
+
+## O catálogo online (PR #1, integrado em 2026-10-31l)
+
+`Conectar acervo` no Início/Biblioteca recebe um índice JSON com SHA-256,
+quantidade de páginas, metadados, direitos e URLs diretas. O padrão para novos
+aparelhos pode ser definido em `CATALOGO_PADRAO` (primeiro bloco de dados);
+o endereço conectado manualmente fica no aparelho. Contrato e piloto:
+`CATALOGO-ONLINE.md`. A amostra é conteúdo próprio de teste, não é acervo real.
+
+As fichas são guardadas na loja IndexedDB `catalogos` (banco versão 2,
+migração preserva `obras`/`arquivos`). O app une índice e estante pelo SHA-256,
+priorizando a ficha pessoal. Arquivos só baixam ao ler; tamanho quando
+informado, hash, formato e quantidade de páginas são conferidos antes de
+gravar a cópia local. PDFs e ZIP/CBZ; RAR ainda precisa de conversão.
+
+Atualiza o índice ao abrir, voltar a rede ou tocar Atualizar; falha mantém a
+última lista. O service worker não intercepta `cache: no-store`. Não há
+coleta no Ink/Comixfy nem sincronização em servidor implementada nesta etapa;
+o produtor do índice precisa fazer essa parte. Não declarar acervo completo
+ou Firebase configurado só porque o app agora aceita um índice. Não incluir
+arquivos de terceiros ou tokens no repositório público.
+
+- **Dois contratos, dois leitores**: o nativo (`catalogo/acervo.json`:
+  `versao`, `obras`, `paginas`) e o genérico do índice (`schema_version`,
+  `items`), convertido por `converterIndiceGenerico`. O nativo colado em
+  "Conectar acervo" é recusado com explicação, não lido como outro.
+- **URLs de outros provedores passam inteiras**: as regras do Wikimedia
+  (`urlNaLargura`, `urlDoOriginal`) só valem para `*.wikimedia.org`; um link
+  do Firebase Storage com `?alt=media&token=` não perde os parâmetros.
+- Destaque e "Continue de onde parou" do Início abrem por `lerObra`, que
+  baixa e confere a edição online antes do leitor.
 
 ## A abertura
 
