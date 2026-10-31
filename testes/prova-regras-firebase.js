@@ -42,6 +42,10 @@ const campos = (o) => { const f = {}; for (const k in o) f[k] = typeof o[k] === 
     prova("aceite sem a hora do servidor é recusado", false, (await commit("aceites", uid + "_" + (em + 1), Object.assign({}, reg, { em: em + 1 }), false)).s);
     prova("aceite em nome de outra conta é recusado", false, (await commit("aceites", "outro_" + em, Object.assign({}, reg, { conta: "outro" }))).s);
     prova("a pessoa NÃO lê o histórico de aceites", false, (await j(DOCS + "/aceites/" + uid + "_" + em, { headers: H })).s);
+    // o acervo do app (regras v6): conta pendente não lê nem envia
+    prova("conta pendente NÃO lista o acervo", false, (await j(DOCS + ":runQuery", { method: "POST", headers: H, body: JSON.stringify({ structuredQuery: { from: [{ collectionId: "acervo" }],
+      where: { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "publicada" } } } } }) })).s);
+    prova("conta comum NÃO cria ficha no acervo", false, (await commit("acervo", "a".repeat(64), { sha256: "a".repeat(64), titulo: "x", titular: "x", licenca: "x", origem: "x", status: "publicada" }, true)).s);
     // os pagamentos
     const pag = { conta: uid, email, nome: "Teste regras", plano: "mensal", planoNome: "Mensal", valor: 1, dias: 30, metodo: "pix", txid: "SHTESTE", nota: "teste das regras", condicoes: "2026-10-31", status: "informado", em, aparelho: "teste", versaoApp: "teste" };
     prova("avisa que pagou (informado, hora do servidor)", true, (await commit("pagamentos", uid + "_" + em, pag)).s);

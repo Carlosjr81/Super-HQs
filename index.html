@@ -266,7 +266,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31l";
+const VERSAO_APP = "2026-10-31m";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -369,6 +369,10 @@ const semAcento = (s) => String(s || "").toLowerCase()
 // O projeto super-hqs do dono (ligado em 2026-10-31e). Vazio desliga o porteiro: é o
 // desligar de emergência. A chave é pública; quem protege são as regras.
 const FIREBASE_ACESSO = { apiKey: "AIzaSyD2r9A1bcEytofZiST_7xbJsCfLXfeu6D8", projectId: "super-hqs" };
+// O balde do Firebase Storage do acervo do app (ex.: "super-hqs.firebasestorage.app").
+// Vazio = acervo do app desligado: o painel do dono mostra o passo a passo
+// (plano Blaze com alerta de orçamento, criar o Storage, colar as regras).
+const FIREBASE_ARMAZENAMENTO = "";
 const EMAIL_DONO = "carlos.jr.81@hotmail.com";
 // Sem rede, quem estava liberado continua entrando por 7 dias: quem lê no metrô
 // ou no avião não tem sinal, e travar a leitura por isso seria punir quem pode.
@@ -800,6 +804,48 @@ const contaApi = {
       const m = /[?&]client_id=([^&]+)/.exec((j && j.authUri) || "");
       return m ? decodeURIComponent(m[1]) : "";
     } catch (e) { if (e.semRede) throw e; return ""; }
+  },
+  // O acervo do app. Quem não é dono só pode pedir as "publicada" (as regras
+  // recusam a consulta inteira se ela puder trazer uma "pendente").
+  async listarAcervo(token, soPublicadas) {
+    const out = [];
+    let ultimo = null;
+    for (let volta = 0; volta < 400; volta++) {
+      const q = { from: [{ collectionId: "acervo" }], orderBy: [{ field: { fieldPath: "__name__" }, direction: "ASCENDING" }], limit: 300 };
+      if (soPublicadas) q.where = { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "publicada" } } };
+      if (ultimo) q.startAt = { values: [{ referenceValue: ultimo }], before: false };
+      const j = await chamarFirebase(this.doc("").replace(/\/$/, "") + ":runQuery",
+        { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ structuredQuery: q }) });
+      const docs = (j || []).filter((x) => x && x.document).map((x) => x.document);
+      docs.forEach((d) => { const o = deFirestore(d); if (o) out.push(o); });
+      if (docs.length < 300) break;
+      ultimo = docs[docs.length - 1].name;
+    }
+    return out;
+  },
+  criarNoAcervo(sha, campos, token) {
+    return this.commit([this.escrita("acervo/" + sha, campos, { existe: false, servidor: "enviadoEm" })], token);
+  },
+  mudarNoAcervo(sha, campos, token) { return this.gravarEm("acervo/" + sha, campos, token, "&currentDocument.exists=true"); },
+  apagarDoAcervo(sha, token) { return chamarFirebase(this.doc("acervo/" + sha), { method: "DELETE", headers: { Authorization: "Bearer " + token } }); },
+  // O arquivo no Storage (REST do Firebase, o mesmo que o SDK usa), com o
+  // andamento do envio (XMLHttpRequest: o fetch não informa o upload).
+  enviarAoArmazenamento(caminho, blob, mime, token, aoAndar) {
+    return new Promise((res, rej) => {
+      const x = new XMLHttpRequest();
+      x.open("POST", "https://firebasestorage.googleapis.com/v0/b/" + encodeURIComponent(FIREBASE_ARMAZENAMENTO) + "/o?name=" + encodeURIComponent(caminho));
+      x.setRequestHeader("Authorization", "Firebase " + token);
+      x.setRequestHeader("Content-Type", mime);
+      if (aoAndar) x.upload.onprogress = (e) => { if (e.lengthComputable) aoAndar(e.loaded / e.total); };
+      x.onload = () => (x.status >= 200 && x.status < 300 ? res() : rej(Object.assign(new Error("o Storage recusou (HTTP " + x.status + ")"), { status: x.status })));
+      x.onerror = () => rej(Object.assign(new Error("SEM_REDE"), { semRede: true }));
+      x.send(blob);
+    });
+  },
+  async apagarDoArmazenamento(caminho, token) {
+    const r = await fetch("https://firebasestorage.googleapis.com/v0/b/" + encodeURIComponent(FIREBASE_ARMAZENAMENTO) + "/o/" + encodeURIComponent(caminho),
+      { method: "DELETE", headers: { Authorization: "Firebase " + token } });
+    if (!r.ok && r.status !== 404) throw new Error("o Storage não apagou (HTTP " + r.status + ")");
   },
   async listarColecao(colecao, token) {
     const out = [];
@@ -1626,7 +1672,182 @@ function CartaoTermos() {
 
 // O cartão da conta nos Ajustes: quem está dentro, trocar a senha, sair,
 // apagar a conta e, só para o dono, o painel
-function CartaoConta({ onPainel }) {
+// ---------------- O ACERVO DO APP: A TELA DO DONO ----------------
+// Enviar edições (arquivos ou uma pasta inteira), com o registro de direitos
+// obrigatório, e publicar/despublicar/apagar as que já estão lá.
+function blobParaDataUrl(b) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
+}
+const PASSOS_ARMAZENAMENTO = [
+  "No console do Firebase (projeto super-hqs), troque o plano para Blaze e crie um alerta de orçamento (Google Cloud › Faturamento › Orçamentos e alertas), por exemplo R$ 50/mês.",
+  "Firebase › Storage › Começar: região southamerica-east1 (São Paulo), modo de produção.",
+  "Storage › Regras: apague o que houver, cole o arquivo firebase/storage.rules inteiro e publique.",
+  "Firestore › Regras: cole o firebase/firestore.rules (versão 6, com o acervo) e publique.",
+  "Mande ao Claude o nome do balde que aparece no topo do Storage (algo como super-hqs.firebasestorage.app). Ele entra em FIREBASE_ARMAZENAMENTO e esta tela passa a enviar.",
+];
+function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
+  const [dados, setDados] = useState({ titular: "", licenca: "", origem: "", editora: "", autor: "", ano: "", categoria: "hq", colecao: "", publicar: true, confirmo: false });
+  const [linhas, setLinhas] = useState([]);
+  const [andamento, setAndamento] = useState(null);   // { atual, total, nome, fracao }
+  const [lista, setLista] = useState(null);
+  const [erro, setErro] = useState("");
+  const arquivos = useRef(null), pasta = useRef(null);
+  const mudar = (k) => (e) => { const v = e.target.type === "checkbox" ? e.target.checked : e.target.value; setDados((d) => ({ ...d, [k]: v })); };
+  const token = async () => (await tokenValido(lerSessaoConta())).idToken;
+  const carregar = useCallback(async () => {
+    if (!FIREBASE_ARMAZENAMENTO) return;
+    try { setLista(await contaApi.listarAcervo(await token(), false)); setErro(""); }
+    catch (e) { setErro("Não consegui ler o acervo (" + ((e && e.message) || "erro") + "). Confira se as regras da versão 6 foram publicadas."); }
+  }, []);
+  useEffect(() => { carregar(); }, []);
+  const prontoParaEnviar = direitosCompletos(dados) && dados.confirmo && !andamento;
+
+  const enviar = async (fileList) => {
+    const files = Array.from(fileList || []).filter((f) => /\.(pdf|cbz|cbr|zip)$/i.test(f.name));
+    if (!files.length || !prontoParaEnviar) return;
+    const existentes = new Set((lista || []).map((d) => d.uid));
+    const saida = [];
+    setLinhas([]);
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i], trilha = f.webkitRelativePath || f.name;
+      const linha = { nome: trilha, situacao: "", motivo: "" };
+      setAndamento({ atual: i + 1, total: files.length, nome: f.name, fracao: 0 });
+      let ab = null;
+      try {
+        const tipo = tipoDoArquivo(new Uint8Array(await f.slice(0, 8).arrayBuffer()));
+        if (tipo === "rar" || tipo === "7z") throw new Error((tipo === "rar" ? "CBR em RAR" : "CB7") + " ainda não abre no app: converta para CBZ e envie de novo (guarde o original).");
+        if (tipo !== "pdf" && tipo !== "zip") throw new Error("não é PDF nem CBZ pelos bytes (pode ser uma página de login salva com outro nome).");
+        const sha = hexDe(await crypto.subtle.digest("SHA-256", await f.arrayBuffer()));
+        if (existentes.has(sha)) { linha.situacao = "repetido"; linha.motivo = "o mesmo arquivo já está no acervo"; saida.push(linha); setLinhas(saida.slice()); continue; }
+        ab = await abrirArquivoDaEstante(f, tipo);
+        if (!ab.paginas) throw new Error("nenhuma página dentro.");
+        const paginas = ab.paginas;
+        const capa = await blobParaDataUrl(await miniatura(await ab.imagem(0, 400), 200));
+        ab.fechar(); ab = null;
+        const caminho = caminhoNoArmazenamento(sha, tipo);
+        const t = await token();
+        await contaApi.enviarAoArmazenamento(caminho, f, tipo === "pdf" ? "application/pdf" : "application/zip", t,
+          (fr) => setAndamento((a) => (a ? { ...a, fracao: fr } : a)));
+        const ficha = {
+          sha256: sha, titulo: tituloDoArquivo(f.name), nomeOriginal: f.name, tipo: tipo, paginas: paginas, tamanho: f.size,
+          colecao: (dados.colecao.trim() || colecaoDaTrilha(f.webkitRelativePath)).slice(0, 200),
+          categoria: dados.categoria, editora: dados.editora.trim(), autor: dados.autor.trim(),
+          ano: /^\d{4}$/.test(dados.ano.trim()) ? +dados.ano.trim() : null,
+          titular: dados.titular.trim(), licenca: dados.licenca.trim(), origem: dados.origem.trim(),
+          status: dados.publicar ? "publicada" : "pendente", caminho: caminho, capa: capa, enviadoPor: (CONTA_ATUAL && CONTA_ATUAL.email) || "",
+        };
+        try { await contaApi.criarNoAcervo(sha, ficha, await token()); }
+        catch (e) { contaApi.apagarDoArmazenamento(caminho, await token()).catch(() => {}); throw e; }
+        existentes.add(sha);
+        linha.situacao = dados.publicar ? "enviado" : "direitos";
+        linha.motivo = dados.publicar ? paginas + " páginas, publicada" : "enviada como pendente (fora do catálogo até você publicar)";
+      } catch (e) {
+        linha.situacao = "erro"; linha.motivo = (e && e.message) || "falhou";
+      } finally { if (ab) ab.fechar(); }
+      saida.push(linha); setLinhas(saida.slice());
+    }
+    setAndamento(null);
+    carregar();
+  };
+
+  const alternar = async (d) => {
+    try { await contaApi.mudarNoAcervo(d.uid, { status: d.status === "publicada" ? "pendente" : "publicada" }, await token()); carregar(); }
+    catch (e) { setErro("Não consegui mudar: " + ((e && e.message) || "erro")); }
+  };
+  const apagar = (d) => pedirConfirmacao("Apagar \u201c" + d.titulo + "\u201d do acervo? O arquivo sai do Storage; quem já baixou continua com a cópia no aparelho.",
+    async () => {
+      try { const t = await token(); await contaApi.apagarDoAcervo(d.uid, t); await contaApi.apagarDoArmazenamento(d.caminho, t); carregar(); }
+      catch (e) { setErro("Não consegui apagar: " + ((e && e.message) || "erro")); }
+    });
+
+  const r = resumoDoEnvio(linhas);
+  const campo = (k, rotulo, dica) => (
+    <label style={{ display: "block", marginBottom: 10, fontSize: 13.5 }}>{rotulo}
+      <input value={dados[k]} onChange={mudar(k)} placeholder={dica} style={{ ...S.input, marginTop: 4 }} disabled={!!andamento} />
+    </label>
+  );
+  return (
+    <React.Fragment>
+      <button onClick={onVoltar} style={{ ...S.btnGhost, marginBottom: 12 }}>‹ Voltar</button>
+      {!FIREBASE_ARMAZENAMENTO ? (
+        <div style={S.card}>
+          <div style={S.label}>📦 Acervo do app: falta o armazenamento</div>
+          <p style={{ fontSize: 14, color: "var(--cinza)", lineHeight: 1.6 }}>As edições do acervo moram no Firebase Storage, que pede o plano Blaze (pago pelo uso). O app não liga nada pago sozinho. Para ligar:</p>
+          <ol style={{ fontSize: 14, lineHeight: 1.6, paddingLeft: 20 }}>{PASSOS_ARMAZENAMENTO.map((t, i) => <li key={i} style={{ marginBottom: 6 }}>{t}</li>)}</ol>
+          <p style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.5 }}>Só entra obra sua, licenciada a você ou em domínio público no Brasil. Acervo de outro serviço (Ink, Comixfy...) não entra, mesmo com assinatura: a licença de leitura não dá direito de republicar.</p>
+        </div>
+      ) : (
+        <React.Fragment>
+          <div style={S.card}>
+            <div style={S.label}>📤 Enviar edições ao acervo</div>
+            <p style={{ fontSize: 13.5, color: "var(--cinza)", lineHeight: 1.55 }}>O registro de direitos vale para todos os arquivos deste envio. Se forem de titulares diferentes, envie em lotes separados.</p>
+            {campo("titular", "Titular dos direitos *", "quem detém os direitos (autor, editora, você)")}
+            {campo("licenca", "Licença ou autorização *", "ex.: obra própria; contrato de 01/11/2026; domínio público (autor †1934)")}
+            {campo("origem", "Origem *", "de onde vem o arquivo (ex.: original do autor; digitalização da Biblioteca X)")}
+            {campo("colecao", "Coleção", "vazio: o nome da pasta")}
+            {campo("editora", "Editora", "")}
+            {campo("autor", "Autor", "")}
+            {campo("ano", "Ano", "AAAA")}
+            <label style={{ display: "block", marginBottom: 10, fontSize: 13.5 }}>Categoria
+              <select value={dados.categoria} onChange={mudar("categoria")} style={{ ...S.input, marginTop: 4 }} disabled={!!andamento}>
+                {CATEGORIAS.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13.5, marginBottom: 8, lineHeight: 1.5 }}>
+              <input type="checkbox" checked={dados.publicar} onChange={mudar("publicar")} disabled={!!andamento} style={{ width: 22, height: 22, flexShrink: 0 }} />
+              Publicar já (desmarcado: entra como pendente, fora do catálogo)
+            </label>
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13.5, marginBottom: 12, lineHeight: 1.5 }}>
+              <input type="checkbox" checked={dados.confirmo} onChange={mudar("confirmo")} disabled={!!andamento} style={{ width: 22, height: 22, flexShrink: 0 }} />
+              Confirmo que tenho o direito de oferecer estas edições aos usuários do Super HQs, conforme o registro acima.
+            </label>
+            {!prontoParaEnviar && !andamento && <div style={{ fontSize: 12.5, color: "var(--cinza)", marginBottom: 8 }}>Preencha titular, licença e origem e marque a confirmação para liberar o envio.</div>}
+            <input ref={arquivos} type="file" multiple accept=".pdf,.cbz,.cbr,.zip" style={{ display: "none" }} onChange={(e) => { enviar(e.target.files); e.target.value = ""; }} />
+            <input ref={pasta} type="file" multiple webkitdirectory="" directory="" style={{ display: "none" }} onChange={(e) => { enviar(e.target.files); e.target.value = ""; }} />
+            <button style={S.btn} disabled={!prontoParaEnviar} onClick={() => arquivos.current.click()}>＋ Escolher arquivos</button>
+            <button style={{ ...S.btnGhost, marginTop: 8 }} disabled={!prontoParaEnviar} onClick={() => pasta.current.click()}>📁 Escolher uma pasta (com subpastas)</button>
+            {andamento && (
+              <div role="status" style={{ marginTop: 12, fontSize: 13.5 }}>
+                Enviando {andamento.atual} de {andamento.total}: {andamento.nome} ({Math.round(100 * andamento.fracao)}%)
+                <div style={{ height: 6, background: "var(--surface-muted)", borderRadius: 3, marginTop: 6 }}>
+                  <div style={{ height: 6, width: Math.round(100 * andamento.fracao) + "%", background: "var(--brand-primary)", borderRadius: 3 }} />
+                </div>
+              </div>
+            )}
+          </div>
+          {linhas.length > 0 && (
+            <div style={S.card}>
+              <div style={S.label}>Relatório do envio</div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.7 }}>
+                {r.encontrados} encontrados · {r.integros} íntegros · <b>{r.enviados} publicados</b> · {r.repetidos} repetidos · {r.direitos} pendentes (sem publicar) · {r.erro} com erro
+              </div>
+              <div style={{ marginTop: 8, maxHeight: 280, overflow: "auto", fontSize: 12.5, lineHeight: 1.5 }}>
+                {linhas.map((l, i) => <div key={i} style={{ padding: "4px 0", borderTop: "1px solid var(--borda)" }}>
+                  {l.situacao === "erro" ? "⚠️" : l.situacao === "repetido" ? "♻️" : l.situacao === "direitos" ? "⏸" : "✅"} {l.nome}: {l.motivo}</div>)}
+              </div>
+            </div>
+          )}
+          <div style={S.card}>
+            <div style={S.label}>📚 No acervo ({lista ? lista.length : "…"})</div>
+            {erro && <div role="alert" style={{ color: "var(--danger)", fontSize: 13.5, lineHeight: 1.5, margin: "6px 0" }}>{erro}</div>}
+            {(lista || []).slice().sort((a, b) => ordemNatural(a.titulo || "", b.titulo || "")).map((d) => (
+              <div key={d.uid} style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 0", borderTop: "1px solid var(--borda)" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.titulo}</div>
+                  <div style={{ fontSize: 12, color: "var(--cinza)" }}>{d.status === "publicada" ? "Publicada" : "Pendente"} · {d.paginas} pág. · {d.titular}</div>
+                </div>
+                <button style={{ ...S.btnGhost, width: "auto", padding: "0 12px", minHeight: 44 }} onClick={() => alternar(d)}>{d.status === "publicada" ? "Despublicar" : "Publicar"}</button>
+                <button style={{ ...S.btnGhost, width: 44, padding: 0, minHeight: 44 }} aria-label={"Apagar " + d.titulo} onClick={() => apagar(d)}>🗑</button>
+              </div>
+            ))}
+          </div>
+        </React.Fragment>
+      )}
+    </React.Fragment>
+  );
+}
+
+function CartaoConta({ onPainel, onAcervo }) {
   const c = CONTA_ATUAL;
   const [aviso, setAviso] = useState("");
   const [apagando, setApagando] = useState(false);
@@ -1664,6 +1885,9 @@ function CartaoConta({ onPainel }) {
       )}
       {c.dono && onPainel && (
         <button onClick={onPainel} style={{ ...S.btn, width: "100%", marginBottom: 8 }}>👥 Painel de usuários</button>
+      )}
+      {c.dono && onAcervo && (
+        <button onClick={onAcervo} style={{ ...S.btnGhost, width: "100%", marginBottom: 8 }}>📦 Acervo do app (enviar edições)</button>
       )}
       <button onClick={trocarSenha} style={{ ...S.btnGhost, width: "100%", marginBottom: 8 }}>🔑 Trocar minha senha</button>
       {aviso && <div role="status" style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.5, marginBottom: 8 }}>{aviso}</div>}
@@ -2716,6 +2940,51 @@ function mesclarEstantes(locais, online) {
   (locais || []).forEach((o) => porId.set(o.id, { ...porId.get(o.id), ...o, noAparelho: true }));
   return Array.from(porId.values());
 }
+// ---- O acervo do app (Firebase Storage + Firestore "acervo/{sha256}") ----
+// O dono envia as edições pelo painel; cada uma tem registro de direitos
+// (titular, licença, origem) obrigatório. Quem está liberado lê as
+// "publicada"; as "pendente" ficam só para o dono. O arquivo mora no Storage
+// com o nome do próprio SHA-256 (imutável: trocar o arquivo é outra edição).
+function caminhoNoArmazenamento(sha, tipo) { return "acervo/" + sha + (tipo === "pdf" ? ".pdf" : ".cbz"); }
+function urlDoArmazenamento(balde, caminho) {
+  return "https://firebasestorage.googleapis.com/v0/b/" + encodeURIComponent(balde) + "/o/" + encodeURIComponent(caminho) + "?alt=media";
+}
+function direitosCompletos(d) {
+  return !!d && ["titular", "licenca", "origem"].every((k) => typeof d[k] === "string" && d[k].trim().length > 0);
+}
+// A pasta escolhida vira a coleção ("HQs/Turma/Edição 1.cbz" -> "Turma").
+function colecaoDaTrilha(trilha) {
+  const partes = String(trilha || "").split("/").filter(Boolean);
+  return partes.length >= 2 ? partes[partes.length - 2] : "";
+}
+// A ficha do Firestore vira uma edição da estante (baixada e conferida ao ler).
+function fichaDoAcervoApp(d, balde) {
+  const sha = String((d && (d.sha256 || d.uid)) || "").toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(sha) || !d.caminho || !(d.paginas > 0) || (d.tipo !== "pdf" && d.tipo !== "zip")) return null;
+  const texto = (v) => (typeof v === "string" ? v.slice(0, 500) : "");
+  return {
+    id: sha, titulo: texto(d.titulo) || "Sem título", nomeOriginal: texto(d.nomeOriginal), tipo: d.tipo,
+    paginas: d.paginas, tamanho: d.tamanho || 0, colecao: texto(d.colecao),
+    categoria: CATEGORIAS.some((c) => c[0] === d.categoria) ? d.categoria : "hq",
+    adicionadoEm: d.enviadoEm || 0, leitura: null,
+    capaUrl: /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(d.capa || "") ? d.capa : "",
+    autor: texto(d.autor), editora: texto(d.editora), ano: d.ano || null,
+    direitos: { titular: texto(d.titular), licenca: texto(d.licenca), origem: texto(d.origem) },
+    online: { url: urlDoArmazenamento(balde, d.caminho), privado: true, fonte: "acervo-super-hqs", id: sha, revisao: sha },
+  };
+}
+// O relatório de um envio: cada arquivo cai em uma situação só.
+function resumoDoEnvio(linhas) {
+  const r = { encontrados: linhas.length, integros: 0, enviados: 0, repetidos: 0, erro: 0, direitos: 0 };
+  linhas.forEach((l) => {
+    if (l.situacao !== "erro") r.integros++;
+    if (l.situacao === "enviado") r.enviados++;
+    else if (l.situacao === "repetido") r.repetidos++;
+    else if (l.situacao === "direitos") r.direitos++;
+    else if (l.situacao === "erro") r.erro++;
+  });
+  return r;
+}
 // ---------------- FIM DAS CONTAS DO CATALOGO ----------------
 
 // ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------
@@ -2841,10 +3110,15 @@ async function buscarCatalogo(url) {
 async function baixarObraOnline(obra) {
   if (await estanteDb.arquivo(obra.id)) return (await estanteDb.obra(obra.id)) || obra;
   const controle = new AbortController();
-  const tempo = setTimeout(() => controle.abort(), 180000);
+  // edição grande no 4G: até 15 minutos
+  const tempo = setTimeout(() => controle.abort(), 900000);
   let blob;
   try {
-    const r = await fetch(obra.online.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: controle.signal });
+    const cab = {};
+    // o acervo do app: só quem está liberado lê (as regras do Storage conferem)
+    if (obra.online.privado) { const s = await tokenValido(lerSessaoConta()); cab.Authorization = "Firebase " + s.idToken; }
+    const r = await fetch(obra.online.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: controle.signal, headers: cab });
+    if (obra.online.privado && (r.status === 401 || r.status === 403)) throw new Error("O seu acesso não permite baixar esta edição agora (confira o seu plano em Perfil).");
     if (!r.ok) throw new Error("O arquivo não respondeu (HTTP " + r.status + ").");
     blob = await r.blob();
   } catch (e) {
@@ -3239,6 +3513,12 @@ function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
             </React.Fragment>
           ) : (
             <React.Fragment>
+              {linha("Coleção", obra.colecao)}
+              {linha("Autor", obra.autor)}
+              {linha("Editora", obra.editora)}
+              {linha("Ano", obra.ano ? String(obra.ano) : "")}
+              {obra.direitos && linha("Direitos", [obra.direitos.titular, obra.direitos.licenca].filter(Boolean).join(" · "))}
+              {obra.direitos && linha("Origem", obra.direitos.origem)}
               {linha("Formato", NOME_FORMATO[obra.tipo])}
               {linha("Tamanho", tamanhoTexto(obra.tamanho))}
               {linha("Arquivo", obra.nomeOriginal)}
@@ -3881,7 +4161,33 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   // A estante: as fichas vêm do IndexedDB; os arquivos só quando se lê.
   const [obrasLocais, setObras] = useState([]);
   const [obrasOnline, setObrasOnline] = useState([]);
-  const obras = mesclarEstantes(obrasLocais, obrasOnline);
+  const [obrasDoApp, setObrasDoApp] = useState([]);   // o acervo do app (Storage), só as publicadas
+  // As edições do acervo do app ficam em Biblioteca › Acervo Super HQs (a cópia
+  // baixada junto delas); a estante pessoal fica com o resto.
+  const idsDoApp = new Set(obrasDoApp.map((o) => o.id));
+  const obras = mesclarEstantes(obrasLocais.filter((o) => !idsDoApp.has(o.id)), obrasOnline);
+  const acervoDoApp = mesclarEstantes(obrasLocais.filter((o) => idsDoApp.has(o.id)), obrasDoApp);
+  // O acervo do app: a última lista guardada aparece na hora (e sem rede); a
+  // nova vem do Firestore, que só entrega a quem está liberado.
+  useEffect(() => {
+    if (!FIREBASE_ARMAZENAMENTO || !acessoLigado() || !lerSessaoConta()) return undefined;
+    let vivo = true;
+    const CHAVE = "acervo-do-app";
+    estanteDb.catalogo(CHAVE).then((c) => { if (vivo && c) setObrasDoApp(c.obras); }).catch(() => {});
+    const carregar = async () => {
+      try {
+        const s = await tokenValido(lerSessaoConta());
+        const lista = (await contaApi.listarAcervo(s.idToken, !(CONTA_ATUAL && CONTA_ATUAL.dono)))
+          .filter((d) => d.status === "publicada").map((d) => fichaDoAcervoApp(d, FIREBASE_ARMAZENAMENTO)).filter(Boolean);
+        if (!vivo) return;
+        setObrasDoApp(lista);
+        estanteDb.guardarCatalogo(CHAVE, lista).catch(() => {});
+      } catch (e) { /* sem rede ou sem acesso: fica a última lista */ }
+    };
+    carregar();
+    window.addEventListener("online", carregar);
+    return () => { vivo = false; window.removeEventListener("online", carregar); };
+  }, []);
   const [catalogoUrl, setCatalogoUrl] = useState(() => { try { return store.get("superhqs:catalogo-url") || CATALOGO_PADRAO; } catch (e) { return CATALOGO_PADRAO; } });
   const [catalogoEstado, setCatalogoEstado] = useState({ ocupado: false, erro: "", em: 0 });
   const [conectando, setConectando] = useState(false);
@@ -4114,13 +4420,14 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   if (abertura) return <Abertura onFim={() => setAbertura(false)} />;
   if (lendo) return <Leitor obra={lendo.obra} inicio={lendo.pagina} onProgresso={guardarProgresso} onFechar={() => setLendo(null)} />;
 
-  const todasObras = obras.concat(obrasAcervo);
-  const daEstante = estante === "acervo" ? obrasAcervo : obras;
+  const acervoTodo = acervoDoApp.concat(obrasAcervo);
+  const todasObras = obras.concat(acervoTodo);
+  const daEstante = estante === "acervo" ? acervoTodo : obras;
   const daCategoria = buscarObras(daEstante, { categoria: categoria, ordem: estante === "acervo" ? "titulo" : "recentes" });
   const resultados = buscarObras(todasObras, busca);
   const lendoAgora = continuarLendo(todasObras, 12);
   const destaque = obraDoDia(todasObras);
-  const titulo = (ABAS.find((a) => a[0] === aba) || [0, 0, "Painel de usuários"])[2];
+  const titulo = (ABAS.find((a) => a[0] === aba) || [0, 0, aba === "acervoDono" ? "Acervo do app" : "Painel de usuários"])[2];
   return (
     <div style={S.app}>
       <div style={S.header}>
@@ -4183,7 +4490,7 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
               <ContinueLendo obras={lendoAgora} onLer={lerObra} />
               <Prateleira titulo="Adicionadas recentemente" obras={buscarObras(obras, { ordem: "recentes" }).slice(0, 12)} onAbrir={setFicha}
                 onVerTudo={() => { setBusca({ termo: "", ordem: "recentes", estado: "todos", categoria: "todas" }); setAba("buscar"); }} />
-              <Prateleira titulo="Do acervo Super HQs" obras={buscarObras(obrasAcervo, { ordem: "titulo" }).slice(0, 12)} onAbrir={setFicha}
+              <Prateleira titulo="Do acervo Super HQs" obras={buscarObras(acervoTodo, { ordem: "titulo" }).slice(0, 12)} onAbrir={setFicha}
                 onVerTudo={() => { setEstante("acervo"); setCategoria("todas"); setAba("biblioteca"); }} />
               <ExplorarColecoes colecoes={colecoesDe(todasObras)}
                 onAbrir={(nome) => { setBusca({ termo: nome, ordem: "titulo", estado: "todos", categoria: "todas" }); setAba("buscar"); }} />
@@ -4205,15 +4512,15 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
               ))}
             </div>
             {estante === "acervo" ? (
-              acervoErro && !obrasAcervo.length ? (
+              acervoErro && !acervoTodo.length ? (
                 <div style={S.card}>
                   <div style={{ fontSize: 15, fontWeight: 600 }}>Não consegui carregar o acervo</div>
                   <div style={{ fontSize: 13.5, color: "var(--cinza)", margin: "6px 0 12px" }}>{acervoErro}. A sua estante continua funcionando sem internet.</div>
                   <button style={S.btnGhost} onClick={recarregarAcervo}>Tentar de novo</button>
                 </div>
-              ) : obrasAcervo.length ? (
+              ) : acervoTodo.length ? (
                 <React.Fragment>
-                  <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>Obras em domínio público no Brasil, com as imagens do Wikimedia Commons. Atualizado automaticamente.</div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>Obras próprias, licenciadas ou em domínio público no Brasil, cada uma com o registro de direitos na ficha. As do Wikimedia Commons se atualizam sozinhas.</div>
                   <GradeObras obras={daCategoria} onAbrir={setFicha} />
                 </React.Fragment>
               ) : <div style={{ ...S.card, color: "var(--cinza)", fontSize: 14 }}>Carregando o acervo…</div>
@@ -4248,13 +4555,17 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
           </React.Fragment>
         )}
 
+        {aba === "acervoDono" && CONTA_ATUAL && CONTA_ATUAL.dono && (
+          <TelaAcervoDono onVoltar={() => setAba("ajustes")} pedirConfirmacao={pedirConfirmacao} />
+        )}
+
         {aba === "painelUsuarios" && CONTA_ATUAL && CONTA_ATUAL.dono && (
           <TelaPainelUsuarios onVoltar={() => setAba("ajustes")} pedirConfirmacao={pedirConfirmacao} />
         )}
 
         {aba === "ajustes" && (
           <React.Fragment>
-            <div id="aj-conta"><CartaoConta onPainel={() => setAba("painelUsuarios")} /></div>
+            <div id="aj-conta"><CartaoConta onPainel={() => setAba("painelUsuarios")} onAcervo={() => setAba("acervoDono")} /></div>
             {!JA_INSTALADO && (
               <div style={S.card}>
                 <div style={S.label}>📲 Instalar o app</div>

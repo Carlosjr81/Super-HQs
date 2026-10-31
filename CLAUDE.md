@@ -191,6 +191,30 @@ arquivos de terceiros ou tokens no repositório público.
 - Destaque e "Continue de onde parou" do Início abrem por `lerObra`, que
   baixa e confere a edição online antes do leitor.
 
+## O acervo do app (Storage, 2026-10-31m)
+
+Etapa 5 do roteiro, pronta no código e **desligada** até o dono ligar o
+Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
+`firebase/LEIA-ME.md`, que pede o plano Blaze: só o dono autoriza).
+
+- **Envio**: Perfil › Sua conta › 📦 Acervo do app (`TelaAcervoDono`), só o
+  dono. Arquivos ou uma pasta inteira (a pasta vira a coleção). Exige
+  titular, licença e origem e a confirmação de direito; confere o tipo pelos
+  bytes (RAR/7z e HTML recusados com motivo), SHA-256, páginas e capa (200 px
+  em base64 na ficha, para a lista abrir sem baixar nada). Arquivo em
+  `acervo/<sha256>.pdf|cbz` (imutável), ficha em `acervo/{sha256}` no
+  Firestore com `enviadoEm` do servidor. Relatório: encontrados, íntegros,
+  publicados, repetidos, pendentes e com erro. Publicar/despublicar/apagar
+  na mesma tela.
+- **Leitura**: só as `publicada`, para quem está liberado, no prazo e (com a
+  cobrança ligada) com plano. As regras (`firestore.rules` v6 e
+  `storage.rules`) repetem a conta de `planoDaConta`: mudou uma, mude as
+  três. Aparecem em Biblioteca › Acervo Super HQs; o download leva
+  `Authorization: Firebase <token>` e passa pela mesma conferência do
+  catálogo online (`baixarObraOnline`), e a cópia fica no aparelho.
+- Testado no Chromium com Firebase simulado (envio de CBZ e PDF, RAR
+  recusado). **Não testado no Firebase real**: depende do Blaze.
+
 ## A abertura
 
 `VIDEO_ABERTURA` está vazio: o dono vai mandar a vinheta pronta (pedido dele,

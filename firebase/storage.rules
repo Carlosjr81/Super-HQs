@@ -1,0 +1,62 @@
+rules_version = '2';
+// As regras do Firebase Storage do Super HQs: o acervo do app.
+// Cole este arquivo inteiro em: Firebase › Storage › Regras › Publicar.
+// Versão 1 (2026-10-31). Junto com o firestore.rules versão 6.
+//
+// - Só o dono (e-mail confirmado) envia e apaga.
+// - Cada arquivo tem o nome do próprio SHA-256 e não é substituído: um
+//   arquivo diferente é outra edição.
+// - Lê quem está liberado, dentro do prazo e, com a cobrança ligada, com
+//   plano. A conta vem do Firestore (a mesma de firestore.rules; mudou lá,
+//   mude aqui).
+service firebase.storage {
+  match /b/{balde}/o {
+
+    function dono() {
+      return request.auth != null
+        && request.auth.token.email == 'carlos.jr.81@hotmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function cobrancaLigada() {
+      return firestore.exists(/databases/(default)/documents/config/acesso)
+        && firestore.get(/databases/(default)/documents/config/acesso).data.get('cobranca', false) == true;
+    }
+    function emTeste(c) {
+      let cfg = firestore.get(/databases/(default)/documents/config/acesso).data;
+      let dias = cfg.get('testeDias', 7);
+      let fim = dias * 86400000 + 86400000;
+      return dias > 0 && (request.time.toMillis() < c.get('criadoEm', 0) + fim
+        || request.time.toMillis() < cfg.get('cobrancaDesde', 0) + fim);
+    }
+    function comPlano(c) {
+      let agora = request.time.toMillis();
+      return !cobrancaLigada()
+        || (c.get('cortesia', false) == true && (c.get('cortesiaAte', 0) == 0 || c.get('cortesiaAte', 0) > agora))
+        || c.get('vitalicio', false) == true
+        || c.get('pagoAte', 0) > agora
+        || emTeste(c);
+    }
+    function leitorLiberado() {
+      let c = firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data;
+      return c.status == 'liberado'
+        && (c.get('ate', 0) == 0 || c.get('ate', 0) > request.time.toMillis())
+        && comPlano(c);
+    }
+
+    match /acervo/{arquivo} {
+      allow get: if dono() || (request.auth != null && leitorLiberado());
+      allow list: if dono();
+      allow create: if dono()
+        && arquivo.matches('[a-f0-9]{64}[.](pdf|cbz)')
+        && request.resource.size < 2 * 1024 * 1024 * 1024
+        && request.resource.contentType.matches('application/(pdf|zip)');
+      allow update: if false;
+      allow delete: if dono();
+    }
+
+    // qualquer outra coisa: ninguém
+    match /{tudo=**} {
+      allow read, write: if false;
+    }
+  }
+}

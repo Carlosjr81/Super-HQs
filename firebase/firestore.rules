@@ -6,6 +6,7 @@ rules_version = '2';
 // Versão 3 (2026-10-29): a pessoa grava o aceite dos Termos de Uso (termos, termosEm).
 // Versão 4 (2026-10-29): o histórico de aceites (aceites/), que só o dono lê e ninguém altera.
 // Versão 5 (2026-10-30): os pagamentos (pagamentos/): a pessoa avisa que pagou, só o dono confirma.
+// Versão 6 (2026-10-31): o acervo do app (acervo/): só o dono envia; lê quem está liberado e com plano.
 service cloud.firestore {
   match /databases/{banco}/documents {
 
@@ -23,6 +24,57 @@ service cloud.firestore {
     function autoLiberar() {
       return exists(/databases/$(banco)/documents/config/acesso)
         && get(/databases/$(banco)/documents/config/acesso).data.get('auto', false) == true;
+    }
+
+    // Quem pode LER o acervo do app: conta liberada, dentro do prazo e, com a
+    // cobrança ligada, com plano (cortesia, vitalício, pago ou em teste). É a
+    // mesma conta de planoDaConta no index.html; o storage.rules repete esta.
+    function cobrancaLigada() {
+      return exists(/databases/$(banco)/documents/config/acesso)
+        && get(/databases/$(banco)/documents/config/acesso).data.get('cobranca', false) == true;
+    }
+    function emTeste(c) {
+      let cfg = get(/databases/$(banco)/documents/config/acesso).data;
+      let dias = cfg.get('testeDias', 7);
+      let fim = dias * 86400000 + 86400000;
+      return dias > 0 && (request.time.toMillis() < c.get('criadoEm', 0) + fim
+        || request.time.toMillis() < cfg.get('cobrancaDesde', 0) + fim);
+    }
+    function comPlano(c) {
+      let agora = request.time.toMillis();
+      return !cobrancaLigada()
+        || (c.get('cortesia', false) == true && (c.get('cortesiaAte', 0) == 0 || c.get('cortesiaAte', 0) > agora))
+        || c.get('vitalicio', false) == true
+        || c.get('pagoAte', 0) > agora
+        || emTeste(c);
+    }
+    function leitorLiberado() {
+      let c = get(/databases/$(banco)/documents/usuarios/$(request.auth.uid)).data;
+      return c.status == 'liberado'
+        && (c.get('ate', 0) == 0 || c.get('ate', 0) > request.time.toMillis())
+        && comPlano(c);
+    }
+    function direitosCompletos(d) {
+      return d.titular is string && d.titular.size() > 0
+        && d.licenca is string && d.licenca.size() > 0
+        && d.origem is string && d.origem.size() > 0
+        && d.status in ['publicada', 'pendente'];
+    }
+
+    // O acervo do app (versão 6). Uma ficha por edição, com o SHA-256 do
+    // arquivo como id. Só o dono envia, muda e apaga, sempre com o registro de
+    // direitos completo; quem está liberado lê só as publicadas (a consulta
+    // precisa pedir status == "publicada", senão é recusada inteira).
+    match /acervo/{sha} {
+      allow get, list: if dono()
+        || (request.auth != null && resource.data.status == 'publicada' && leitorLiberado());
+      allow create: if dono() && sha.matches('[a-f0-9]{64}')
+        && request.resource.data.sha256 == sha
+        && direitosCompletos(request.resource.data)
+        && request.resource.data.enviadoEm == request.time;
+      allow update: if dono() && direitosCompletos(request.resource.data)
+        && request.resource.data.sha256 == resource.data.sha256;
+      allow delete: if dono();
     }
 
     // a regra das contas novas: todo mundo com conta lê; só o dono muda
