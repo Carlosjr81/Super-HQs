@@ -37,6 +37,8 @@ function paginaDoResultado(r) {
     // sem os parâmetros de rastreio e no host que serve a outros sites
     url: ii.url, thumb: String(ii.thumburl || ii.url).split("?")[0].replace("//thumb.wikimedia.org/", "//upload.wikimedia.org/"),
     largura: ii.thumbwidth || ii.width, altura: ii.thumbheight || ii.height,
+    // o tamanho do arquivo original: o Toque para Ler recorta dele
+    larguraOriginal: ii.width || 0, alturaOriginal: ii.height || 0,
     sha1: ii.sha1, mime: ii.mime, tamanho: ii.size,
     licenca: semTags(md.LicenseShortName && md.LicenseShortName.value),
     artista: semTags(md.Artist && md.Artist.value).slice(0, 200),
@@ -54,6 +56,11 @@ async function coletarFonte(fonte, opcoes) {
   if (typeof o.esperar !== "function") o.esperar = (ms) => new Promise((r) => setTimeout(r, ms));
   const cursor = o.cursor || { cont: null, paginas: [], consultas: 0 };
   const padrao = fonte.padrao ? new RegExp(fonte.padrao) : null;
+  // `alternativas`: outros arquivos da categoria que podem ser a MESMA página
+  // em resolução maior (outro escaneamento). Só entram como candidatas: quem
+  // decide é o escolherMelhorVersao do núcleo.
+  const alternativas = fonte.alternativas ? new RegExp(fonte.alternativas, "i") : null;
+  cursor.outros = cursor.outros || [];
   for (;;) {
     const q = new URLSearchParams(paramsDaConsulta(fonte, cursor.cont)).toString();
     const j = await o.buscarJson(API + "?" + q);
@@ -66,7 +73,15 @@ async function coletarFonte(fonte, opcoes) {
     for (const r of itens) {
       const p = paginaDoResultado(r);
       if (!p) continue;
-      if (padrao && !padrao.test(p.titulo)) continue;
+      if (padrao && !padrao.test(p.titulo)) {
+        if (alternativas && alternativas.test(p.titulo)) p.alternativa = true;
+        else {
+          // para o relatório: o que mais existe na categoria (e de que tamanho)
+          if (cursor.outros.length < 300 && !cursor.outros.some((x) => x.titulo === p.titulo))
+            cursor.outros.push({ titulo: p.titulo, largura: p.larguraOriginal, altura: p.alturaOriginal, mime: p.mime });
+          continue;
+        }
+      }
       if (!cursor.paginas.some((x) => x.titulo === p.titulo)) cursor.paginas.push(p);
     }
     cursor.consultas++;

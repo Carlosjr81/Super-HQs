@@ -75,12 +75,17 @@ async function sincronizar(d) {
         try { ok = await d.disponivel(p.thumb); } catch (e) {}
         if (!ok) fora.add(p.titulo);
       }
-      const { obra, revisao } = N.montarObra(fonte, cursor.paginas, anoAtual, aprovadas, fora);
+      const { obra, revisao, trocas } = N.montarObra(fonte, cursor.paginas, anoAtual, aprovadas, fora);
+      const bases = cursor.paginas.filter((p) => !p.alternativa).length;
+      const larguras = obra.paginas.map((p) => p.larguraOriginal || 0).filter(Boolean).sort((a, b) => a - b);
+      r.larguraMediana = larguras.length ? larguras[Math.floor(larguras.length / 2)] : 0;
+      r.trocas = trocas;
+      r.outros = (cursor.outros || []).slice().sort((a, b) => (b.largura * b.altura) - (a.largura * a.altura)).slice(0, 15);
       const ap = N.aplicarObra(catalogo, obra, agora);
       catalogo = ap.catalogo;
       catalogo.revisao = N.juntarRevisao((catalogo.revisao || []).filter((x) => x.obra !== obra.id), revisao, d.aprovacoes);
-      Object.assign(r, { situacao: "ok", mudanca: ap.mudanca, encontradas: cursor.paginas.length, publicadas: obra.paginas.length, revisao: revisao.length });
-      Object.assign(ef, { cursor: null, erro: null, ultimaColeta: agora, encontradas: cursor.paginas.length, publicadas: obra.paginas.length, revisao: revisao.length });
+      Object.assign(r, { situacao: "ok", mudanca: ap.mudanca, encontradas: bases, publicadas: obra.paginas.length, revisao: revisao.length });
+      Object.assign(ef, { cursor: null, erro: null, ultimaColeta: agora, encontradas: bases, publicadas: obra.paginas.length, revisao: revisao.length });
     } catch (e) {
       r.situacao = "erro"; r.erro = String((e && e.message) || e).slice(0, 300);
       ef.erro = r.erro; ef.erroEm = agora;
@@ -111,6 +116,18 @@ function relatorio(resumo, catalogo) {
     obras.reduce((s, o) => s + (o.status === "publicada" ? o.paginas.length : 0), 0) + " páginas, " +
     (catalogo.revisao || []).length + " itens esperando revisão.", "",
     "\"Na fonte\" conta só os arquivos que casam com o padrão da fonte; a diferença para \"Publicadas\" está em revisão (com o motivo em `catalogo/acervo.json`, campo `revisao`) ou é imagem repetida (mesmo SHA-1).");
+  // A resolução: quanto o Toque para Ler tem para ampliar, e o que mais existe
+  // na categoria (outro escaneamento maior vira `alternativas` no config.json).
+  const comTamanho = resumo.fontes.filter((f) => f.larguraMediana || (f.outros && f.outros.length));
+  if (comTamanho.length) {
+    l.push("", "## Resolução", "", "| Fonte | Largura mediana do original | Páginas trocadas por versão maior |", "|---|---|---|");
+    for (const f of comTamanho) l.push("| " + (f.titulo || f.id) + " | " + (f.larguraMediana ? f.larguraMediana + " px" : "") + " | " + (f.trocas || 0) + " |");
+    for (const f of comTamanho) {
+      if (!f.outros || !f.outros.length) continue;
+      l.push("", "Outros arquivos em **" + (f.titulo || f.id) + "** (fora do padrão, os maiores primeiro):", "");
+      for (const o of f.outros) l.push("- " + o.titulo.replace(/\|/g, "/") + " — " + o.largura + "×" + o.altura + (o.mime ? " (" + o.mime + ")" : ""));
+    }
+  }
   return l.join("\n") + "\n";
 }
 

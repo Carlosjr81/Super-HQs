@@ -3,16 +3,16 @@
  "pausado": false,
  "intervaloHoras": 24,
  "fontes": [
-  { "id": "nemo-1905", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1905", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$",
+  { "id": "nemo-1905", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1905", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$", "alternativas": "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$",
     "titulo": "Little Nemo in Slumberland — 1905", "colecao": "Little Nemo in Slumberland", "autor": "Winsor McCay", "autorFalecidoEm": 1934, "ano": 1905,
     "categoriaApp": "hq", "idioma": "en", "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1905" },
-  { "id": "nemo-1906", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1906", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$",
+  { "id": "nemo-1906", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1906", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$", "alternativas": "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$",
     "titulo": "Little Nemo in Slumberland — 1906", "colecao": "Little Nemo in Slumberland", "autor": "Winsor McCay", "autorFalecidoEm": 1934, "ano": 1906,
     "categoriaApp": "hq", "idioma": "en", "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1906" },
-  { "id": "nemo-1907", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1907", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$",
+  { "id": "nemo-1907", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1907", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$", "alternativas": "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$",
     "titulo": "Little Nemo in Slumberland — 1907", "colecao": "Little Nemo in Slumberland", "autor": "Winsor McCay", "autorFalecidoEm": 1934, "ano": 1907,
     "categoriaApp": "hq", "idioma": "en", "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1907" },
-  { "id": "nemo-1908", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1908", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$",
+  { "id": "nemo-1908", "tipo": "commons-categoria", "categoria": "Category:Little Nemo in Slumberland, 1908", "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$", "alternativas": "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$",
     "titulo": "Little Nemo in Slumberland — 1908", "colecao": "Little Nemo in Slumberland", "autor": "Winsor McCay", "autorFalecidoEm": 1934, "ano": 1908,
     "categoriaApp": "hq", "idioma": "en", "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1908" }
  ]

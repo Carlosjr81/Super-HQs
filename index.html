@@ -263,7 +263,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31j";
+const VERSAO_APP = "2026-10-31k";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -2712,7 +2712,11 @@ function abrirDoAcervo(o) {
     // para o Toque para Ler: o arquivo original do Commons (a miniatura de
     // 1280 px deixa o balão de uma página de jornal com uns 60 px)
     async detalhe(i) {
-      const url = String(o.paginas[i].url || "").split("?")[0];
+      const pg = o.paginas[i];
+      // o catálogo sabe o tamanho do original: se não é maior que a página
+      // aberta, baixar não ajuda (o realce resolve sozinho)
+      if (pg.larguraOriginal && pg.larguraOriginal <= (pg.largura || 1280) * 1.15) return null;
+      const url = String(pg.url || "").split("?")[0];
       if (!/^https:\/\/upload\.wikimedia\.org\/.+\.(jpe?g|png|gif|webp)$/i.test(url)) return null;
       const r = await fetch(url);
       if (!r.ok) throw new Error("o original não respondeu (" + r.status + ")");

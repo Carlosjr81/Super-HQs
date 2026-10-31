@@ -129,7 +129,11 @@ no projeto** (o próprio documento dele pede isso).
   textura abaixo do limiar fica como está), só no balão ampliado, nunca na
   página. O botão "Original" mostra sem realce (fica lembrado em
   `superhqs:balaoOriginal`). Escaneamento antigo de jornal tem limite: o
-  realce firma a borda da letra, não inventa detalhe.
+  realce firma a borda da letra, não inventa detalhe. Por isso a
+  sincronização escolhe o **maior escaneamento** de cada página
+  (`alternativas` no `config.json`, `escolherMelhorVersao` no núcleo) e guarda
+  `larguraOriginal`; o app nem baixa o original quando ele não é maior que a
+  página aberta.
 - Cartões com raio 16 e sombra suave só no claro; no escuro, borda.
 
 ## O acervo sincronizado (`conectores/`, `catalogo/acervo.json`)

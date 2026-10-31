@@ -1,5 +1,5 @@
 // Super HQs - Service Worker (modo offline). Veio do Treino Livre.
-const CACHE = "superhqs-v10";
+const CACHE = "superhqs-v11";
 // A vinheta de abertura num cache só dela, preservado entre versões: guardá-la
 // no cache da versão a baixaria de novo a cada atualização do app.
 const CACHE_MIDIA = "superhqs-midia";
