@@ -1,10 +1,10 @@
 # Relatório da sincronização do acervo
 
-Gerado em 2026-10-31T14:59:06.147Z. Gravado a cada execução por `conectores/rodar.js`.
+Gerado em 2026-10-31T15:06:28.792Z. Gravado a cada execução por `conectores/rodar.js`.
 
 | Fonte | Situação | Mudança | Na fonte | Publicadas | Em revisão |
 |---|---|---|---|---|---|
-| Little Nemo in Slumberland — 1905 | ok | alterada | 11 | 11 | 0 |
+| Little Nemo in Slumberland — 1906 | ok | alterada | 48 | 48 | 0 |
 
 No catálogo: 4 obras publicadas, 0 indisponíveis, 163 páginas, 0 itens esperando revisão.
 
@@ -14,14 +14,17 @@ No catálogo: 4 obras publicadas, 0 indisponíveis, 163 páginas, 0 itens espera
 
 | Fonte | Largura mediana do original | Páginas trocadas por versão maior |
 |---|---|---|
-| Little Nemo in Slumberland — 1905 | 1741 px | 0 |
+| Little Nemo in Slumberland — 1906 | 1768 px | 1 |
 
-Outros arquivos em **Little Nemo in Slumberland — 1905** (fora do padrão, os maiores primeiro):
+Outros arquivos em **Little Nemo in Slumberland — 1906** (fora do padrão, os maiores primeiro):
 
-- Little Nemo moon.jpg — 1720×2380 (image/jpeg)
-- WikiReaderNemo.png — 1266×1820 (image/png)
-- Little Nemo turkey.jpg — 1225×1722 (image/jpeg)
-- Winsor McCay turky in a circle.jpg — 499×510 (image/jpeg)
-- Little Nemo 1905.jpg — 468×357 (image/jpeg)
-- Nemo mushroom 240.jpg — 240×595 (image/jpeg)
-- Little Nemo horse.jpg — 450×185 (image/jpeg)
+- Winsor McCay, Little Nemo in Slumberland - "I don't like this, one little tiny bit, not one tiny weenie bit", 1906, NGA 142153.jpg — 3166×4000 (image/jpeg)
+- Little Nemo pink dress.jpg — 1193×1660 (image/jpeg)
+- Nemo1906.jpg — 1132×1548 (image/jpeg)
+- Little Nemo Elephant.jpg — 1050×1382 (image/jpeg)
+- Little NemoSlumberland band.jpg — 788×1016 (image/jpeg)
+- Little Nemo Dragon.jpg — 800×614 (image/jpeg)
+- 1906 0311 peacocks 650.jpg — 650×421 (image/jpeg)
+- Pointing Flip.png — 482×316 (image/png)
+- Little Nemo title.jpg — 600×159 (image/jpeg)
+- Little Nemo princess.jpg — 111×173 (image/jpeg)
