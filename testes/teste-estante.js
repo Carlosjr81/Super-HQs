@@ -10,7 +10,7 @@ function pedaco(de, ate) {
 }
 eval(pedaco("const semAcento = (s) =>", ";\n") + ";\nglobalThis.semAcento = semAcento;");
 eval(pedaco("// ---------------- ESTANTE: AS CONTAS", "// ---------------- FIM DAS CONTAS DA ESTANTE") +
-  "\nglobalThis.E = { tipoDoArquivo, paginasDoZip, tituloDoArquivo, buscarObras, estadoLeitura, progressoTexto, continuarLendo, ordemNatural, hexDe, tamanhoTexto };");
+  "\nglobalThis.E = { tipoDoArquivo, paginasDoZip, tituloDoArquivo, buscarObras, estadoLeitura, progressoTexto, continuarLendo, ordemNatural, hexDe, tamanhoTexto, obraDoDia, colecoesDe };");
 
 let ok = 0, mal = 0;
 function teste(nome, esperado, obtido) {
@@ -62,6 +62,15 @@ teste("título A-Z, com número em ordem natural", ["a", "b", "d", "c"], E.busca
 teste("lidas por último", ["d", "b", "c", "a"], E.buscarObras(todas, { ordem: "lidas" }).map((o) => o.id));
 teste("busca vazia devolve tudo", 4, E.buscarObras(todas, {}).length);
 teste("a busca não mexe na lista original", ["a", "b", "c", "d"], todas.map((o) => o.id));
+
+console.log("\n--- o Início ---");
+const d1 = E.obraDoDia(todas, Date.parse("2026-10-31T10:00:00Z")), d2 = E.obraDoDia(todas, Date.parse("2026-10-31T23:00:00Z"));
+teste("obra do dia: a mesma o dia todo", d1.id, d2.id);
+teste("obra do dia: não escolhe a já lida quando há outras", false, E.estadoLeitura(d1) === "lida");
+teste("obra do dia: muda de um dia para outro (em 10 dias, mais de uma)", true,
+  new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => E.obraDoDia(todas, Date.parse("2026-11-01T12:00:00Z") + i * 864e5).id)).size > 1);
+teste("obra do dia: estante vazia", null, E.obraDoDia([], Date.now()));
+teste("coleções: contadas, das maiores para as menores", [{ nome: "Saga da Noite", n: 1 }], E.colecoesDe(todas));
 
 console.log("\n--- miudezas ---");
 teste("hex do SHA-256", "00ff10", E.hexDe(new Uint8Array([0, 255, 16]).buffer));

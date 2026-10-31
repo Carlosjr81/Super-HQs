@@ -100,8 +100,13 @@
     background: #6F8CFF; animation: carrega 1.1s ease-in-out infinite alternate; }
   @keyframes carrega { from { transform: translateX(-10%); } to { transform: translateX(160%); } }
   @keyframes surge { 0% { transform: scale(.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  /* entrada discreta das seções do Início (só uma vez, curta) */
+  @keyframes entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .entra { animation: entra .32s ease-out both; }
+  .entra + .entra { animation-delay: .05s; }
   @media (prefers-reduced-motion: reduce) {
     #carregando .barra i { animation: none; width: 100%; }
+    .entra { animation: none; }
   }
 </style>
 </head>
@@ -258,7 +263,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31f";
+const VERSAO_APP = "2026-10-31g";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -2413,6 +2418,24 @@ function continuarLendo(lista, n) {
   return (lista || []).filter((o) => estadoLeitura(o) === "lendo")
     .sort((a, b) => (b.leitura.em || 0) - (a.leitura.em || 0)).slice(0, n || 10);
 }
+// A "Descoberta do dia": uma obra por dia, a mesma o dia todo em qualquer
+// aparelho (sorteio estável pela data). Prefere as que a pessoa não terminou.
+function obraDoDia(lista, data) {
+  const l = (lista || []).filter((o) => estadoLeitura(o) !== "lida");
+  const fonte = l.length ? l : (lista || []);
+  if (!fonte.length) return null;
+  const dia = new Date(data || Date.now()).toISOString().slice(0, 10);
+  let h = 7;
+  for (let i = 0; i < dia.length; i++) h = (h * 31 + dia.charCodeAt(i)) >>> 0;
+  const ordenada = fonte.slice().sort((a, b) => (a.id < b.id ? -1 : 1));
+  return ordenada[h % ordenada.length];
+}
+// As coleções da estante e do acervo, das maiores para as menores.
+function colecoesDe(lista) {
+  const m = new Map();
+  (lista || []).forEach((o) => { if (!o.colecao) return; const c = m.get(o.colecao) || { nome: o.colecao, n: 0 }; c.n++; m.set(o.colecao, c); });
+  return Array.from(m.values()).sort((a, b) => b.n - a.n || ordemNatural(a.nome, b.nome));
+}
 function hexDe(buf) { return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join(""); }
 function tamanhoTexto(bytes) {
   if (!(bytes > 0)) return "";
@@ -2737,14 +2760,7 @@ async function importarArquivo(file) {
 // A capa: proporção vertical de revista (2:3), a arte inteira e sem esticar
 // (contain); o que sobra fica no fundo neutro do cartão.
 function Capa({ obra, largura }) {
-  const [url, setUrl] = useState(null);
-  useEffect(() => {
-    if (obra.capaUrl) { setUrl(obra.capaUrl); return; }
-    if (!obra.capa) return;
-    const u = URL.createObjectURL(obra.capa);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [obra.capa, obra.capaUrl]);
+  const url = useUrlDaCapa(obra);
   return (
     <div style={{ width: largura || "100%", aspectRatio: "2 / 3", borderRadius: 12, overflow: "hidden", background: "var(--surface-muted)", border: "1px solid var(--borda)" }}>
       {url && <img src={url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />}
@@ -2796,16 +2812,106 @@ function GradeObras({ obras, onAbrir }) {
 function Prateleira({ titulo, obras, onAbrir, onVerTudo }) {
   if (!obras.length) return null;
   return (
-    <section style={{ marginBottom: 24 }} aria-label={titulo}>
+    <section className="entra" style={{ marginBottom: 24 }} aria-label={titulo}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>{titulo}</h2>
         {onVerTudo && <button onClick={onVerTudo} style={{ background: "none", border: "none", color: "var(--brand-primary)", fontWeight: 600, fontSize: 14, cursor: "pointer", minHeight: 44, padding: "0 4px" }}>Ver tudo</button>}
       </div>
       <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 6, scrollSnapType: "x mandatory" }}>
         {obras.map((o) => (
-          <div key={o.id} style={{ width: 132, flexShrink: 0, scrollSnapAlign: "start" }}>
+          <div key={o.id} style={{ width: 148, flexShrink: 0, scrollSnapAlign: "start" }}>
             <GradeObras obras={[o]} onAbrir={onAbrir} />
           </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// O endereço da capa: o Blob da estante (vira URL temporária) ou o endereço
+// do acervo. Serve à capa do cartão e ao fundo desfocado do destaque.
+function useUrlDaCapa(obra) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    if (obra.capaUrl) { setUrl(obra.capaUrl); return; }
+    if (!obra.capa) { setUrl(null); return; }
+    const u = URL.createObjectURL(obra.capa);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [obra.capa, obra.capaUrl]);
+  return url;
+}
+
+// O destaque do topo do Início: a capa grande, o fundo com a própria arte
+// desfocada e as ações principais. Escuro nos dois temas: é o "palco".
+function Destaque({ obra, onLer, onDetalhes }) {
+  const url = useUrlDaCapa(obra);
+  const e = estadoLeitura(obra);
+  return (
+    <section className="entra" aria-label="Descoberta do dia" style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 24, background: "#0D1530", minHeight: 236 }}>
+      {url && <img src={url} alt="" aria-hidden="true" style={{ position: "absolute", inset: -30, width: "calc(100% + 60px)", height: "calc(100% + 60px)", objectFit: "cover", filter: "blur(22px) brightness(0.5) saturate(1.3)" }} />}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(100deg, rgba(9,15,33,0.92) 0%, rgba(9,15,33,0.55) 60%, rgba(9,15,33,0.25) 100%)" }} />
+      <div style={{ position: "relative", display: "flex", gap: 16, padding: 20, alignItems: "flex-end" }}>
+        <div style={{ width: 118, flexShrink: 0, boxShadow: "0 12px 30px rgba(0,0,0,0.5)", borderRadius: 12 }}><Capa obra={obra} /></div>
+        <div style={{ minWidth: 0, flex: 1, color: "#F5F7FF" }}>
+          <span style={{ display: "inline-block", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 999, background: "rgba(111,140,255,0.22)", color: "#C9D4FF", marginBottom: 8 }}>✦ Descoberta do dia</span>
+          <h2 style={{ fontSize: 21, fontWeight: 700, lineHeight: 1.25, margin: "0 0 4px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>{obra.titulo}</h2>
+          <div style={{ fontSize: 13, color: "#BAC3D9", marginBottom: 12 }}>{[obra.acervo && obra.acervo.autor, obra.paginas + " páginas", e === "lendo" ? progressoTexto(obra) : ""].filter(Boolean).join(" · ")}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={() => onLer(obra, e === "lendo" ? obra.leitura.pagina : 0)}
+              style={{ minHeight: 44, borderRadius: 12, border: "none", background: "#6F8CFF", color: "#090F21", fontWeight: 700, fontSize: 15, padding: "0 18px", cursor: "pointer" }}>
+              {e === "lendo" ? "▶ Continuar" : "▶ Ler agora"}</button>
+            <button onClick={() => onDetalhes(obra)}
+              style={{ minHeight: 44, borderRadius: 12, border: "1px solid rgba(245,247,255,0.35)", background: "rgba(9,15,33,0.35)", color: "#F5F7FF", fontWeight: 600, fontSize: 14, padding: "0 14px", cursor: "pointer" }}>Detalhes</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// "Continue de onde parou": cartões largos, com a página e a barra, que
+// abrem o leitor direto na página certa (um toque, sem passar pela ficha).
+function ContinueLendo({ obras, onLer }) {
+  if (!obras.length) return null;
+  return (
+    <section className="entra" style={{ marginBottom: 24 }} aria-label="Continue de onde parou">
+      <h2 style={{ fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>Continue de onde parou</h2>
+      <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 6, scrollSnapType: "x mandatory" }}>
+        {obras.map((o) => {
+          const pct = Math.round(100 * (o.leitura.pagina + 1) / o.paginas);
+          return (
+            <button key={o.id} onClick={() => onLer(o, o.leitura.pagina)} aria-label={"Continuar " + o.titulo + ", " + progressoTexto(o)}
+              style={{ ...S.card, marginBottom: 0, flexShrink: 0, width: 268, display: "flex", gap: 12, padding: 10, textAlign: "left", cursor: "pointer", color: "var(--texto)", scrollSnapAlign: "start" }}>
+              <div style={{ width: 64, flexShrink: 0 }}><Capa obra={o} /></div>
+              <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{o.titulo}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", margin: "4px 0 8px" }}>{progressoTexto(o)}</div>
+                <div style={{ height: 4, background: "var(--borda)", borderRadius: 2 }}>
+                  <div style={{ height: 4, width: pct + "%", background: "var(--brand-primary)", borderRadius: 2 }} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--brand-primary)", marginTop: 8 }}>▶ Continuar · {pct}%</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// "Explorar coleções": as coleções em chips, cada uma leva à busca dela.
+function ExplorarColecoes({ colecoes, onAbrir }) {
+  if (!colecoes.length) return null;
+  return (
+    <section className="entra" style={{ marginBottom: 24 }} aria-label="Explorar coleções">
+      <h2 style={{ fontSize: 20, fontWeight: 600, margin: "0 0 12px" }}>Explorar coleções</h2>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {colecoes.slice(0, 12).map((c) => (
+          <button key={c.nome} onClick={() => onAbrir(c.nome)}
+            style={{ minHeight: 44, borderRadius: 999, border: "1px solid var(--borda2)", background: "var(--surface)", color: "var(--texto)", fontWeight: 600, fontSize: 14, padding: "0 14px", cursor: "pointer", boxShadow: "var(--sombra-cartao)" }}>
+            {c.nome} <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>· {c.n}</span>
+          </button>
         ))}
       </div>
     </section>
@@ -3633,6 +3739,7 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   const daCategoria = buscarObras(daEstante, { categoria: categoria, ordem: estante === "acervo" ? "titulo" : "recentes" });
   const resultados = buscarObras(todasObras, busca);
   const lendoAgora = continuarLendo(todasObras, 12);
+  const destaque = obraDoDia(todasObras);
   const titulo = (ABAS.find((a) => a[0] === aba) || [0, 0, "Painel de usuários"])[2];
   return (
     <div style={S.app}>
@@ -3642,10 +3749,14 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
             <div style={S.logo}>Super HQs</div>
             <div style={{ fontSize: 13, color: "var(--cinza)", fontWeight: 700 }}>{titulo}</div>
           </div>
-          <button onClick={() => setTema(tema === "escuro" ? "claro" : "escuro")} aria-label={tema === "escuro" ? "Usar o tema claro" : "Usar o tema escuro"}
-            style={{ background: "none", border: "1px solid var(--borda2)", borderRadius: 12, color: "var(--texto)", fontSize: 18, width: 42, height: 42, cursor: "pointer" }}>
-            {tema === "escuro" ? "☀" : "☾"}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setAba("buscar")} aria-label="Buscar"
+              style={{ background: "none", border: "1px solid var(--borda2)", borderRadius: 12, color: "var(--texto)", fontSize: 18, width: 44, height: 44, cursor: "pointer" }}>🔎</button>
+            <button onClick={() => setTema(tema === "escuro" ? "claro" : "escuro")} aria-label={tema === "escuro" ? "Usar o tema claro" : "Usar o tema escuro"}
+              style={{ background: "none", border: "1px solid var(--borda2)", borderRadius: 12, color: "var(--texto)", fontSize: 18, width: 44, height: 44, cursor: "pointer" }}>
+              {tema === "escuro" ? "☀" : "☾"}
+            </button>
+          </div>
         </div>
         <div style={S.faixa} />
       </div>
@@ -3676,12 +3787,14 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
         {aba === "inicio" && (
           todasObras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} /> : (
             <React.Fragment>
-              <Prateleira titulo="Continuar lendo" obras={lendoAgora} onAbrir={setFicha}
-                onVerTudo={() => { setBusca({ termo: "", ordem: "lidas", estado: "lendo", categoria: "todas" }); setAba("buscar"); }} />
+              {destaque && <Destaque obra={destaque} onDetalhes={setFicha} onLer={(o, p) => setLendo({ obra: o, pagina: p })} />}
+              <ContinueLendo obras={lendoAgora} onLer={(o, p) => setLendo({ obra: o, pagina: p })} />
               <Prateleira titulo="Adicionadas recentemente" obras={buscarObras(obras, { ordem: "recentes" }).slice(0, 12)} onAbrir={setFicha}
                 onVerTudo={() => { setBusca({ termo: "", ordem: "recentes", estado: "todos", categoria: "todas" }); setAba("buscar"); }} />
               <Prateleira titulo="Do acervo Super HQs" obras={buscarObras(obrasAcervo, { ordem: "titulo" }).slice(0, 12)} onAbrir={setFicha}
                 onVerTudo={() => { setEstante("acervo"); setCategoria("todas"); setAba("biblioteca"); }} />
+              <ExplorarColecoes colecoes={colecoesDe(todasObras)}
+                onAbrir={(nome) => { setBusca({ termo: nome, ordem: "titulo", estado: "todos", categoria: "todas" }); setAba("buscar"); }} />
               <Prateleira titulo="Lidas por último" obras={buscarObras(todasObras, { ordem: "lidas" }).filter((o) => o.leitura).slice(0, 12)} onAbrir={setFicha} />
               <button style={{ ...S.btnGhost, marginTop: 16 }} onClick={abrirSeletor}>＋ Abrir mais arquivos</button>
             </React.Fragment>
