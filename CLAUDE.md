@@ -117,6 +117,13 @@ no projeto** (o próprio documento dele pede isso).
   Biblioteca, Buscar, Minhas leituras e Perfil (o antigo Ajustes).
 - **Leitor**: fundo `--reader-canvas`, controles que somem sozinhos em 2,5 s e
   voltam com um toque no meio. A cor da revista nunca é alterada.
+- **Balão ampliado (Toque para Ler)**: o recorte sai da maior imagem que existe
+  da página, pedida ao abridor por `detalhe(i)`: no acervo, o original do
+  Commons (`paginas[].url`; a miniatura de 1280 px deixa o balão de uma página
+  de jornal com ~60 px); no PDF, a página redesenhada a 3000 px; no CBZ, a
+  própria página. É desenhado já no tamanho da tela × densidade, com
+  suavização alta e teto de 3000 px (`pixelsDoRecorte`). Só a página atual
+  guarda o original na memória. Sem rede, cai para a página aberta.
 - Cartões com raio 16 e sombra suave só no claro; no escuro, borda.
 
 ## O acervo sincronizado (`conectores/`, `catalogo/acervo.json`)

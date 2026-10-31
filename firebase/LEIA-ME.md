@@ -42,6 +42,11 @@ deixam apagar). Esvaziar `FIREBASE_ACESSO` desliga o login (emergência).
    client (auto created by Google Service)** › **Origens JavaScript
    autorizadas** › **Adicionar URI** › `https://carlosjr81.github.io` › **Salvar**.
 3. O botão aparece sozinho na tela de entrar. Não precisa mandar nada ao Claude.
+4. **"Erro 400: origin_mismatch"** na tela do Google (aconteceu em 31/10/2026,
+   com o primeiro usuário): é o passo 2 que faltou ou ficou errado. A origem é
+   exatamente `https://carlosjr81.github.io`: sem barra no fim e sem
+   `/Super-HQs`. Pode levar de 5 minutos a algumas horas para valer. Não é
+   erro do código: o app não tem como contornar.
 
 ## Assim que o Claude publicar com a chave
 

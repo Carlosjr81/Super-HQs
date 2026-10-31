@@ -9,7 +9,7 @@ function pedaco(de, ate) {
   return html.slice(i, f);
 }
 eval(pedaco("// ---------------- LEITOR: AS CONTAS", "// ---------------- FIM DAS CONTAS DO LEITOR") +
-  "\nglobalThis.L = { retanguloContido, telaParaImagem, classificarGesto, decidirVirada, acharBalao, acharBalaoPerto, caixaManual };");
+  "\nglobalThis.L = { retanguloContido, telaParaImagem, classificarGesto, decidirVirada, acharBalao, acharBalaoPerto, caixaManual, tamanhoNaCamada, pixelsDoRecorte };");
 
 let ok = 0, mal = 0;
 function teste(nome, esperado, obtido) {
@@ -78,6 +78,15 @@ teste("longe de qualquer balão: continua recusando", true, !!L.acharBalaoPerto(
 console.log("\n--- a seleção manual ---");
 teste("caixa centrada no toque", { x: 200, y: 480, l: 400, a: 240 }, L.caixaManual(400, 600, 800, 1200));
 teste("perto da borda, não sai da página", { x: 0, y: 960, l: 400, a: 240 }, L.caixaManual(10, 1190, 800, 1200));
+
+console.log("\n--- a nitidez do balão ampliado ---");
+// balão de 60x80 px (página de jornal em 1280 px), tela de 375x812, densidade 3
+teste("balão pequeno ocupa a largura útil da camada", { l: 321, a: 428 }, L.tamanhoNaCamada(60, 80, 321, 812));
+teste("balão alto não passa de 72% da altura", 585, L.tamanhoNaCamada(60, 200, 321, 812).a);
+teste("balão pequeno é desenhado na densidade da tela (sem esticar por CSS)", true, L.pixelsDoRecorte(60, 80, 321, 812, 3).l >= 321 * 3);
+teste("recorte do original grande não é reduzido além do preciso", { l: 1445, a: 1926 }, L.pixelsDoRecorte(600, 800, 321, 812, 3));
+teste("nunca passa de 3000 px no lado maior", true, Math.max(L.pixelsDoRecorte(2000, 2600, 900, 2000, 3).l, L.pixelsDoRecorte(2000, 2600, 900, 2000, 3).a) <= 3000);
+teste("nunca encolhe abaixo do recorte original (até o teto)", { l: 2000, a: 1000 }, L.pixelsDoRecorte(2000, 1000, 321, 812, 1));
 
 console.log("\n" + ok + " passou / " + mal + " falhou");
 process.exit(mal ? 1 : 0);
