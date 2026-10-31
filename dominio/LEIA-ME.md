@@ -10,7 +10,8 @@ sai do passo "Impressão digital da chave" do workflow App Android, depois do
 primeiro APK.
 
 **Feito em 31/10/2026**: a entrada do Super HQs está no repositório do domínio,
-com a impressão digital 
+com a impressão digital
+`8B:0F:64:D7:C2:C1:D8:AF:ED:CC:A1:B0:82:69:4F:C1:AF:96:F6:2F:79:DA:71:74:0A:82:15:57:6F:09:22:7A`
 (a chave do cache do Actions). Se a chave mudar, este número muda e a barra volta.
 
 A entrada a acrescentar (trocar o `XX:...` pela impressão digital):
