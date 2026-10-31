@@ -8,7 +8,7 @@
   Código visível não é código livre: copiar, modificar, republicar ou usar
   em outro app, gratuito ou pago, exige autorização por escrito. Ver LICENSE.
 -->
-<meta name="theme-color" content="#0B0B0F" />
+<meta name="theme-color" content="#090F21" />
 <title>Super HQs</title>
 <meta name="description" content="Leia os seus quadrinhos, mangás e livros no celular: virada de página como um livro e o balão ampliado com um toque." />
 
@@ -43,39 +43,61 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js?v=3"
   integrity="sha384-1qlE7MZPM2pHD/pBZCU/yB8UCP52RYL8bge/qNdfNBCWToySp8/M+JL2waXU4hjJ" crossorigin="anonymous"></script>
 <style>
+  /* A fonte da interface: Inter (SIL OFL 1.1), servida pelo próprio app
+     (fontes/), sem depender de servidor de fontes na primeira abertura. */
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url("fontes/inter-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap;
+    src: url("fontes/inter-latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  /* Os tokens da identidade visual (prompt de identidade, 31/10/2026). O
+     escuro é o padrão: a biblioteca em azul-marinho. Os nomes antigos
+     (--bg, --card, --marca...) continuam valendo, apontando para os tokens,
+     porque o código copiado do Treino Livre os usa em centenas de lugares. */
   :root {
-    --bg: #0B0B0F; --bg2: #101016; --card: #15151C;
-    --borda: #26262F; --borda2: #383844;
-    --texto: #F2F2F5; --cinza: #A6A6B3; --cinza2: #9497A3;
-    --perigo: #F58E8E; --perigo-borda: #F58E8E55;
-    --aviso-bg: #2A1512; --ok: #4ADE80; --ok-bg: #173B1E;
-    --obs: #E5B93C; --input: #0B0B0F;
-    --marca: #FF4D2E;
-    --barra: rgba(14,14,20,0.92); --barra-sombra: 0 -10px 30px rgba(0,0,0,0.55);
+    --brand-primary: #6F8CFF; --brand-primary-strong: #8EA5FF; --brand-primary-soft: #17244C;
+    --on-brand: #090F21;
+    --canvas: #090F21; --surface: #111A30; --surface-muted: #172139;
+    --text-primary: #F5F7FF; --text-secondary: #BAC3D9; --text-muted: #9AA7C0;
+    --border: #2B3954; --border-strong: #3A4B6C;
+    --success: #57D78D; --warning: #F7BD62; --danger: #FF8E96;
+    --danger-fill: #B91C1C; --on-danger: #FFFFFF;
+    --reader-canvas: #07080D;
+    --sombra-cartao: none;
+    --bg: var(--canvas); --bg2: var(--surface-muted); --card: var(--surface);
+    --borda: var(--border); --borda2: var(--border-strong);
+    --texto: var(--text-primary); --cinza: var(--text-secondary); --cinza2: var(--text-muted);
+    --perigo: var(--danger); --perigo-borda: #FF8E9655;
+    --aviso-bg: #3A1D22; --ok: var(--success); --ok-bg: #12301F;
+    --obs: var(--warning); --input: var(--surface-muted);
+    --marca: var(--brand-primary);
+    --barra: rgba(9,15,33,0.92); --barra-sombra: 0 -10px 30px rgba(0,0,0,0.45);
   }
   [data-tema="claro"] {
-    --bg: #FFFFFF; --bg2: #FFFFFF; --card: #FFFFFF;
-    --borda: #DBDBE2; --borda2: #C4C4CE;
-    --texto: #1B1B22; --cinza: #62626E; --cinza2: #6E6E78;
-    --perigo: #C62828; --perigo-borda: #C6282855;
-    --aviso-bg: #FFF1EF; --ok: #1B7F3B; --ok-bg: #E8F7EC;
-    --obs: #8A6D00; --input: #FAFAFA;
-    --marca: #D9361A;
-    --barra: rgba(255,255,255,0.95); --barra-sombra: 0 -8px 26px rgba(38,38,38,0.12);
+    --brand-primary: #022BCF; --brand-primary-strong: #0122A6; --brand-primary-soft: #EEF2FF;
+    --on-brand: #FFFFFF;
+    --canvas: #F7F7F8; --surface: #FFFFFF; --surface-muted: #F1F3F6;
+    --text-primary: #111827; --text-secondary: #4B5563; --text-muted: #6B7280;
+    --border: #E5E7EB; --border-strong: #D1D5DB;
+    --success: #16803C; --warning: #92400E; --danger: #B91C1C;
+    --sombra-cartao: 0 1px 2px rgba(17,24,39,0.05), 0 4px 14px rgba(17,24,39,0.05);
+    --perigo-borda: #B91C1C55; --aviso-bg: #FEF2F2; --ok-bg: #ECFDF3;
+    --barra: rgba(255,255,255,0.96); --barra-sombra: 0 -6px 20px rgba(17,24,39,0.08);
   }
-  html, body { margin: 0; background: var(--bg); color: var(--texto); }
+  html, body { margin: 0; background: var(--bg); color: var(--texto);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select, textarea { font-family: inherit; }
   * { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid var(--brand-primary); outline-offset: 2px; }
   #carregando {
     min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 14px; background: #0B0B0F; color: #A6A6B3; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    gap: 14px; background: #090F21; color: #BAC3D9; font-family: "Inter", system-ui, -apple-system, sans-serif;
   }
-  #carregando .marca {
-    font-size: 30px; font-weight: 900; letter-spacing: -0.5px;
-    background: linear-gradient(45deg, #FFB000, #FF4D2E, #C2185B); -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  #carregando .barra { width: 140px; height: 4px; border-radius: 2px; background: #26262F; overflow: hidden; }
+  #carregando .marca { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; color: #6F8CFF; }
+  #carregando .barra { width: 140px; height: 4px; border-radius: 2px; background: #2B3954; overflow: hidden; }
   #carregando .barra i { display: block; width: 40%; height: 100%; border-radius: 2px;
-    background: linear-gradient(45deg, #FFB000, #FF4D2E, #C2185B); animation: carrega 1.1s ease-in-out infinite alternate; }
+    background: #6F8CFF; animation: carrega 1.1s ease-in-out infinite alternate; }
   @keyframes carrega { from { transform: translateX(-10%); } to { transform: translateX(160%); } }
   @keyframes surge { 0% { transform: scale(.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
@@ -92,7 +114,7 @@
   </div>
 </div>
 <noscript>
-  <div style="font-family:sans-serif;color:#F2F2F5;background:#0B0B0F;padding:24px;line-height:1.6">
+  <div style="font-family:sans-serif;color:#F5F7FF;background:#090F21;padding:24px;line-height:1.6">
     O Super HQs precisa de JavaScript para funcionar. Ative o JavaScript nas configurações do
     seu navegador e recarregue a página.
   </div>
@@ -236,7 +258,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31b";
+const VERSAO_APP = "2026-10-31c";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -285,17 +307,18 @@ function carregarScript(src, sri) {
 }
 
 // ---------------- ESTILOS ----------------
-// O degradê da marca é um só: amarelo, laranja e vermelho de capa de gibi.
-const GRAD = "linear-gradient(45deg, #FFB000, #FF4D2E, #C2185B)";
+// A cor da marca (azul, token --brand-primary). O nome GRAD ficou do Treino
+// Livre, onde era um degradê: o código de acesso copiado de lá o usa.
+const GRAD = "var(--brand-primary)";
 const S = {
   app: { minHeight: "100vh", background: "var(--bg)", color: "var(--texto)", fontFamily: "-apple-system, 'Segoe UI', Roboto, sans-serif", paddingBottom: "calc(96px + env(safe-area-inset-bottom))" },
   header: { padding: "20px 18px 10px", position: "sticky", top: 0, background: "var(--bg)", zIndex: 5 },
-  logo: { fontSize: 27, fontWeight: 900, letterSpacing: -0.5, display: "inline-block", backgroundImage: GRAD, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" },
+  logo: { fontSize: 24, fontWeight: 800, letterSpacing: -0.5, display: "inline-block", color: "var(--brand-primary)" },
   faixa: { height: 3, width: 72, marginTop: 10, background: GRAD, borderRadius: 2 },
-  card: { background: "var(--card)", borderRadius: 18, padding: 16, marginBottom: 12, border: "1px solid var(--borda)" },
-  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, color: "var(--cinza)", fontWeight: 700 },
-  btn: { background: GRAD, color: "#FFFFFF", border: "none", borderRadius: 12, padding: "13px 16px", fontWeight: 800, fontSize: 15, width: "100%", cursor: "pointer" },
-  btnGhost: { background: "transparent", color: "var(--texto)", border: "1px solid var(--borda2)", borderRadius: 12, padding: "12px 16px", fontWeight: 700, fontSize: 14, width: "100%", cursor: "pointer" },
+  card: { background: "var(--card)", borderRadius: 16, padding: 16, marginBottom: 12, border: "1px solid var(--borda)", boxShadow: "var(--sombra-cartao)" },
+  label: { fontSize: 13, color: "var(--cinza)", fontWeight: 600 },
+  btn: { background: GRAD, color: "var(--on-brand)", border: "none", borderRadius: 12, padding: "13px 16px", minHeight: 48, fontWeight: 700, fontSize: 15, width: "100%", cursor: "pointer" },
+  btnGhost: { background: "transparent", color: "var(--texto)", border: "1px solid var(--borda2)", borderRadius: 12, padding: "12px 16px", minHeight: 48, fontWeight: 600, fontSize: 14, width: "100%", cursor: "pointer" },
   input: { background: "var(--input)", border: "1px solid var(--borda2)", borderRadius: 12, color: "var(--texto)", padding: "12px 14px", fontSize: 16, width: "100%", boxSizing: "border-box" },
   inputMini: { background: "var(--input)", border: "1px solid var(--borda2)", borderRadius: 10, color: "var(--texto)", padding: "10px 8px", fontSize: 16, width: "100%", boxSizing: "border-box", textAlign: "center" },
   voltar: { background: "none", border: "none", color: "var(--cinza)", fontWeight: 700, fontSize: 14, padding: 0, cursor: "pointer", marginBottom: 12 },
@@ -1119,7 +1142,7 @@ function CaixaConta({ children }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px", boxSizing: "border-box", background: "var(--bg)", color: "var(--texto)", fontFamily: S.app.fontFamily }}>
       <div style={{ width: "100%", maxWidth: 380 }}>
-        <div style={{ fontSize: 30, fontWeight: 900, textAlign: "center", marginBottom: 4, background: GRAD, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>Super HQs</div>
+        <div style={{ fontSize: 30, fontWeight: 800, textAlign: "center", marginBottom: 4, color: "var(--brand-primary)" }}>Super HQs</div>
         {children}
       </div>
     </div>
@@ -2283,7 +2306,7 @@ function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
                 <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                   <button onClick={() => setEditando(null)} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>Cancelar</button>
                   <button disabled={mexendo === c.uid} onClick={salvarEdicao}
-                    style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5, background: ed.campo === "bloquear" ? "#ED4956" : GRAD }}>
+                    style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5, background: ed.campo === "bloquear" ? "var(--danger-fill)" : GRAD, color: ed.campo === "bloquear" ? "var(--on-danger)" : "var(--on-brand)" }}>
                     {ed.campo === "bloquear" ? "⛔ Bloquear" : "Salvar"}
                   </button>
                 </div>
@@ -2546,7 +2569,9 @@ async function importarArquivo(file) {
 }
 
 // ---------------- ESTANTE: AS TELAS ----------------
-function Capa({ obra, altura }) {
+// A capa: proporção vertical de revista (2:3), a arte inteira e sem esticar
+// (contain); o que sobra fica no fundo neutro do cartão.
+function Capa({ obra, largura }) {
   const [url, setUrl] = useState(null);
   useEffect(() => {
     if (!obra.capa) return;
@@ -2555,31 +2580,83 @@ function Capa({ obra, altura }) {
     return () => URL.revokeObjectURL(u);
   }, [obra.capa]);
   return (
-    <div style={{ width: "100%", height: altura || 190, borderRadius: 10, overflow: "hidden", background: "var(--bg2)", border: "1px solid var(--borda)" }}>
-      {url && <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+    <div style={{ width: largura || "100%", aspectRatio: "2 / 3", borderRadius: 12, overflow: "hidden", background: "var(--surface-muted)", border: "1px solid var(--borda)" }}>
+      {url && <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />}
     </div>
   );
 }
 
+// Selo discreto, só quando é verdade (Lendo, Lida, Novidade).
+const NOVIDADE_MS = 3 * 864e5;
+function SeloEstado({ obra }) {
+  const e = estadoLeitura(obra);
+  const novo = e === "nova" && Date.now() - (obra.adicionadoEm || 0) < NOVIDADE_MS;
+  const [txt, cor] = e === "lida" ? ["Lida", "var(--success)"] : e === "lendo" ? ["Lendo", "var(--brand-primary)"] : novo ? ["Novidade", "var(--warning)"] : [null];
+  if (!txt) return null;
+  return (
+    <span style={{ position: "absolute", top: 8, left: 8, fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 999,
+      background: "var(--surface)", color: cor, border: "1px solid var(--borda)" }}>{txt}</span>
+  );
+}
+
+// A grade: duas colunas no celular estreito, mais conforme a largura.
 function GradeObras({ obras, onAbrir }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 16 }}>
       {obras.map((o) => {
         const e = estadoLeitura(o);
+        const pct = e === "lendo" ? Math.round(100 * (o.leitura.pagina + 1) / o.paginas) : 0;
         return (
           <button key={o.id} onClick={() => onAbrir(o)} aria-label={o.titulo + ", " + progressoTexto(o)}
-            style={{ background: "none", border: "none", padding: 0, textAlign: "left", color: "var(--texto)", cursor: "pointer", minWidth: 0 }}>
-            <Capa obra={o} altura={156} />
+            style={{ background: "none", border: "none", padding: 0, textAlign: "left", color: "var(--texto)", cursor: "pointer", minWidth: 0, position: "relative" }}>
+            <Capa obra={o} />
+            <SeloEstado obra={o} />
             {e === "lendo" && (
-              <div style={{ height: 3, background: "var(--borda)", borderRadius: 2, marginTop: 4 }}>
-                <div style={{ height: 3, width: Math.round(100 * (o.leitura.pagina + 1) / o.paginas) + "%", background: "var(--marca)", borderRadius: 2 }} />
+              <div style={{ height: 3, background: "var(--borda)", borderRadius: 2, marginTop: 6 }}>
+                <div style={{ height: 3, width: pct + "%", background: "var(--brand-primary)", borderRadius: 2 }} />
               </div>
             )}
-            <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.3, marginTop: 5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{o.titulo}</div>
-            <div style={{ fontSize: 11, color: e === "lida" ? "var(--ok)" : "var(--cinza)" }}>{e === "nova" ? NOME_FORMATO[o.tipo] + " · " + o.paginas + " pág." : progressoTexto(o)}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.35, marginTop: 8, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{o.titulo}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{e === "lendo" ? pct + "% · " + progressoTexto(o) : NOME_FORMATO[o.tipo] + " · " + o.paginas + " pág."}</div>
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// Uma prateleira com título e "Ver tudo": carrossel horizontal, acessível
+// por teclado (é uma lista de botões que rola).
+function Prateleira({ titulo, obras, onAbrir, onVerTudo }) {
+  if (!obras.length) return null;
+  return (
+    <section style={{ marginBottom: 24 }} aria-label={titulo}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>{titulo}</h2>
+        {onVerTudo && <button onClick={onVerTudo} style={{ background: "none", border: "none", color: "var(--brand-primary)", fontWeight: 600, fontSize: 14, cursor: "pointer", minHeight: 44, padding: "0 4px" }}>Ver tudo</button>}
+      </div>
+      <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 6, scrollSnapType: "x mandatory" }}>
+        {obras.map((o) => (
+          <div key={o.id} style={{ width: 132, flexShrink: 0, scrollSnapAlign: "start" }}>
+            <GradeObras obras={[o]} onAbrir={onAbrir} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// O campo de busca: largo, com ícone e botão de limpar.
+function CampoBusca({ valor, onMudar }) {
+  return (
+    <div style={{ position: "relative", marginBottom: 12 }}>
+      <span aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontSize: 16 }}>🔎</span>
+      <input value={valor} onChange={(e) => onMudar(e.target.value)} placeholder="Buscar título, coleção ou arquivo"
+        aria-label="Buscar na estante" type="search" style={{ ...S.input, paddingLeft: 42, paddingRight: 48, minHeight: 48 }} />
+      {valor && (
+        <button onClick={() => onMudar("")} aria-label="Limpar a busca"
+          style={{ position: "absolute", right: 2, top: 2, width: 44, height: 44, background: "none", border: "none", color: "var(--text-secondary)", fontSize: 18, cursor: "pointer" }}>✕</button>
+      )}
     </div>
   );
 }
@@ -2591,7 +2668,7 @@ function Chips({ opcoes, valor, onMudar }) {
         <button key={id} onClick={() => onMudar(id)} aria-pressed={valor === id}
           style={{ flexShrink: 0, borderRadius: 999, padding: "7px 13px", fontSize: 13, fontWeight: 700, cursor: "pointer",
             border: "1px solid " + (valor === id ? "var(--marca)" : "var(--borda2)"),
-            background: valor === id ? "var(--marca)" : "transparent", color: valor === id ? "#FFFFFF" : "var(--texto)" }}>{nome}</button>
+            background: valor === id ? "var(--brand-primary-soft)" : "transparent", color: valor === id ? "var(--brand-primary)" : "var(--texto)" }}>{nome}</button>
       ))}
     </div>
   );
@@ -2626,7 +2703,7 @@ function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
       <div role="dialog" aria-modal="true" aria-label={obra.titulo} onClick={(ev) => ev.stopPropagation()}
         style={{ ...S.card, width: "100%", maxWidth: 480, margin: 0, borderRadius: "20px 20px 0 0", maxHeight: "90vh", overflowY: "auto", paddingBottom: "calc(18px + env(safe-area-inset-bottom))" }}>
         <div style={{ display: "flex", gap: 14 }}>
-          <div style={{ width: 110, flexShrink: 0 }}><Capa obra={obra} altura={165} /></div>
+          <div style={{ width: 120, flexShrink: 0 }}><Capa obra={obra} /></div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.3 }}>{obra.titulo}</div>
             <div style={{ fontSize: 13, color: "var(--cinza)", marginTop: 4 }}>{progressoTexto(obra)}</div>
@@ -2647,7 +2724,7 @@ function FichaObra({ obra, onLer, onFechar, onMudar, onApagar }) {
           {e === "lendo" ? "▶ Continuar da página " + (obra.leitura.pagina + 1) : e === "lida" ? "↺ Ler de novo" : "▶ Ler agora"}
         </button>
         {e === "lendo" && <button style={{ ...S.btnGhost, marginTop: 8 }} onClick={() => onLer(obra, 0)}>Começar do início</button>}
-        <button style={{ ...S.btnGhost, marginTop: 8, color: apagando ? "#ED4956" : "var(--cinza)", borderColor: apagando ? "#ED4956" : "var(--borda2)" }}
+        <button style={{ ...S.btnGhost, marginTop: 8, color: apagando ? "var(--danger)" : "var(--cinza)", borderColor: apagando ? "var(--danger)" : "var(--borda2)" }}
           onClick={() => { if (apagando) onApagar(obra); else setApagando(true); }}>
           {apagando ? "Toque de novo para tirar da estante (apaga a cópia deste aparelho)" : "Tirar da estante"}
         </button>
@@ -2670,6 +2747,9 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
   const abridor = useRef(null);
   const pedidas = useRef({});
   const urlsRef = useRef({});
+  // Os controles aparecem ao abrir e somem sozinhos: a arte ocupa a tela, e um
+  // toque no meio os traz de volta.
+  useEffect(() => { const t = setTimeout(() => setControles(false), 2500); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -2729,10 +2809,10 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
     else if (x > 0.7) ir(1);
     else setControles((c) => !c);
   };
-  const barra = { position: "absolute", left: 0, right: 0, zIndex: 2, background: "rgba(11,11,15,0.88)", color: "#F2F2F5", padding: "10px 14px",
+  const barra = { position: "absolute", left: 0, right: 0, zIndex: 2, background: "rgba(7,8,13,0.86)", color: "#F5F7FF", padding: "10px 14px",
     display: "flex", alignItems: "center", gap: 10, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" };
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "#000", userSelect: "none", touchAction: "manipulation" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "var(--reader-canvas)", userSelect: "none", touchAction: "manipulation" }}>
       <div onClick={tocar} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {urls[pagina]
           ? <img src={urls[pagina]} alt={"Página " + (pagina + 1) + " de " + obra.paginas} draggable={false}
@@ -2748,7 +2828,7 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
           <div style={{ ...barra, bottom: 0, paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
             <button onClick={() => ir(-1)} aria-label="Página anterior" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 20, cursor: "pointer" }}>‹</button>
             <input type="range" min={1} max={obra.paginas} value={pagina + 1} aria-label="Ir à página"
-              onChange={(e) => { setFim(false); setPagina(+e.target.value - 1); }} style={{ flex: 1, accentColor: "#FF4D2E" }} />
+              onChange={(e) => { setFim(false); setPagina(+e.target.value - 1); }} style={{ flex: 1, accentColor: "#6F8CFF", minHeight: 44 }} />
             <span style={{ fontSize: 12.5, minWidth: 64, textAlign: "center" }}>{pagina + 1} / {obra.paginas}</span>
             <button onClick={() => ir(1)} aria-label="Próxima página" style={{ background: "none", border: "none", color: "#F2F2F5", fontSize: 20, cursor: "pointer" }}>›</button>
           </div>
@@ -2803,13 +2883,13 @@ function Abertura({ onFim }) {
   if (reduzido || !VIDEO_ABERTURA) return null;
   return (
     <div onClick={fim} role="img" aria-label="Super HQs"
-      style={{ position: "fixed", inset: 0, zIndex: 90, background: "#0B0B0F", overflow: "hidden", cursor: "pointer" }}>
+      style={{ position: "fixed", inset: 0, zIndex: 90, background: "#090F21", overflow: "hidden", cursor: "pointer" }}>
       <video ref={videoRef} src={VIDEO_ABERTURA} playsInline muted preload="auto"
         poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
         onPlaying={() => { tocandoRef.current = true; setTocando(true); }}
         onEnded={fim} onError={() => { if (!tocandoRef.current) fim(); }}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
-          background: "#0B0B0F", opacity: tocando ? 1 : 0, transition: "opacity 0.25s" }} />
+          background: "#090F21", opacity: tocando ? 1 : 0, transition: "opacity 0.25s" }} />
       {tocando && (
         <div style={{ position: "absolute", left: 0, right: 0, bottom: "calc(18px + env(safe-area-inset-bottom))", zIndex: 2,
           textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, letterSpacing: 1, pointerEvents: "none", fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -2860,7 +2940,7 @@ function ComoInstalar({ onFechar, onCopiarLink }) {
         {passos.map((p, i) => (
           <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
             <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 11, background: "var(--marca)",
-              color: "#FFFFFF", fontSize: 12, fontWeight: 900, textAlign: "center", lineHeight: "22px" }}>{i + 1}</span>
+              color: "var(--on-brand)", fontSize: 12, fontWeight: 800, textAlign: "center", lineHeight: "22px" }}>{i + 1}</span>
             <span style={{ fontSize: 13.5, lineHeight: 1.55 }}>{p}</span>
           </div>
         ))}
@@ -2882,7 +2962,7 @@ const ABAS = [
   ["biblioteca", "📚", "Biblioteca"],
   ["buscar", "🔎", "Buscar"],
   ["leituras", "🔖", "Minhas leituras"],
-  ["ajustes", "⚙", "Ajustes"],
+  ["ajustes", "👤", "Perfil"],
 ];
 const EM_BREVE = {
   leituras: ["Fila, Favoritos, Lidas, Histórico, Calendário e Downloads para ler sem internet.", "Etapa 4"],
@@ -3076,14 +3156,11 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
         {aba === "inicio" && (
           obras.length === 0 ? <EstanteVazia onImportar={abrirSeletor} /> : (
             <React.Fragment>
-              {lendoAgora.length > 0 && (
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ ...S.label, marginBottom: 10 }}>Continuar lendo</div>
-                  <GradeObras obras={lendoAgora} onAbrir={setFicha} />
-                </div>
-              )}
-              <div style={{ ...S.label, marginBottom: 10 }}>Adicionadas recentemente</div>
-              <GradeObras obras={buscarObras(obras, { ordem: "recentes" }).slice(0, 12)} onAbrir={setFicha} />
+              <Prateleira titulo="Continuar lendo" obras={lendoAgora} onAbrir={setFicha}
+                onVerTudo={() => { setBusca({ termo: "", ordem: "lidas", estado: "lendo", categoria: "todas" }); setAba("buscar"); }} />
+              <Prateleira titulo="Adicionadas recentemente" obras={buscarObras(obras, { ordem: "recentes" }).slice(0, 12)} onAbrir={setFicha}
+                onVerTudo={() => { setBusca({ termo: "", ordem: "recentes", estado: "todos", categoria: "todas" }); setAba("buscar"); }} />
+              <Prateleira titulo="Lidas por último" obras={buscarObras(obras, { ordem: "lidas" }).filter((o) => o.leitura).slice(0, 12)} onAbrir={setFicha} />
               <button style={{ ...S.btnGhost, marginTop: 16 }} onClick={abrirSeletor}>＋ Abrir mais arquivos</button>
             </React.Fragment>
           )
@@ -3102,14 +3179,18 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
 
         {aba === "buscar" && (
           <React.Fragment>
-            <input value={busca.termo} onChange={(e) => setBusca({ ...busca, termo: e.target.value })} placeholder="Título, coleção ou nome do arquivo"
-              aria-label="Buscar na estante" type="search" style={{ ...S.input, marginBottom: 10 }} />
+            <CampoBusca valor={busca.termo} onMudar={(v) => setBusca({ ...busca, termo: v })} />
             <Chips opcoes={[["todas", "Tudo"]].concat(CATEGORIAS)} valor={busca.categoria} onMudar={(v) => setBusca({ ...busca, categoria: v })} />
             <Chips opcoes={[["todos", "Qualquer estado"], ["nova", "Não iniciadas"], ["lendo", "Lendo"], ["lida", "Lidas"]]} valor={busca.estado} onMudar={(v) => setBusca({ ...busca, estado: v })} />
             <select value={busca.ordem} onChange={(e) => setBusca({ ...busca, ordem: e.target.value })} aria-label="Ordenar"
               style={{ ...S.input, padding: "9px 12px", fontSize: 14, marginBottom: 14 }}>
               {ORDENS.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
             </select>
+            {(busca.termo || busca.categoria !== "todas" || busca.estado !== "todos") && (
+              <button onClick={() => setBusca({ termo: "", ordem: busca.ordem, estado: "todos", categoria: "todas" })}
+                style={{ background: "none", border: "none", color: "var(--brand-primary)", fontWeight: 600, fontSize: 14, cursor: "pointer", minHeight: 44, padding: 0, marginBottom: 4 }}>Limpar filtros</button>
+            )}
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }} role="status">{resultados.length} {plural(resultados.length, "edição", "edições")}</div>
             {resultados.length ? <GradeObras obras={resultados} onAbrir={setFicha} />
               : <div style={{ ...S.card, color: "var(--cinza)", fontSize: 14 }}>{obras.length ? "Nada encontrado com essa busca." : "A estante está vazia: abra arquivos na Biblioteca."}</div>}
           </React.Fragment>
@@ -3156,8 +3237,8 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
         paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}>
         {ABAS.map(([id, ic, nome]) => (
           <button key={id} onClick={() => setAba(id)} aria-current={aba === id ? "page" : undefined}
-            style={{ flex: 1, background: "none", border: "none", padding: "10px 2px 8px", cursor: "pointer",
-              color: aba === id ? "var(--marca)" : "var(--cinza)", fontWeight: aba === id ? 800 : 600, fontSize: 10.5 }}>
+            style={{ flex: 1, background: "none", border: "none", padding: "8px 2px", minHeight: 56, cursor: "pointer",
+              color: aba === id ? "var(--brand-primary)" : "var(--text-muted)", fontWeight: aba === id ? 700 : 500, fontSize: 11 }}>
             <div style={{ fontSize: 20, lineHeight: 1.1 }} aria-hidden="true">{ic}</div>{nome}
           </button>
         ))}
@@ -3174,7 +3255,7 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
               {modal.onSim ? (
                 <React.Fragment>
                   <button style={{ ...S.btnGhost, flex: 1 }} onClick={() => { const f = modal.onNao; setModal(null); if (f) f(); }}>{modal.labelNao || "Cancelar"}</button>
-                  <button style={{ ...S.btn, flex: 1, background: modal.positivo ? GRAD : "#ED4956" }}
+                  <button style={{ ...S.btn, flex: 1, background: modal.positivo ? GRAD : "var(--danger-fill)", color: modal.positivo ? "var(--on-brand)" : "var(--on-danger)" }}
                     onClick={() => { const f = modal.onSim; setModal(null); f(); }}>{modal.labelSim || "Confirmar"}</button>
                 </React.Fragment>
               ) : (
@@ -3200,7 +3281,7 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
               <div style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1.4 }}>Tem versão nova do app</div>
               <div style={{ fontSize: 11.5, color: "var(--cinza)", marginTop: 2 }}>Esta é a {VERSAO_APP}. Disponível: {versaoNova}.</div>
             </div>
-            <button onClick={atualizarApp} style={{ background: GRAD, color: "#FFFFFF", border: "none", borderRadius: 10,
+            <button onClick={atualizarApp} style={{ background: GRAD, color: "var(--on-brand)", border: "none", borderRadius: 12, minHeight: 44,
               padding: "10px 14px", fontWeight: 900, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>Atualizar</button>
           </div>
         </div>

@@ -5,3 +5,13 @@
 
 # O hook do git não tem extensão, mas é script de shell: LF obrigatório.
 testes/hooks/* text eol=lf
+
+# Binários: nunca converter fim de linha (um PDF com CRLF trocado quebra)
+*.pdf binary
+*.cbz binary
+*.cbr binary
+*.zip binary
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.mp4 binary

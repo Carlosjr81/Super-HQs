@@ -27,7 +27,7 @@ object Site {
     }
 
     fun abrir(activity: Activity, uri: Uri, guardar: (TwaLauncher) -> Unit, depois: () -> Unit) {
-        val cor = Color.parseColor("#0B0B0F")
+        val cor = Color.parseColor("#090F21")
         val cores = CustomTabColorSchemeParams.Builder()
             .setToolbarColor(cor)
             .setNavigationBarColor(cor)

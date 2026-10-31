@@ -3,7 +3,7 @@
     <!-- A abertura: o fundo da marca com o ícone, enquanto o Chrome sobe -->
     <style name="Tema.Abertura" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/abertura</item>
-        <item name="android:statusBarColor">#0B0B0F</item>
-        <item name="android:navigationBarColor">#0B0B0F</item>
+        <item name="android:statusBarColor">#090F21</item>
+        <item name="android:navigationBarColor">#090F21</item>
     </style>
 </resources>

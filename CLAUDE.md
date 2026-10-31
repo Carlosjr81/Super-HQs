@@ -85,6 +85,38 @@ documentação completa de cada parte está no CLAUDE.md do Treino Livre, seçõ
   `localStorage`; quando a estante for para o IndexedDB, ele precisa levar a
   lista da estante também (os arquivos não: são grandes e a pessoa tem os originais).
 
+## A identidade visual
+
+Fonte: `Prompt_Identidade_Visual_Super_HQs.md` do dono (31/10/2026), que também
+é a seção 9 do `Prompt_App_Quadrinhos_Comixfy_Ink (1).md`. **Azul como marca,
+capas como protagonistas, interface limpa.** Nada de nome, logo, selo ou banner
+do Comixfy ou do Ink: a referência é só hierarquia, proporção e organização.
+O link privado de acesso ao Comixfy que o dono mandou **não é aberto nem entra
+no projeto** (o próprio documento dele pede isso).
+
+- **Tokens** no `:root` do `index.html` (escuro, o padrão) e em
+  `[data-tema="claro"]`, com os valores da tabela do prompt: `--brand-primary`,
+  `--brand-primary-strong`, `--brand-primary-soft`, `--canvas`, `--surface`,
+  `--surface-muted`, `--text-primary/secondary/muted`, `--border`, `--success`,
+  `--warning`, `--danger`, `--reader-canvas`. Acrescentados por necessidade:
+  `--on-brand` (texto sobre o azul: branco no claro, `#090F21` no escuro,
+  porque branco sobre `#6F8CFF` dá 3:1) e `--danger-fill`/`--on-danger`.
+- **Os nomes antigos continuam** (`--bg`, `--card`, `--marca`, `--cinza`...)
+  apontando para os tokens: o código de acesso do Treino Livre os usa em
+  centenas de lugares. `GRAD` virou `var(--brand-primary)` pelo mesmo motivo.
+- **Contraste medido** (WCAG) nas combinações usadas: todas ≥ 4,5:1; a menor é
+  `--text-muted` sobre `--canvas` no claro (4,52). Mudou uma cor, meça de novo.
+- **Inter** (SIL OFL 1.1) servida de `fontes/` (latin e latin-ext, variável,
+  `font-display: swap`), com `system-ui` de reserva. Nada de servidor de fontes.
+- **Capas** em 2:3 com `object-fit: contain` (a arte inteira, sem esticar);
+  grade de no mínimo 140 px (duas colunas no celular); prateleiras com "Ver
+  tudo"; selos Lendo, Lida e Novidade só quando verdadeiros.
+- **Toque**: botões com altura mínima de 44–48 px; barra inferior Início,
+  Biblioteca, Buscar, Minhas leituras e Perfil (o antigo Ajustes).
+- **Leitor**: fundo `--reader-canvas`, controles que somem sozinhos em 2,5 s e
+  voltam com um toque no meio. A cor da revista nunca é alterada.
+- Cartões com raio 16 e sombra suave só no claro; no escuro, borda.
+
 ## A abertura
 
 `VIDEO_ABERTURA` está vazio: o dono vai mandar a vinheta pronta (pedido dele,
@@ -108,7 +140,7 @@ Ler → retomada → offline. Loja e comunidade depois.
 | Etapa | O quê | Como, nesta base |
 |---|---|---|
 | 0 | Fundação | **Pronta**: acesso, termos, cobrança, PWA, Android, testes |
-| 1 | Estante e abrir arquivo | Arquivos da pessoa no IndexedDB, identificados pelo SHA-256. PDF com pdf.js (Apache-2.0), CBZ/ZIP com fflate (MIT), CBR com libarchive.js (MIT), num Worker. Pastas com trilha, busca sem acento, filtros, ordem natural de número ("0", "0.1", "anual") |
+| 1 | Estante e abrir arquivo | **Em parte (2026-10-31b/c)**: PDF e CBZ abrem, id SHA-256, relatório de importação, Biblioteca por categoria, Buscar com filtros, Início com prateleiras, ficha, leitor de página simples com progresso. **Falta**: CBR em RAR, pastas com trilha, coleção/saga/arco/personagem (muitos-para-muitos, sem duplicar arquivo), edição de metadados na ficha. Arquivos da pessoa no IndexedDB, identificados pelo SHA-256. PDF com pdf.js (Apache-2.0), CBZ/ZIP com fflate (MIT), CBR com libarchive.js (MIT), num Worker. Pastas com trilha, busca sem acento, filtros, ordem natural de número ("0", "0.1", "anual") |
 | 2 | Leitor e Toque para Ler | Página simples e rolagem com o mesmo índice. Toque para Ler: **recorte a partir do toque** (expande a área clara do balão até o contorno, numa camada por cima; a página não se mexe) + **Selecionar texto manualmente**. Nada de OCR inventando fala |
 | 3 | Virada de livro | StPageFlip (MIT) ou implementação própria; validar o conflito toque × arraste × pinça; movimento reduzido vira transição simples |
 | 4 | Progresso, listas e offline | Local primeiro, Firestore depois, com revisão (quem voltou para reler não é atropelado). Fila, favoritos, histórico, calendário, cronologias. Download de edição validado página a página |

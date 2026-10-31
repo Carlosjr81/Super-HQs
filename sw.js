@@ -1,5 +1,5 @@
 // Super HQs - Service Worker (modo offline). Veio do Treino Livre.
-const CACHE = "superhqs-v2";
+const CACHE = "superhqs-v3";
 // A vinheta de abertura num cache só dela, preservado entre versões: guardá-la
 // no cache da versão a baixaria de novo a cada atualização do app.
 const CACHE_MIDIA = "superhqs-midia";
@@ -16,6 +16,8 @@ const ARQUIVOS = [
   "./apple-touch-icon.png",
   "./termos.html",
   "./privacidade.html",
+  "./fontes/inter-latin.woff2",
+  "./fontes/inter-latin-ext.woff2",
   // O "?v=3" precisa bater exatamente com o endereço usado no index.html,
   // senão o que é guardado aqui nunca é encontrado depois.
   "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js?v=3",
