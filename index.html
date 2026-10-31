@@ -263,7 +263,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31g";
+const VERSAO_APP = "2026-10-31h";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -2561,6 +2561,22 @@ function caixaManual(x, y, imgL, imgA) {
   const l = imgL * 0.5, a = imgA * 0.2;
   return { x: Math.min(Math.max(0, x - l / 2), imgL - l), y: Math.min(Math.max(0, y - a / 2), imgA - a), l: l, a: a };
 }
+// O tamanho do balão na camada (px da tela): o mais largo que cabe na largura
+// útil sem passar de 72% da altura, nem passar de 6x o recorte (mais que isso
+// só aumenta o borrão).
+function tamanhoNaCamada(rl, ra, larguraUtil, alturaTela) {
+  const l = Math.max(1, Math.min(larguraUtil, alturaTela * 0.72 * rl / ra, rl * 6));
+  return { l: Math.round(l), a: Math.round(l * ra / rl) };
+}
+// Em quantos pixels o recorte é desenhado: o tamanho na camada vezes a
+// densidade da tela, com folga para o "+" (1,5x), sem nunca encolher a arte
+// original nem passar de 3000 px no lado maior (memória do celular).
+function pixelsDoRecorte(rl, ra, larguraUtil, alturaTela, dpr) {
+  const t = tamanhoNaCamada(rl, ra, larguraUtil, alturaTela);
+  let esc = Math.max(1, (t.l * (dpr || 1) * 1.5) / rl);
+  esc = Math.min(esc, 3000 / Math.max(rl, ra));
+  return { l: Math.max(1, Math.round(rl * esc)), a: Math.max(1, Math.round(ra * esc)) };
+}
 // ---------------- FIM DAS CONTAS DO LEITOR ----------------
 
 // ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------
@@ -2651,6 +2667,15 @@ function abrirDoAcervo(o) {
       if (!r.ok) throw new Error("a página não respondeu (" + r.status + ")");
       return r.blob();
     },
+    // para o Toque para Ler: o arquivo original do Commons (a miniatura de
+    // 1280 px deixa o balão de uma página de jornal com uns 60 px)
+    async detalhe(i) {
+      const url = String(o.paginas[i].url || "").split("?")[0];
+      if (!/^https:\/\/upload\.wikimedia\.org\/.+\.(jpe?g|png|gif|webp)$/i.test(url)) return null;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("o original não respondeu (" + r.status + ")");
+      return r.blob();
+    },
     fechar() {},
   };
 }
@@ -2715,6 +2740,8 @@ async function abrirPdf(blob) {
       pg.cleanup();
       return new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
     },
+    // para o Toque para Ler: a mesma página desenhada a 3000 px de largura
+    detalhe(i) { return this.imagem(i, 3000); },
     fechar() { try { doc.destroy(); } catch (e) {} },
   };
 }
@@ -3054,14 +3081,25 @@ async function analisarPagina(url) {
   ctx.drawImage(img, 0, 0, l, a);
   return { img: img, l: l, a: a, k: k, dados: ctx.getImageData(0, 0, l, a).data };
 }
-// O recorte sai da imagem na resolução em que a página foi aberta (a maior
-// que o app tem), sem filtro nem cor nova: é a arte original.
-function recortar(img, caixa) {
+const larguraDaCamada = () => Math.min((window.innerWidth || 375) * 0.92, 900) - 24;
+// O recorte sai da maior imagem que o app tem da página (`fonte`: o original
+// do acervo ou o PDF redesenhado; sem ela, a página aberta). `caixa` vem nas
+// coordenadas de `img`, a página aberta. Sem filtro nem cor nova: é a arte
+// original, desenhada já no tamanho da tela com a suavização mais alta (o
+// navegador, esticando por CSS, borra mais).
+function recortar(img, caixa, fonte) {
+  const f = fonte && fonte.naturalWidth ? fonte : img;
+  const k = f.naturalWidth / img.naturalWidth;
+  const x = Math.max(0, Math.round(caixa.x * k)), y = Math.max(0, Math.round(caixa.y * k));
+  const rl = Math.max(1, Math.min(f.naturalWidth - x, Math.round(caixa.l * k)));
+  const ra = Math.max(1, Math.min(f.naturalHeight - y, Math.round(caixa.a * k)));
+  const px = pixelsDoRecorte(rl, ra, larguraDaCamada(), window.innerHeight || 700, window.devicePixelRatio || 1);
   const c = document.createElement("canvas");
-  const esc = Math.min(1, 2400 / Math.max(caixa.l, caixa.a));
-  c.width = Math.max(1, Math.round(caixa.l * esc)); c.height = Math.max(1, Math.round(caixa.a * esc));
-  c.getContext("2d").drawImage(img, caixa.x, caixa.y, caixa.l, caixa.a, 0, 0, c.width, c.height);
-  return new Promise((r) => c.toBlob((b) => r({ url: URL.createObjectURL(b), l: c.width, a: c.height }), "image/png"));
+  c.width = px.l; c.height = px.a;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(f, x, y, rl, ra, 0, 0, c.width, c.height);
+  return new Promise((r) => c.toBlob((b) => r({ url: URL.createObjectURL(b), l: c.width, a: c.height, rl: rl, ra: ra }), "image/png"));
 }
 
 // A camada do Toque para Ler: só o recorte, ampliado até 92% da largura útil,
@@ -3075,16 +3113,16 @@ function CamadaBalao({ recorte, onFechar, onAjustar }) {
     if (fechar.current) fechar.current.focus();
     return () => { try { ant && ant.focus && ant.focus(); } catch (e) {} };
   }, []);
-  const larguraUtil = Math.min(window.innerWidth * 0.92, 900) - 24;
-  const base = Math.min(larguraUtil, recorte.l * 3) / recorte.l;
+  const larguraUtil = larguraDaCamada();
+  const t = tamanhoNaCamada(recorte.rl || recorte.l, recorte.ra || recorte.a, larguraUtil, window.innerHeight || 700);
   const btn = { minWidth: 44, minHeight: 44, borderRadius: 12, border: "1px solid #2B3954", background: "#172139", color: "#F5F7FF", fontSize: 16, fontWeight: 600, cursor: "pointer", padding: "0 12px" };
   return (
     <div onClick={onFechar} style={{ position: "fixed", inset: 0, zIndex: 95, background: "rgba(3,5,12,0.62)", display: "flex", alignItems: "center", justifyContent: "center", padding: "calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))" }}>
       <div role="dialog" aria-modal="true" aria-label="Texto ampliado" onClick={(e) => e.stopPropagation()}
         style={{ background: "#111A30", border: "1px solid #2B3954", borderRadius: 16, padding: 12, maxWidth: "92vw", boxShadow: "0 18px 50px rgba(0,0,0,0.55)", animation: MOVIMENTO_REDUZIDO ? "none" : "surge 160ms ease-out both" }}>
-        <div style={{ maxWidth: larguraUtil, maxHeight: "72vh", overflow: "auto", borderRadius: 10, background: "#FFFFFF", WebkitOverflowScrolling: "touch" }}>
+        <div style={{ maxWidth: larguraUtil, maxHeight: "72vh", overflow: "auto", borderRadius: 10, WebkitOverflowScrolling: "touch" }}>
           <img src={recorte.url} alt="Recorte ampliado da página" draggable={false}
-            style={{ display: "block", width: Math.round(recorte.l * base * zoom), height: "auto", maxWidth: "none" }} />
+            style={{ display: "block", margin: "0 auto", borderRadius: 10, width: Math.round(t.l * zoom), height: Math.round(t.a * zoom), maxWidth: "none" }} />
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 10, justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8 }}>
@@ -3166,6 +3204,7 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
   const pedidas = useRef({});
   const urlsRef = useRef({});
   const analises = useRef({});
+  const detalhes = useRef({});                   // página -> Promise<Image|null> em alta resolução
   const palcoRef = useRef(null);
   const gesto = useRef(null);
   const virando = useRef(false);
@@ -3202,6 +3241,8 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
       vivo = false;
       if (abridor.current) abridor.current.fechar();
       Object.values(urlsRef.current).forEach((u) => URL.revokeObjectURL(u));
+      Object.values(detalhes.current).forEach((d) => d.then((r) => { if (r) URL.revokeObjectURL(r.url); }));
+      detalhes.current = {};
     };
   }, [obra.id]);
 
@@ -3273,6 +3314,28 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
     if (!analises.current[i]) analises.current[i] = analisarPagina(urlsRef.current[i]);
     return analises.current[i];
   };
+  // A imagem grande da página, só para o recorte. Se não houver (CBZ já é o
+  // original) ou falhar (sem rede), o recorte sai da página aberta.
+  // Só a da página atual fica guardada: o original de uma página de jornal
+  // passa de 100 MB descomprimido.
+  const soltarDetalhe = (k) => {
+    const d = detalhes.current[k];
+    delete detalhes.current[k];
+    if (d) d.then((r) => { if (r) URL.revokeObjectURL(r.url); });
+  };
+  const detalhe = (i) => {
+    const ab = abridor.current;
+    Object.keys(detalhes.current).forEach((k) => { if (+k !== i) soltarDetalhe(k); });
+    if (!detalhes.current[i]) detalhes.current[i] = (ab && ab.detalhe ? Promise.resolve(ab.detalhe(i)) : Promise.resolve(null))
+      .then((b) => {
+        if (!b) return null;
+        const u = URL.createObjectURL(b);
+        return carregarImagem(u).then((img) => ({ img: img, url: u }), (e) => { URL.revokeObjectURL(u); throw e; });
+      })
+      .catch(() => { delete detalhes.current[i]; return null; });
+    return detalhes.current[i];
+  };
+  const recortarDaPagina = async (an, i, caixa) => { const d = await detalhe(i); return recortar(an.img, caixa, d && d.img); };
   const tocarParaLer = async (x, y) => {
     const pt = telaParaImagem(x, y, ret, dimAtual.l, dimAtual.a);
     if (!pt || !urlsRef.current[pagina]) { setControles((c) => !c); return; }
@@ -3280,7 +3343,9 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
       const an = await analise(pagina);
       const b = acharBalaoPerto(an.dados, an.l, an.a, pt.x * an.k, pt.y * an.k);
       if (b.motivo) { setControles(true); setAviso({ texto: "Não achei um balão aqui", ponto: pt }); return; }
-      abrirCamada(await recortar(an.img, { x: b.x / an.k, y: b.y / an.k, l: b.l / an.k, a: b.a / an.k }));
+      setAviso({ texto: "Ampliando…" });
+      abrirCamada(await recortarDaPagina(an, pagina, { x: b.x / an.k, y: b.y / an.k, l: b.l / an.k, a: b.a / an.k }));
+      setAviso(null);
     } catch (e) { setAviso({ texto: "Não consegui ampliar esta página", ponto: pt }); }
   };
   const abrirManual = (pt) => {
@@ -3289,7 +3354,7 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
     setManual(caixaManual(p.x, p.y, dimAtual.l, dimAtual.a));
   };
   const ampliarManual = async () => {
-    try { const an = await analise(pagina); abrirCamada(await recortar(an.img, manual)); }
+    try { const an = await analise(pagina); abrirCamada(await recortarDaPagina(an, pagina, manual)); }
     catch (e) { setAviso({ texto: "Não consegui ampliar esta página" }); }
   };
 
