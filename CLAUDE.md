@@ -42,7 +42,24 @@ Comixfy), adaptado a essa base. Quando os dois divergem, vale o que está aqui.
 2. `versao.json` com o mesmo valor
 3. `CACHE` no `sw.js` (`superhqs-vN`)
 
-Antes de todo `git push`: `node testes/rodar.js` e `node testes/verificar.js`.
+**Nunca publicar sem a trava**: antes de todo `git push`, `node testes/rodar.js`
+e `node testes/verificar.js`. O dono desenvolve também pelo celular (sessão do
+Claude Code na nuvem), onde não dá para abrir o app em localhost antes de
+publicar, e um push republica para todo mundo. As três travas são as do Treino
+Livre: o hook `testes/hooks/pre-push` (ligado por `core.hooksPath`, que o
+`preparar.ps1`/`preparar.sh` configura; não existe em clone novo), esta regra
+(a única que alcança a sessão na nuvem) e o `conferir.yml` no GitHub Actions
+(avisa depois, mas aparece no celular). Publicou quebrado:
+`git revert --no-edit HEAD && git push`, e investigar depois.
+
+## Trabalhar de qualquer aparelho e de qualquer conta do Claude
+
+O GitHub (`Carlosjr81/Super-HQs`) é a verdade. Celular: `COMECE-AQUI.md`, seção
+*No celular*. Computador: clone + "prepare esta máquina" (`preparar.ps1`).
+Outra conta do Claude (a pessoal no lugar da corporativa):
+`TROCAR-DE-CONTA-CLAUDE.md`. Tudo o que for decidido em conversa precisa vir
+para este arquivo ou para a mensagem do commit: a conversa fica na conta onde
+aconteceu, e a próxima conta só enxerga o repositório.
 
 ## O que veio do Treino Livre (seção ACESSO do `index.html`)
 

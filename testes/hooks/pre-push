@@ -1,0 +1,39 @@
+#!/bin/sh
+# Trava de publicação: nada sai daqui sem passar pelos testes e pela conferida.
+#
+# Instalado por `preparar.ps1` / `preparar.sh`, que apontam o git para esta
+# pasta (`core.hooksPath testes/hooks`). Para pular numa emergência:
+#
+#   git push --no-verify
+#
+# Mas pense duas vezes: este app roda no celular de gente que está no meio de uma
+# leitura, e uma publicação quebrada deixa todo mundo na tela branca até a
+# próxima correção chegar.
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-push: node não encontrado — não dá para conferir nada."
+  echo "          instale o Node (veja COMECE-AQUI.md) ou use: git push --no-verify"
+  exit 1
+fi
+
+RAIZ="$(cd "$(dirname "$0")/../.." && pwd)"
+
+echo ""
+echo "pre-push: conferindo antes de publicar..."
+echo ""
+
+if ! node "$RAIZ/testes/rodar.js"; then
+  echo ""
+  echo "pre-push: os testes falharam. Publicação cancelada."
+  exit 1
+fi
+
+if ! node "$RAIZ/testes/verificar.js"; then
+  echo ""
+  echo "pre-push: a conferida de publicação reprovou. Publicação cancelada."
+  exit 1
+fi
+
+echo ""
+echo "pre-push: tudo certo, publicando."
+exit 0

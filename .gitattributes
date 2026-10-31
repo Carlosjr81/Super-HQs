@@ -2,3 +2,6 @@
 # entra no shebang e o sistema procura um interpretador "bash\r".
 *.sh text eol=lf
 *.ps1 text eol=crlf
+
+# O hook do git não tem extensão, mas é script de shell: LF obrigatório.
+testes/hooks/* text eol=lf
