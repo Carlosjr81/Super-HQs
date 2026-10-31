@@ -74,7 +74,8 @@ jobs:
       - name: Impressão digital da chave
         run: |
           DIGITAL=$(keytool -list -v -keystore "$SH_KEYSTORE" -storepass "$SH_STORE_PASS" -alias superhqs | grep -m1 "SHA256:" | sed 's/.*SHA256: *//')
-          echo "### Impressão digital SHA-256 da chave do APK" >> "$GITHUB_STEP_SUMMARY"
+          echo "IMPRESSAO_DIGITAL=$DIGITAL"
+          echo "###Impressão digital SHA-256 da chave do APK" >> "$GITHUB_STEP_SUMMARY"
           echo "\`$DIGITAL\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Renomear
