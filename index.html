@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <!--
-  Super HQs — Copyright (c) 2026 Carlos Jr (github.com/Carlosjr81). Todos os direitos reservados.
+  Super HQs — Copyright (c) 2026 Super HQs (github.com/Carlosjr81). Todos os direitos reservados.
   Código visível não é código livre: copiar, modificar, republicar ou usar
   em outro app, gratuito ou pago, exige autorização por escrito. Ver LICENSE.
 -->
@@ -153,7 +153,7 @@ const AVISO_CONTEUDO = {
 // todo mundo vê os termos de novo e precisa aceitar outra vez.
 // Não é parecer jurídico: é o que dá para escrever sem um advogado.
 const TERMOS_USO = {
-  versao: "2026-10-31",
+  versao: "2026-10-31b",
   resumo: [
     ["\u{1F193}", "Acesso liberado pelo criador", "A conta precisa da liberação do criador do app, que pode pôr prazo ou bloquear quem descumprir estas regras. Se houver plano pago, você vê o preço antes, e nada é cobrado sem o seu aceite."],
     ["\u{1F4DA}", "Só o que é seu", "Abra no app só arquivos que são seus, que você comprou, que estão em domínio público ou que você tem autorização para ler."],
@@ -165,7 +165,7 @@ const TERMOS_USO = {
   ],
   secoes: [
     ["1. O que é o Super HQs", [
-      "O Super HQs é um aplicativo para ler e organizar quadrinhos, mangás, manhwas, revistas e livros, com virada de página como um livro e a ampliação do texto tocado (Toque para Ler). Ele é criado e mantido por Carlos Jr. (Instagram @carlos.jr.81), chamado aqui de criador do app, e funciona no site carlosjr81.github.io/Super-HQs e no app Android.",
+      "O Super HQs é um aplicativo para ler e organizar quadrinhos, mangás, manhwas, revistas e livros, com virada de página como um livro e a ampliação do texto tocado (Toque para Ler). Ele é criado e mantido pelo Super HQs (Instagram @superhqs), chamado aqui de criador do app, e funciona no site carlosjr81.github.io/Super-HQs e no app Android.",
       "Estes Termos de Uso são as regras para usar o app. A Política de Privacidade explica o que acontece com os seus dados e faz parte destes termos.",
     ]],
     ["2. O seu aceite", [
@@ -216,7 +216,7 @@ const TERMOS_USO = {
       "Estes termos seguem as leis do Brasil, entre elas o Marco Civil da Internet (Lei 12.965/2014), a Lei Geral de Proteção de Dados (Lei 13.709/2018), a Lei de Direitos Autorais (Lei 9.610/1998) e o Código de Defesa do Consumidor (Lei 8.078/1990). Qualquer questão será resolvida no foro da cidade onde você mora.",
     ]],
     ["15. Fale com o criador do app", [
-      "Dúvidas, pedidos ou reclamações sobre estes termos ou sobre a sua conta: Instagram @carlos.jr.81.",
+      "Dúvidas, pedidos ou reclamações sobre estes termos ou sobre a sua conta: Instagram @superhqs.",
     ]],
   ],
   // as duas caixas de aceite (o cadastro e a tela de aceite)
@@ -231,13 +231,13 @@ const TERMOS_USO = {
 // precisa disso. Aparecem na tela de planos, e o aceite vai junto com cada
 // pagamento informado (`condicoes`). Não é parecer jurídico.
 const CONDICOES_ASSINATURA = {
-  versao: "2026-10-31",
+  versao: "2026-10-31b",
   itens: [
     "O pagamento é feito por Pix ou pelo link de pagamento indicado, direto ao criador do app. O acesso é liberado quando o pagamento é confirmado, normalmente em até 1 dia útil.",
     "Não há renovação automática: nada é cobrado sem você pagar de novo. Perto do vencimento, o app avisa.",
     "Os planos mensal, anual e de pagamento único valem pelo período do plano, contado da confirmação, ou do fim do período que ainda estiver valendo.",
     "O plano vitalício dá acesso enquanto o Super HQs for oferecido, sem novas cobranças pelo mesmo plano.",
-    "Você pode desistir em até 7 dias depois do pagamento e receber o valor de volta (Código de Defesa do Consumidor, art. 49). Peça pelo Instagram @carlos.jr.81.",
+    "Você pode desistir em até 7 dias depois do pagamento e receber o valor de volta (Código de Defesa do Consumidor, art. 49). Peça pelo Instagram @superhqs.",
     "A sua estante fica no seu aparelho. Se o acesso vencer, nada é apagado: você pode baixar o backup a qualquer momento e volta a ler tudo ao renovar.",
     "Os preços podem mudar para compras novas. O que você já pagou não muda.",
   ],
@@ -262,11 +262,11 @@ const store = {
 const STORAGE_KEY = "superhqs:v1";
 const LINK_APP = "https://carlosjr81.github.io/Super-HQs/";
 // Quem fez. Uma constante só, porque o @ aparece em vários lugares.
-const INSTAGRAM = "carlos.jr.81";
+const INSTAGRAM = "superhqs";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31m";
+const VERSAO_APP = "2026-10-31n";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -4584,9 +4584,9 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
             <div style={S.card}>
               <div style={S.label}>Créditos</div>
               <div style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.6, marginTop: 6 }}>
-                Criado por Carlos Jr. ·{" "}
+                Criado por Super HQs ·{" "}
                 <a href={LINK_INSTAGRAM} target="_blank" rel="noopener" style={{ color: "var(--marca)", fontWeight: 800 }}>@{INSTAGRAM}</a>
-                <br />© 2026 Carlos Jr. Todos os direitos reservados.
+                <br />© 2026 Super HQs. Todos os direitos reservados.
                 <br />React e ReactDOM (MIT), Babel (MIT), qrcode-generator (MIT), pdf.js (Apache-2.0), fflate (MIT).
                 <br />Versão {VERSAO_APP} · <a href="privacidade.html" style={{ color: "var(--marca)" }}>Privacidade</a>
               </div>

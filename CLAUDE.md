@@ -76,7 +76,7 @@ documentação completa de cada parte está no CLAUDE.md do Treino Livre, seçõ
   Firestore, regras v5). Provado no Firebase real com
   `node testes/prova-regras-firebase.js` (rode depois de mudar as regras). Mesmo
   desligado, a `TelaAceiteTermos` aparece antes do app.
-- **Termos**: `TERMOS_USO` (versão 2026-10-31), com o `AVISO_CONTEUDO` no lugar do
+- **Termos**: `TERMOS_USO` (versão 2026-10-31b), com o `AVISO_CONTEUDO` no lugar do
   aviso de saúde. As duas caixas: termos/18 anos e "só arquivos meus ou
   autorizados". `termos.html` e `termos-versoes/<versão>.txt` saem do mesmo
   texto, e o `teste-acesso.js` reprova se divergirem. Mudou os termos: suba a
@@ -84,6 +84,14 @@ documentação completa de cada parte está no CLAUDE.md do Treino Livre, seçõ
 - **Cobrança**: `cobranca` em `config/acesso`, nasce desligada; planos mensal,
   anual, único e vitalício; Pix copia e cola (txid com prefixo `SH`); o dono
   confirma no painel. Ninguém além do dono vê ou mexe.
+- **Marca e contato (2026-10-31n)**: o app assina como **Super HQs** (créditos,
+  copyright, cabeçalho) e o contato é o **Instagram @superhqs** (`INSTAGRAM`),
+  usado nos Termos, na privacidade, nas telas de bloqueado/vencido e no
+  "Seguir". O nome pessoal e o Instagram pessoal saíram das telas. **O e-mail
+  do dono continua `carlos.jr.81@hotmail.com`** (decisão do dono): é a chave do
+  painel, fixa aqui e nas regras, e segue visível no repositório público. A
+  troca do contato mexeu no texto dos Termos, por isso a versão subiu para
+  2026-10-31b (todo mundo aceita de novo).
 - **Painel do dono**: Ajustes › Sua conta › Painel de usuários, só para
   `carlos.jr.81@hotmail.com` com e-mail confirmado (as regras garantem isso).
 - **O backup das telas de bloqueio** (`baixarBackupLocal`) hoje baixa o
