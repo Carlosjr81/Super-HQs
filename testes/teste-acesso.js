@@ -19,7 +19,7 @@ function teste(nome, esperado, obtido) {
 }
 
 console.log("--- o porteiro só liga com o projeto configurado ---");
-teste("o login fica desligado até o projeto do Super HQs existir", ["", ""], [A.FIREBASE_ACESSO.projectId, A.FIREBASE_ACESSO.apiKey]);
+teste("o login está ligado no projeto do Super HQs", ["super-hqs", true], [A.FIREBASE_ACESSO.projectId, /^AIza/.test(A.FIREBASE_ACESSO.apiKey)]);
 teste("o dono é o e-mail do Carlos", "carlos.jr.81@hotmail.com", A.EMAIL_DONO);
 teste("maiúscula e espaço não mudam quem é o dono", true, A.ehEmailDono("  Carlos.Jr.81@Hotmail.com "));
 teste("outro e-mail não é dono", false, A.ehEmailDono("carlos.jr.81@hotmail.com.br"));

@@ -258,7 +258,7 @@ const INSTAGRAM = "carlos.jr.81";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31d";
+const VERSAO_APP = "2026-10-31e";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -358,8 +358,9 @@ const semAcento = (s) => String(s || "").toLowerCase()
 // como sempre: é como ele fica até o dono criar o projeto no Firebase.
 // O projeto do dono (criado em 28/10/2026). A chave é pública: só identifica
 // o projeto; quem protege são as regras (firebase/firestore.rules).
-// Vazio até o dono criar o projeto do Super HQs no Firebase (firebase/LEIA-ME.md).
-const FIREBASE_ACESSO = { apiKey: "", projectId: "" };
+// O projeto super-hqs do dono (ligado em 2026-10-31e). Vazio desliga o porteiro: é o
+// desligar de emergência. A chave é pública; quem protege são as regras.
+const FIREBASE_ACESSO = { apiKey: "AIzaSyD2r9A1bcEytofZiST_7xbJsCfLXfeu6D8", projectId: "super-hqs" };
 const EMAIL_DONO = "carlos.jr.81@hotmail.com";
 // Sem rede, quem estava liberado continua entrando por 7 dias: quem lê no metrô
 // ou no avião não tem sinal, e travar a leitura por isso seria punir quem pode.

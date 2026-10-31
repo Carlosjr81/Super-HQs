@@ -69,7 +69,9 @@ documentação completa de cada parte está no CLAUDE.md do Treino Livre, seçõ
 *Login com aprovação*, *Os Termos de Uso*, *O app pago* e *Entrar com o Google*.
 
 - **`Porteiro`** envolve o app. `FIREBASE_ACESSO` **vazio = porteiro desligado**
-  (hoje está vazio até o dono criar o projeto: `firebase/LEIA-ME.md`). Mesmo
+  **Ligado em 2026-10-31e** no projeto `super-hqs` (Auth e-mail/senha e Google,
+  Firestore, regras v5). Provado no Firebase real com
+  `node testes/prova-regras-firebase.js` (rode depois de mudar as regras). Mesmo
   desligado, a `TelaAceiteTermos` aparece antes do app.
 - **Termos**: `TERMOS_USO` (versão 2026-10-31), com o `AVISO_CONTEUDO` no lugar do
   aviso de saúde. As duas caixas: termos/18 anos e "só arquivos meus ou

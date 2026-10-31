@@ -8,8 +8,13 @@ Bloquear, prazos, cortesia, recados e a chave **💰 Cobrança**.
 É um **projeto do Firebase separado** do `treino-livre` (decisão do dono): contas,
 aprovação e pagamentos de um app não se misturam com os do outro.
 
-**Enquanto o projeto não existir, o login fica desligado** e o app abre direto.
-Ele liga quando a chave do projeto entra no `index.html` (`FIREBASE_ACESSO`).
+**Ligado em 31/10/2026 (versão 2026-10-31e)**, no projeto `super-hqs` do dono:
+Authentication com E-mail/senha e Google, Firestore com as regras versão 5
+publicadas, app da Web registrado. Conferido no Firebase de verdade com
+`node testes/prova-regras-firebase.js` (17 provas, conta descartável apagada).
+Cada rodada da prova deixa um aceite "Teste regras" no histórico e um aviso de
+pagamento de R$ 1,00 "teste das regras": recuse-o no painel (as regras não
+deixam apagar). Esvaziar `FIREBASE_ACESSO` desliga o login (emergência).
 
 ## O que o dono faz uma vez (uns 10 minutos)
 
