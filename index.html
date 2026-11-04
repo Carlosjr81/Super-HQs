@@ -266,7 +266,7 @@ const INSTAGRAM = "superhqs";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-11-04a";
+const VERSAO_APP = "2026-11-04b";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -4097,7 +4097,7 @@ function Leitor({ obra, inicio, onFechar, onProgresso }) {
 // chegar: abertura-v1.mp4, 720×1280, sem som. Vinheta nova entra com outro nome
 // (v2): o service worker guarda o vídeo num cache próprio, que sobrevive às
 // versões do app.
-const VIDEO_ABERTURA = "";
+const VIDEO_ABERTURA = "abertura-v1.mp4";
 
 // Só o vídeo. Vídeo que não começa em 5 s, ou que não abre, encerra a abertura
 // em vez de prender alguém numa tela preta. Um toque pula. Movimento reduzido:
@@ -4124,20 +4124,20 @@ function Abertura({ onFim }) {
   }, []);
   if (reduzido || !VIDEO_ABERTURA) return null;
   return (
-    <div onClick={fim} role="img" aria-label="Super HQs"
+    <div onClick={fim} role="dialog" aria-modal="true" aria-label="Abertura Super HQs"
       style={{ position: "fixed", inset: 0, zIndex: 90, background: "#090F21", overflow: "hidden", cursor: "pointer" }}>
       <video ref={videoRef} src={VIDEO_ABERTURA} playsInline muted preload="auto"
-        poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        poster="capa-super-hqs.png"
         onPlaying={() => { tocandoRef.current = true; setTocando(true); }}
-        onEnded={fim} onError={() => { if (!tocandoRef.current) fim(); }}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+        onEnded={fim} onError={fim}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain",
           background: "#090F21", opacity: tocando ? 1 : 0, transition: "opacity 0.25s" }} />
-      {tocando && (
-        <div style={{ position: "absolute", left: 0, right: 0, bottom: "calc(18px + env(safe-area-inset-bottom))", zIndex: 2,
-          textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 12, letterSpacing: 1, pointerEvents: "none", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-          toque para pular
-        </div>
-      )}
+      <button type="button" onClick={(e) => { e.stopPropagation(); fim(); }} autoFocus
+        style={{ position: "absolute", right: 18, bottom: "calc(18px + env(safe-area-inset-bottom))", zIndex: 2,
+          minWidth: 80, minHeight: 48, padding: "10px 16px", borderRadius: 12, border: "1px solid #fff",
+          background: "#090F21", color: "#fff", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+        Pular
+      </button>
     </div>
   );
 }
