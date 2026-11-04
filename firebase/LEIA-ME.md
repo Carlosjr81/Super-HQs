@@ -1,5 +1,9 @@
 # Login, aprovação, cobrança e painel de usuários (Firebase)
 
+Ferramentas oficiais sem depender do botão de instalar a integração do ChatGPT:
+[FERRAMENTAS.md](FERRAMENTAS.md). Configuração da CLI e MCP não equivale a
+publicar um backend ou conectar o Drive.
+
 O Super HQs tem o mesmo controle de acesso do Treino Livre: quem se cadastra fica
 **aguardando** até o dono liberar, e só o dono (`carlos.jr.81@hotmail.com`, com o
 e-mail confirmado) vê o **👥 Painel de usuários** em Ajustes, com Liberar,

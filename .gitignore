@@ -18,3 +18,11 @@ android/local.properties
 
 # As amostras próprias da estante (geradas por script, sem obra de ninguém)
 !testes/amostras/*
+
+# Ferramentas locais do Firebase; nunca publicar credenciais.
+node_modules/
+.firebase/
+firebase-debug*.log
+.env
+.env.*
+*-firebase-adminsdk-*.json
