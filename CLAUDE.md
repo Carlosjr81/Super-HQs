@@ -71,6 +71,12 @@ de montagem trocou `treinolivre:` por `superhqs:` e os textos de treino). A
 documentação completa de cada parte está no CLAUDE.md do Treino Livre, seções
 *Login com aprovação*, *Os Termos de Uso*, *O app pago* e *Entrar com o Google*.
 
+- **Firebase (verificado 04/11/2026)**: projeto `super-hqs`, **plano Spark**
+  (sem Storage/Functions até o dono ligar o Blaze), Auth e Firestore ativos. A
+  sessão do Claude na nuvem **não autentica** no Firebase (CLI/MCP sem login) e
+  **não publica regras nem valida pelo console** daqui; isso é do dono ou de uma
+  sessão com login. As regras são testadas contra o Firebase real pelo
+  `prova-regras-firebase.js` (REST, conta descartável).
 - **`Porteiro`** envolve o app. `FIREBASE_ACESSO` **vazio = porteiro desligado**
   **Ligado em 2026-10-31e** no projeto `super-hqs` (Auth e-mail/senha e Google,
   Firestore, regras v5). Provado no Firebase real com
@@ -222,6 +228,18 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
   catálogo online (`baixarObraOnline`), e a cópia fica no aparelho.
 - Testado no Chromium com Firebase simulado (envio de CBZ e PDF, RAR
   recusado). **Não testado no Firebase real**: depende do Blaze.
+- **Acesso por coleção (2026-11-04a)**: a conta ganha `acervoTudo` (ausente/true
+  = acervo inteiro) e `colecoes` (lista, quando `acervoTudo:false`). O painel do
+  dono define por usuário (Mais opções › 📚 Coleções do acervo). Cada edição
+  guarda `chaveAcesso` = `"status|coleção"`, para a consulta parcial usar **um
+  campo só** (`chaveAcesso in [...]`, índice automático, sem índice composto).
+  O leitor consulta conforme a própria conta (`acervoLiberadoDaConta`). As
+  regras **v7** (`firestore.rules`) e **v2** (`storage.rules`) conferem a
+  coleção no servidor (`podeVerColecaoAcervo` / `podeVerArquivoAcervo`): regra
+  não filtra, então a consulta pede exatamente o que a regra permite. Dormente
+  enquanto o Storage estiver desligado (sem dados). **As regras v7/v2 precisam
+  ser publicadas pelo dono** (`firebase deploy --only firestore:rules` e as de
+  Storage pelo console): a sessão na nuvem não tem login no Firebase.
 
 ## A abertura
 

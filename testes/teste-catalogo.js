@@ -7,13 +7,15 @@ const ctx = { URL, Set, Map, Blob, crypto: webcrypto, AbortController, setTimeou
 vm.createContext(ctx);
 vm.runInContext(trecho("// ---------------- ESTANTE: AS CONTAS", "// ---------------- FIM DAS CONTAS DA ESTANTE") +
   trecho("// ---------------- CATALOGO: AS CONTAS", "// ---------------- FIM DAS CONTAS DO CATALOGO") +
-  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal, caminhoNoArmazenamento, urlDoArmazenamento, direitosCompletos, colecaoDaTrilha, fichaDoAcervoApp, resumoDoEnvio};", ctx);
+  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal, caminhoNoArmazenamento, urlDoArmazenamento, direitosCompletos, colecaoDaTrilha, fichaDoAcervoApp, resumoDoEnvio, acervoLiberadoDaConta, podeLerColecaoAcervo, chaveAcessoAcervo};", ctx);
 let ok = 0, mal = 0;
 function teste(nome, esperado, obtido) {
   if (JSON.stringify(esperado) === JSON.stringify(obtido)) { ok++; console.log("  ok   " + nome); }
   else { mal++; console.log("  X    " + nome + ": " + JSON.stringify(obtido)); }
 }
 const F = ctx.funcoes;
+const ctx2 = { Date }; vm.createContext(ctx2);
+vm.runInContext(trecho("function paraFirestore", "// \"Android · app\"") + "\nthis.paraFirestore = paraFirestore; this.deFirestore = deFirestore;", ctx2);
 const sha = "a".repeat(64);
 const url = "https://acervo.example/catalog/catalog.json";
 const item = {id:"edicao-1", source:"proprio", sha256:sha, path:"HQs/Minha Coleção/01.cbz", page_count:4, size_bytes:512, file_url:"https://arquivos.example/01.cbz", title:"Minha coleção", collection:"Coleção", category:"manga"};
@@ -47,7 +49,7 @@ teste("Firestore v6: acervo só o dono grava, com direitos e hora do servidor", 
   /match \/acervo\/\{sha\}/.test(regrasFs) && /allow create: if dono\(\) && sha\.matches/.test(regrasFs) && /enviadoEm == request\.time/.test(regrasFs) && /allow delete: if dono\(\);\s*\}\s*\n\s*\/\/ a regra das contas novas/.test(regrasFs));
 teste("Firestore v6: leitor só vê publicada e com conta liberada", true, /resource\.data\.status == 'publicada' && leitorLiberado\(\)/.test(regrasFs));
 teste("Storage: só o dono envia/apaga, arquivo imutável, leitor liberado lê", true,
-  /allow create: if dono\(\)/.test(regrasSt) && /allow update: if false;/.test(regrasSt) && /allow get: if dono\(\) \|\| \(request\.auth != null && leitorLiberado\(\)\)/.test(regrasSt) && /allow read, write: if false;/.test(regrasSt));
+  /allow create: if dono\(\)/.test(regrasSt) && /allow update: if false;/.test(regrasSt) && /allow get: if dono\(\) \|\| \(request\.auth != null && leitorLiberado\(\) && podeVerArquivoAcervo\(arquivo\)\)/.test(regrasSt) && /allow read, write: if false;/.test(regrasSt));
 teste("as duas regras usam a mesma conta de plano", true, ["cortesiaAte","vitalicio","pagoAte","testeDias","cobrancaDesde"].every((k)=>regrasFs.includes(k)&&regrasSt.includes(k)));
 teste("o catálogo nativo (versao/obras) não é aceito no lugar do índice", true, (()=>{try{F.converterIndiceGenerico({versao:1,obras:[]},url);return false;}catch(e){return /formato nativo/.test(e.message);}})());
 const fb="https://firebasestorage.googleapis.com/v0/b/super-hqs.appspot.com/o/acervo%2Fp1.jpg?alt=media&token=abc";
@@ -97,6 +99,19 @@ vm.runInContext(baixador+"\nthis.baixar = baixarObraOnline;",ctx);
   ctx.estanteDb.obra=async()=>({...real,leitura:{pagina:3,em:10}});
   ctx.fetch=async()=>{throw Error("não deveria baixar");};
   teste("arquivo local funciona sem rede",3,(await ctx.baixar(real)).leitura.pagina);
+  console.log("\n--- acesso por coleção ao acervo ---");
+  teste("conta sem o campo: acervo inteiro", true, F.acervoLiberadoDaConta({status:"liberado"}));
+  teste("acervoTudo true: acervo inteiro", true, F.acervoLiberadoDaConta({acervoTudo:true, colecoes:["X"]}));
+  teste("acervoTudo false: só a lista", ["A","B"], F.acervoLiberadoDaConta({acervoTudo:false, colecoes:["A","B"]}));
+  teste("acervoTudo false sem lista: nada", [], F.acervoLiberadoDaConta({acervoTudo:false}));
+  teste("pode ler coleção liberada; nega as outras", [true,false,true], [F.podeLerColecaoAcervo({acervoTudo:false,colecoes:["A"]},"A"), F.podeLerColecaoAcervo({acervoTudo:false,colecoes:["A"]},"B"), F.podeLerColecaoAcervo({status:"liberado"},"Qualquer")]);
+  teste("chave de acesso é status|coleção", ["publicada|Turma","pendente|"], [F.chaveAcessoAcervo("publicada","Turma"), F.chaveAcessoAcervo()]);
+  teste("lista de strings sobrevive ao round-trip Firestore", {acervoTudo:false, colecoes:["A","B"]}, (() => { const o = ctx2.deFirestore(ctx2.paraFirestore({acervoTudo:false, colecoes:["A","B"]})); delete o.uid; return o; })());
+  console.log("\n--- as regras do acesso por coleção (v7) ---");
+  const rFs = require("fs").readFileSync(require("path").join(__dirname,"..","firebase","firestore.rules"),"utf8");
+  teste("Firestore v7: leitura do acervo confere a coleção", true, /podeVerColecaoAcervo\(resource\.data\.colecao\)/.test(rFs) && /acervoTudo', true\) == true/.test(rFs) && /colecao in c\.get\('colecoes'/.test(rFs));
+  teste("Storage v2: lê só publicada e coleção liberada", true, /podeVerArquivoAcervo\(arquivo\)/.test(regrasSt) && /d\.status == 'publicada'/.test(regrasSt) && /d\.colecao in c\.get\('colecoes'/.test(regrasSt));
+  teste("o próprio usuário não grava acervoTudo/colecoes no self-update", true, !/affectedKeys\(\)[\s\S]{0,140}acervoTudo/.test(rFs));
   console.log("\n"+ok+" passou / "+mal+" falhou");
   process.exit(mal?1:0);
 })().catch(e=>{console.error(e);process.exit(1);});
