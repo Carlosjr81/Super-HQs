@@ -266,7 +266,7 @@ const INSTAGRAM = "superhqs";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-10-31n";
+const VERSAO_APP = "2026-11-04a";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -393,6 +393,7 @@ function paraFirestore(obj) {
     if (v === null || v === undefined) fields[k] = { nullValue: null };
     else if (typeof v === "number") fields[k] = Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
     else if (typeof v === "boolean") fields[k] = { booleanValue: v };
+    else if (Array.isArray(v)) fields[k] = { arrayValue: { values: v.map((x) => ({ stringValue: String(x) })) } };
     else fields[k] = { stringValue: String(v) };
   });
   return { fields: fields };
@@ -406,6 +407,7 @@ function deFirestore(doc) {
     else if ("doubleValue" in f) o[k] = +f.doubleValue;
     else if ("booleanValue" in f) o[k] = !!f.booleanValue;
     else if ("stringValue" in f) o[k] = f.stringValue;
+    else if ("arrayValue" in f) o[k] = ((f.arrayValue && f.arrayValue.values) || []).map((x) => ("stringValue" in x ? x.stringValue : "integerValue" in x ? parseInt(x.integerValue, 10) : null));
     else if ("timestampValue" in f) o[k] = Date.parse(f.timestampValue);
     else o[k] = null;
   });
@@ -807,12 +809,19 @@ const contaApi = {
   },
   // O acervo do app. Quem não é dono só pode pedir as "publicada" (as regras
   // recusam a consulta inteira se ela puder trazer uma "pendente").
-  async listarAcervo(token, soPublicadas) {
+  // `opc`: {} = dono (tudo); { soPublicadas:true } = liberado com acervo inteiro;
+  // { colecoes:[...] } = acesso parcial (consulta por chaveAcesso, um campo só,
+  // que a regra aceita; lista vazia = sem acesso, nem consulta).
+  async listarAcervo(token, opc) {
+    const o = opc || {};
+    if (Array.isArray(o.colecoes) && o.colecoes.length === 0) return [];
+    const colecoes = Array.isArray(o.colecoes) ? o.colecoes.slice(0, 30) : null;
     const out = [];
     let ultimo = null;
     for (let volta = 0; volta < 400; volta++) {
       const q = { from: [{ collectionId: "acervo" }], orderBy: [{ field: { fieldPath: "__name__" }, direction: "ASCENDING" }], limit: 300 };
-      if (soPublicadas) q.where = { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "publicada" } } };
+      if (colecoes) q.where = { fieldFilter: { field: { fieldPath: "chaveAcesso" }, op: "IN", value: { arrayValue: { values: colecoes.map((c) => ({ stringValue: chaveAcessoAcervo("publicada", c) })) } } } };
+      else if (o.soPublicadas) q.where = { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "publicada" } } };
       if (ultimo) q.startAt = { values: [{ referenceValue: ultimo }], before: false };
       const j = await chamarFirebase(this.doc("").replace(/\/$/, "") + ":runQuery",
         { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ structuredQuery: q }) });
@@ -1696,7 +1705,7 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
   const token = async () => (await tokenValido(lerSessaoConta())).idToken;
   const carregar = useCallback(async () => {
     if (!FIREBASE_ARMAZENAMENTO) return;
-    try { setLista(await contaApi.listarAcervo(await token(), false)); setErro(""); }
+    try { setLista(await contaApi.listarAcervo(await token(), {})); setErro(""); }
     catch (e) { setErro("Não consegui ler o acervo (" + ((e && e.message) || "erro") + "). Confira se as regras da versão 6 foram publicadas."); }
   }, []);
   useEffect(() => { carregar(); }, []);
@@ -1736,6 +1745,7 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
           titular: dados.titular.trim(), licenca: dados.licenca.trim(), origem: dados.origem.trim(),
           status: dados.publicar ? "publicada" : "pendente", caminho: caminho, capa: capa, enviadoPor: (CONTA_ATUAL && CONTA_ATUAL.email) || "",
         };
+        ficha.chaveAcesso = chaveAcessoAcervo(ficha.status, ficha.colecao);
         try { await contaApi.criarNoAcervo(sha, ficha, await token()); }
         catch (e) { contaApi.apagarDoArmazenamento(caminho, await token()).catch(() => {}); throw e; }
         existentes.add(sha);
@@ -1751,7 +1761,8 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
   };
 
   const alternar = async (d) => {
-    try { await contaApi.mudarNoAcervo(d.uid, { status: d.status === "publicada" ? "pendente" : "publicada" }, await token()); carregar(); }
+    const novo = d.status === "publicada" ? "pendente" : "publicada";
+    try { await contaApi.mudarNoAcervo(d.uid, { status: novo, chaveAcesso: chaveAcessoAcervo(novo, d.colecao) }, await token()); carregar(); }
     catch (e) { setErro("Não consegui mudar: " + ((e && e.message) || "erro")); }
   };
   const apagar = (d) => pedirConfirmacao("Apagar \u201c" + d.titulo + "\u201d do acervo? O arquivo sai do Storage; quem já baixou continua com a cópia no aparelho.",
@@ -2232,6 +2243,8 @@ function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
   const [aberto, setAberto] = useState(null);      // o "Mais opções" de qual conta
   const [editando, setEditando] = useState(null);  // { uid, campo, valor }
   const [escolhendoPrazo, setEscolhendoPrazo] = useState(null);
+  const [colecoesAcervo, setColecoesAcervo] = useState([]);
+  const [editColecoes, setEditColecoes] = useState(null); // { uid, tudo, sel: [coleções] }
   const [auto, setAuto] = useState(null);
   const token = async () => (await tokenValido(lerSessaoConta())).idToken;
   const avisar = (uid, t) => setAvisos((a) => Object.assign({}, a, { [uid]: t }));
@@ -2244,6 +2257,7 @@ function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
       setAuto(!!(cfg0 && cfg0.auto));
       setLista(ordenarContas(await contaApi.listar(t), Date.now(), lerCobranca(cfg0)));
       contaApi.listarPagamentos(t).then((l) => setPagamentos(ordenarPagamentos(l)), () => setPagamentos([]));
+      contaApi.listarAcervo(t, {}).then((a) => setColecoesAcervo(Array.from(new Set((a || []).map((x) => x.colecao).filter(Boolean))).sort(ordemNatural)), () => {});
     } catch (x) { setErro(erroDeConta(x.message)); if (!lista) setLista([]); }
   };
   useEffect(() => { carregar(); }, []);
@@ -2297,6 +2311,14 @@ function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
     const novo = !auto;
     try { await contaApi.gravarConfig({ auto: novo }, await token()); setAuto(novo); }
     catch (x) { setErro(erroDeConta(x.message) + " (Publique as regras novas do Firebase: firebase/firestore.rules.)"); }
+  };
+  const abrirColecoes = (c) => setEditColecoes({ uid: c.uid, tudo: acervoLiberadoDaConta(c) === true, sel: Array.isArray(c.colecoes) ? c.colecoes.slice() : [] });
+  const marcarColecao = (nome) => setEditColecoes((e) => { const tem = e.sel.indexOf(nome) >= 0; return Object.assign({}, e, { sel: tem ? e.sel.filter((x) => x !== nome) : e.sel.concat([nome]) }); });
+  const salvarColecoes = async () => {
+    const e = editColecoes; const c = (lista || []).find((x) => x.uid === e.uid); if (!c) { setEditColecoes(null); return; }
+    const campos = e.tudo ? { acervoTudo: true, colecoes: [] } : { acervoTudo: false, colecoes: e.sel.slice(0, 30) };
+    const ok = await gravar(c, campos, e.tudo ? "📚 Acesso ao acervo inteiro." : "📚 Acesso a " + campos.colecoes.length + " coleção(ões) do acervo.");
+    if (ok) setEditColecoes(null);
   };
   const liberarTodos = async () => {
     const pend = (lista || []).filter((c) => situacaoConta(c, Date.now()) === "pendente");
@@ -2555,6 +2577,32 @@ function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
               </div>
             )}
 
+            {editColecoes && editColecoes.uid === c.uid && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Acesso ao acervo do app</div>
+                <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, marginBottom: 6 }}>
+                  <input type="radio" name={"ac-" + c.uid} checked={editColecoes.tudo} onChange={() => setEditColecoes(Object.assign({}, editColecoes, { tudo: true }))} style={{ width: 18, height: 18 }} /> Acervo inteiro
+                </label>
+                <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, marginBottom: 6 }}>
+                  <input type="radio" name={"ac-" + c.uid} checked={!editColecoes.tudo} onChange={() => setEditColecoes(Object.assign({}, editColecoes, { tudo: false }))} style={{ width: 18, height: 18 }} /> Somente estas coleções
+                </label>
+                {!editColecoes.tudo && (
+                  <div style={{ border: "1px solid var(--borda2)", borderRadius: 10, padding: 10, maxHeight: 180, overflow: "auto" }}>
+                    {colecoesAcervo.length === 0 ? <div style={{ fontSize: 12.5, color: "var(--cinza)", lineHeight: 1.5 }}>Nenhuma coleção no acervo ainda. Elas aparecem aqui quando você enviar edições em Acervo do app.</div>
+                      : colecoesAcervo.map((nome) => (
+                        <label key={nome} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, padding: "3px 0" }}>
+                          <input type="checkbox" checked={editColecoes.sel.indexOf(nome) >= 0} onChange={() => marcarColecao(nome)} style={{ width: 18, height: 18 }} /> {nome}
+                        </label>
+                      ))}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button onClick={() => setEditColecoes(null)} style={{ ...S.btnGhost, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>Cancelar</button>
+                  <button disabled={mexendo === c.uid} onClick={salvarColecoes} style={{ ...S.btn, flex: 1, padding: "9px 8px", fontSize: 13.5 }}>Salvar acesso</button>
+                </div>
+              </div>
+            )}
+
             <button onClick={() => setAberto(aberto === c.uid ? null : c.uid)} aria-expanded={aberto === c.uid}
               style={{ background: "none", border: "none", color: "var(--marca)", fontWeight: 800, cursor: "pointer", fontSize: 13, padding: "8px 0 0" }}>
               {aberto === c.uid ? "▴ Menos opções" : "⋯ Mais opções"}
@@ -2563,6 +2611,7 @@ function TelaPainelUsuarios({ onVoltar, pedirConfirmacao }) {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                 {!souEu && sit === "liberado" && <button onClick={() => setEscolhendoPrazo(c.uid)} style={pequeno}>⏳ Mudar o prazo</button>}
                 {!souEu && <button onClick={() => setEditando({ uid: c.uid, campo: "aviso", valor: c.aviso || "" })} style={pequeno}>📩 Mandar recado</button>}
+                {!souEu && sit === "liberado" && <button onClick={() => abrirColecoes(c)} style={pequeno}>📚 Coleções do acervo</button>}
                 {!souEu && (pc.tipo === "cortesia"
                   ? <button onClick={() => pedirConfirmacao({ labelSim: "Tirar", msg: "Tirar a cortesia de " + (c.nome || c.email) + "?" + (cob.ligada ? "\n\nCom a cobrança ligada, a pessoa passa a precisar de um plano." : "") },
                       () => gravar(c, { cortesia: false, cortesiaAte: 0 }, "Cortesia retirada."))} style={pequeno}>🎁 Tirar a cortesia</button>
@@ -2985,6 +3034,19 @@ function resumoDoEnvio(linhas) {
   });
   return r;
 }
+// O acesso por coleção ao acervo do app. Conta sem o campo (antigas) ou
+// acervoTudo !== false = acervo inteiro. Senão, só as coleções da lista.
+function acervoLiberadoDaConta(d) {
+  if (d && d.acervoTudo === false) return Array.isArray(d.colecoes) ? d.colecoes.filter((x) => typeof x === "string").slice(0, 30) : [];
+  return true;
+}
+function podeLerColecaoAcervo(d, colecao) {
+  const a = acervoLiberadoDaConta(d);
+  return a === true || a.indexOf(colecao) >= 0;
+}
+// A chave gravada em cada edição ("status|coleção"): deixa a consulta por
+// coleção usar um campo só (índice automático, sem índice composto).
+function chaveAcessoAcervo(status, colecao) { return (status || "pendente") + "|" + (colecao || ""); }
 // ---------------- FIM DAS CONTAS DO CATALOGO ----------------
 
 // ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------
@@ -4177,7 +4239,10 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
     const carregar = async () => {
       try {
         const s = await tokenValido(lerSessaoConta());
-        const lista = (await contaApi.listarAcervo(s.idToken, !(CONTA_ATUAL && CONTA_ATUAL.dono)))
+        const souDono = CONTA_ATUAL && CONTA_ATUAL.dono;
+        let opc = {};
+        if (!souDono) { const meu = await contaApi.ler(s.uid, s.idToken); const ac = acervoLiberadoDaConta(meu); opc = ac === true ? { soPublicadas: true } : { colecoes: ac }; }
+        const lista = (await contaApi.listarAcervo(s.idToken, opc))
           .filter((d) => d.status === "publicada").map((d) => fichaDoAcervoApp(d, FIREBASE_ARMAZENAMENTO)).filter(Boolean);
         if (!vivo) return;
         setObrasDoApp(lista);

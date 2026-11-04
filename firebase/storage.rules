@@ -1,7 +1,8 @@
 rules_version = '2';
 // As regras do Firebase Storage do Super HQs: o acervo do app.
 // Cole este arquivo inteiro em: Firebase › Storage › Regras › Publicar.
-// Versão 1 (2026-10-31). Junto com o firestore.rules versão 6.
+// Versão 2 (2026-11-04). Junto com o firestore.rules versão 7.
+// Lê só edição publicada e só de coleção liberada para a conta.
 //
 // - Só o dono (e-mail confirmado) envia e apaga.
 // - Cada arquivo tem o nome do próprio SHA-256 e não é substituído: um
@@ -42,9 +43,18 @@ service firebase.storage {
         && (c.get('ate', 0) == 0 || c.get('ate', 0) > request.time.toMillis())
         && comPlano(c);
     }
+    // o arquivo é acervo/<sha>.pdf|cbz; a ficha (status, coleção) está no
+    // Firestore em acervo/<sha>. Lê só publicada e de coleção liberada.
+    function podeVerArquivoAcervo(arquivo) {
+      let sha = arquivo.split('\\.')[0];
+      let d = firestore.get(/databases/(default)/documents/acervo/$(sha)).data;
+      let c = firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data;
+      return d.status == 'publicada'
+        && (c.get('acervoTudo', true) == true || (d.colecao in c.get('colecoes', [])));
+    }
 
     match /acervo/{arquivo} {
-      allow get: if dono() || (request.auth != null && leitorLiberado());
+      allow get: if dono() || (request.auth != null && leitorLiberado() && podeVerArquivoAcervo(arquivo));
       allow list: if dono();
       allow create: if dono()
         && arquivo.matches('[a-f0-9]{64}[.](pdf|cbz)')
