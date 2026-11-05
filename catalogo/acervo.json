@@ -2923,189 +2923,394 @@
    "status": "publicada",
    "publicadaEm": 1793840449836,
    "atualizadaEm": 1793840449836
+  },
+  {
+   "id": "dp-nemo-1911",
+   "fonte": "commons-categoria",
+   "origem": {
+    "id": "Category:Little Nemo in Slumberland, 1911",
+    "url": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1911"
+   },
+   "titulo": "Little Nemo in Slumberland — 1911",
+   "colecao": "Little Nemo in Slumberland",
+   "autor": "Winsor McCay",
+   "ano": 1911,
+   "categoria": "hq",
+   "idioma": "en",
+   "direitos": {
+    "situacao": "dominio-publico",
+    "base": "Lei 9.610/98, art. 41: autor falecido em 1934",
+    "autor": "Winsor McCay",
+    "autorFalecidoEm": 1934
+   },
+   "paginas": [
+    {
+     "id": "f8da3ee096290c4707c60b4bbca4b9cb0e274156",
+     "titulo": "Little Nemo 1911-01-01.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Little_Nemo_1911-01-01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Little_Nemo_1911-01-01.jpg/1280px-Little_Nemo_1911-01-01.jpg",
+     "largura": 1280,
+     "altura": 1656,
+     "larguraOriginal": 1756,
+     "alturaOriginal": 2272,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-01.jpg"
+    },
+    {
+     "id": "96192243182d398a229fbb04a3f1218b85d334ae",
+     "titulo": "Little Nemo 1911-01-08.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Little_Nemo_1911-01-08.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Little_Nemo_1911-01-08.jpg/1280px-Little_Nemo_1911-01-08.jpg",
+     "largura": 1280,
+     "altura": 1662,
+     "larguraOriginal": 1754,
+     "alturaOriginal": 2278,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-08.jpg"
+    },
+    {
+     "id": "f5aa84c38040eacbb14ae3010fd10273dafb57bc",
+     "titulo": "Little Nemo 1911-01-15.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/2/29/Little_Nemo_1911-01-15.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Little_Nemo_1911-01-15.jpg/1280px-Little_Nemo_1911-01-15.jpg",
+     "largura": 1280,
+     "altura": 1647,
+     "larguraOriginal": 1772,
+     "alturaOriginal": 2280,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-15.jpg"
+    },
+    {
+     "id": "d9e14d32a05b495947499a4ea43f6011d862ca11",
+     "titulo": "Little Nemo 1911-01-22.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Little_Nemo_1911-01-22.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Little_Nemo_1911-01-22.jpg/1280px-Little_Nemo_1911-01-22.jpg",
+     "largura": 1280,
+     "altura": 1657,
+     "larguraOriginal": 1764,
+     "alturaOriginal": 2284,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-22.jpg"
+    },
+    {
+     "id": "0974a4e8a50a2d8dc267ecc8724b0e5df301a675",
+     "titulo": "Little Nemo 1911-01-29.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Little_Nemo_1911-01-29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Little_Nemo_1911-01-29.jpg/1280px-Little_Nemo_1911-01-29.jpg",
+     "largura": 1280,
+     "altura": 1643,
+     "larguraOriginal": 1764,
+     "alturaOriginal": 2264,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-29.jpg"
+    },
+    {
+     "id": "5b5a4c4f6419ac21d07e4c556e345bda3f779ea3",
+     "titulo": "Little Nemo 1911-02-05.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Little_Nemo_1911-02-05.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Little_Nemo_1911-02-05.jpg/1280px-Little_Nemo_1911-02-05.jpg",
+     "largura": 1280,
+     "altura": 1672,
+     "larguraOriginal": 1752,
+     "alturaOriginal": 2288,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-05.jpg"
+    },
+    {
+     "id": "012dbc8298fffc0517cff12353993d1fb62faaf5",
+     "titulo": "Little Nemo 1911-02-12.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/4/46/Little_Nemo_1911-02-12.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Little_Nemo_1911-02-12.jpg/1280px-Little_Nemo_1911-02-12.jpg",
+     "largura": 1280,
+     "altura": 1664,
+     "larguraOriginal": 1760,
+     "alturaOriginal": 2288,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-12.jpg"
+    },
+    {
+     "id": "9a41a206765184d158828e8bf82fb8959d84ea10",
+     "titulo": "Little Nemo 1911-02-19.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/6/68/Little_Nemo_1911-02-19.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Little_Nemo_1911-02-19.jpg/1280px-Little_Nemo_1911-02-19.jpg",
+     "largura": 1280,
+     "altura": 1660,
+     "larguraOriginal": 1764,
+     "alturaOriginal": 2288,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-19.jpg"
+    },
+    {
+     "id": "8ec04ece14c41efe637169d66bebc816f89b75f9",
+     "titulo": "Little Nemo 1911-02-26.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Little_Nemo_1911-02-26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Little_Nemo_1911-02-26.jpg/1280px-Little_Nemo_1911-02-26.jpg",
+     "largura": 1280,
+     "altura": 1671,
+     "larguraOriginal": 1739,
+     "alturaOriginal": 2270,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-26.jpg"
+    },
+    {
+     "id": "d6a616087c1b3993f7acc084aede143d91bd4536",
+     "titulo": "Little Nemo 1911-03-05.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Little_Nemo_1911-03-05.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Little_Nemo_1911-03-05.jpg/1280px-Little_Nemo_1911-03-05.jpg",
+     "largura": 1280,
+     "altura": 1658,
+     "larguraOriginal": 1760,
+     "alturaOriginal": 2280,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-05.jpg"
+    },
+    {
+     "id": "3b3c2afb246c8f2c22a8734f3ecc745f4e421935",
+     "titulo": "Little Nemo 1911-03-12.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/1/14/Little_Nemo_1911-03-12.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Little_Nemo_1911-03-12.jpg/1280px-Little_Nemo_1911-03-12.jpg",
+     "largura": 1280,
+     "altura": 1662,
+     "larguraOriginal": 1741,
+     "alturaOriginal": 2260,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-12.jpg"
+    },
+    {
+     "id": "9d3b8b5ff014d1c4f865783cdf7daac742af867b",
+     "titulo": "Little Nemo 1911-03-19.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Little_Nemo_1911-03-19.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Little_Nemo_1911-03-19.jpg/1280px-Little_Nemo_1911-03-19.jpg",
+     "largura": 1280,
+     "altura": 1654,
+     "larguraOriginal": 1764,
+     "alturaOriginal": 2280,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-19.jpg"
+    },
+    {
+     "id": "d0939dc672f88bc3bbb5d82dae591a21271e4a66",
+     "titulo": "Little Nemo 1911-03-26.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Little_Nemo_1911-03-26.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Little_Nemo_1911-03-26.jpg/1280px-Little_Nemo_1911-03-26.jpg",
+     "largura": 1280,
+     "altura": 1673,
+     "larguraOriginal": 1744,
+     "alturaOriginal": 2280,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-26.jpg"
+    },
+    {
+     "id": "25ac65d39d5a4fa3b70a459a71c39bb88737df23",
+     "titulo": "Little Nemo 1911-04-02.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Little_Nemo_1911-04-02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Little_Nemo_1911-04-02.jpg/1280px-Little_Nemo_1911-04-02.jpg",
+     "largura": 1280,
+     "altura": 1693,
+     "larguraOriginal": 1736,
+     "alturaOriginal": 2296,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-02.jpg"
+    },
+    {
+     "id": "f960ed889470c03950e416ea68753c90de0982b1",
+     "titulo": "Little Nemo 1911-04-09.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Little_Nemo_1911-04-09.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Little_Nemo_1911-04-09.jpg/1280px-Little_Nemo_1911-04-09.jpg",
+     "largura": 1280,
+     "altura": 1666,
+     "larguraOriginal": 1752,
+     "alturaOriginal": 2280,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-09.jpg"
+    },
+    {
+     "id": "1bc376367fcd09de2fb7988a9b8da372be21579c",
+     "titulo": "Little Nemo 1911-04-16.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/7/76/Little_Nemo_1911-04-16.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Little_Nemo_1911-04-16.jpg/1280px-Little_Nemo_1911-04-16.jpg",
+     "largura": 1280,
+     "altura": 1673,
+     "larguraOriginal": 1760,
+     "alturaOriginal": 2300,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-16.jpg"
+    },
+    {
+     "id": "c79f6841d164674c92fe045bb931bbc2e2d5d3e8",
+     "titulo": "Little Nemo 1911-04-23.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/7/74/Little_Nemo_1911-04-23.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Little_Nemo_1911-04-23.jpg/1280px-Little_Nemo_1911-04-23.jpg",
+     "largura": 1280,
+     "altura": 1665,
+     "larguraOriginal": 1740,
+     "alturaOriginal": 2264,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-23.jpg"
+    },
+    {
+     "id": "35683e705c7fd0b25b183b80858454b9a621b7d2",
+     "titulo": "Little Nemo 1911-04-30.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/9/93/Little_Nemo_1911-04-30.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Little_Nemo_1911-04-30.jpg/1280px-Little_Nemo_1911-04-30.jpg",
+     "largura": 1280,
+     "altura": 1664,
+     "larguraOriginal": 1760,
+     "alturaOriginal": 2288,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-30.jpg"
+    },
+    {
+     "id": "13b0551c474eb3cd3ffd3a751cb82a17bfda7b1e",
+     "titulo": "Little Nemo 1911-05-07.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/1/11/Little_Nemo_1911-05-07.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Little_Nemo_1911-05-07.jpg/1280px-Little_Nemo_1911-05-07.jpg",
+     "largura": 1280,
+     "altura": 1645,
+     "larguraOriginal": 1752,
+     "alturaOriginal": 2252,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-07.jpg"
+    },
+    {
+     "id": "1aeb5e08cea7a09c1378e3d83ff2c32b03b0e321",
+     "titulo": "Little Nemo 1911-05-14.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Little_Nemo_1911-05-14.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Little_Nemo_1911-05-14.jpg/1280px-Little_Nemo_1911-05-14.jpg",
+     "largura": 1280,
+     "altura": 1681,
+     "larguraOriginal": 1748,
+     "alturaOriginal": 2296,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-14.jpg"
+    },
+    {
+     "id": "13d78e8e990fa5b4be6a3789fcfe0176a9cc4be8",
+     "titulo": "Little Nemo 1911-05-21.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Little_Nemo_1911-05-21.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Little_Nemo_1911-05-21.jpg/1280px-Little_Nemo_1911-05-21.jpg",
+     "largura": 1280,
+     "altura": 1659,
+     "larguraOriginal": 1744,
+     "alturaOriginal": 2260,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-21.jpg"
+    },
+    {
+     "id": "c9faf68583b53ed77c471d2fb1877c6cdb93e8f6",
+     "titulo": "Little Nemo 1911-05-28.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/0/03/Little_Nemo_1911-05-28.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Little_Nemo_1911-05-28.jpg/1280px-Little_Nemo_1911-05-28.jpg",
+     "largura": 1280,
+     "altura": 1664,
+     "larguraOriginal": 1760,
+     "alturaOriginal": 2288,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-28.jpg"
+    },
+    {
+     "id": "d8c53edba131b2a32512d18bb92e3020137120e4",
+     "titulo": "Little Nemo 1911-06-04.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Little_Nemo_1911-06-04.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Little_Nemo_1911-06-04.jpg/1280px-Little_Nemo_1911-06-04.jpg",
+     "largura": 1280,
+     "altura": 1680,
+     "larguraOriginal": 1752,
+     "alturaOriginal": 2300,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-04.jpg"
+    },
+    {
+     "id": "8915f2971d732f65b44c8f9a1564150efed194b4",
+     "titulo": "Little Nemo 1911-06-11.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Little_Nemo_1911-06-11.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Little_Nemo_1911-06-11.jpg/1280px-Little_Nemo_1911-06-11.jpg",
+     "largura": 1280,
+     "altura": 1683,
+     "larguraOriginal": 1736,
+     "alturaOriginal": 2282,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-11.jpg"
+    },
+    {
+     "id": "7fe64303bfbe845ea7535ebf4ea93d27d8348798",
+     "titulo": "Little Nemo 1911-06-18.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Little_Nemo_1911-06-18.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Little_Nemo_1911-06-18.jpg/1280px-Little_Nemo_1911-06-18.jpg",
+     "largura": 1280,
+     "altura": 1665,
+     "larguraOriginal": 1744,
+     "alturaOriginal": 2268,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-18.jpg"
+    },
+    {
+     "id": "dd44d4f158959f3657ab3e8e941d0e6edbaeaa14",
+     "titulo": "Little Nemo 1911-06-25.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Little_Nemo_1911-06-25.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Little_Nemo_1911-06-25.jpg/1280px-Little_Nemo_1911-06-25.jpg",
+     "largura": 1280,
+     "altura": 1658,
+     "larguraOriginal": 1748,
+     "alturaOriginal": 2264,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-25.jpg"
+    },
+    {
+     "id": "7c185e91ae01427cc6a659555bc16a822c305a2d",
+     "titulo": "Little Nemo 1911-07-02.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Little_Nemo_1911-07-02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Little_Nemo_1911-07-02.jpg/1280px-Little_Nemo_1911-07-02.jpg",
+     "largura": 1280,
+     "altura": 1657,
+     "larguraOriginal": 1752,
+     "alturaOriginal": 2268,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-02.jpg"
+    },
+    {
+     "id": "543d7daa7592cc0e70e6b96c2e9e88adf47db0ed",
+     "titulo": "Little Nemo 1911-07-09.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Little_Nemo_1911-07-09.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Little_Nemo_1911-07-09.jpg/1280px-Little_Nemo_1911-07-09.jpg",
+     "largura": 1280,
+     "altura": 1670,
+     "larguraOriginal": 1772,
+     "alturaOriginal": 2312,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-09.jpg"
+    },
+    {
+     "id": "4380cb096352b6e34e9f89121de40469ab74fbb3",
+     "titulo": "Little Nemo 1911-07-16.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Little_Nemo_1911-07-16.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Little_Nemo_1911-07-16.jpg/1280px-Little_Nemo_1911-07-16.jpg",
+     "largura": 1280,
+     "altura": 1672,
+     "larguraOriginal": 1752,
+     "alturaOriginal": 2288,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-16.jpg"
+    },
+    {
+     "id": "07009d3454a8c56132594bb1e44d05f54e448449",
+     "titulo": "Little Nemo 1911-07-23.jpg",
+     "url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Little_Nemo_1911-07-23.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+     "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Little_Nemo_1911-07-23.jpg/1280px-Little_Nemo_1911-07-23.jpg",
+     "largura": 1280,
+     "altura": 1673,
+     "larguraOriginal": 1744,
+     "alturaOriginal": 2280,
+     "licenca": "Public domain",
+     "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-23.jpg"
+    }
+   ],
+   "versao": "32605b73",
+   "status": "publicada",
+   "publicadaEm": 1793840490537,
+   "atualizadaEm": 1793840490537
   }
  ],
- "revisao": [
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-01-01.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-01.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-01-08.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-08.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-01-15.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-15.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-01-22.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-22.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-01-29.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-01-29.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-02-05.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-05.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-02-12.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-12.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-02-19.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-19.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-02-26.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-02-26.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-03-05.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-05.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-03-12.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-12.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-03-19.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-19.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-03-26.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-03-26.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-04-02.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-02.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-04-09.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-09.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-04-16.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-16.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-04-23.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-23.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-04-30.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-04-30.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-05-07.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-07.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-05-14.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-14.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-05-21.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-21.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-05-28.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-05-28.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-06-04.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-04.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-06-11.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-11.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-06-18.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-18.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-06-25.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-06-25.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-07-02.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-02.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-07-09.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-09.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-07-16.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-16.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  },
-  {
-   "obra": "dp-nemo-1911",
-   "pagina": "Little Nemo 1911-07-23.jpg",
-   "origemUrl": "https://commons.wikimedia.org/wiki/File:Little_Nemo_1911-07-23.jpg",
-   "motivo": "o arquivo não respondeu na conferência"
-  }
- ],
- "geradoEm": 1793840449836
+ "revisao": [],
+ "geradoEm": 1793840490537
 }
