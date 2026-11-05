@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "acervo",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "colecao", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
