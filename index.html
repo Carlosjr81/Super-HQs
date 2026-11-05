@@ -266,7 +266,7 @@ const INSTAGRAM = "superhqs";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-11-05";
+const VERSAO_APP = "2026-11-05b";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -373,6 +373,10 @@ const FIREBASE_ACESSO = { apiKey: "AIzaSyD2r9A1bcEytofZiST_7xbJsCfLXfeu6D8", pro
 // Vazio = acervo do app desligado: o painel do dono mostra o passo a passo
 // (plano Blaze com alerta de orçamento, criar o Storage, colar as regras).
 const FIREBASE_ARMAZENAMENTO = "";
+// Endereços alvo da implantação, gerados de conectores/config.json.
+// A configuração não comprova que o deploy já foi executado.
+// Só endpoints HTTPS do projeto super-hqs; nunca links de tela do Drive.
+const FIREBASE_DRIVE = {"baixar":"https://us-central1-super-hqs.cloudfunctions.net/baixarEdicao","indexar":"https://us-central1-super-hqs.cloudfunctions.net/indexarAcervo"};
 const EMAIL_DONO = "carlos.jr.81@hotmail.com";
 // Sem rede, quem estava liberado continua entrando por 7 dias: quem lê no metrô
 // ou no avião não tem sinal, e travar a leitura por isso seria punir quem pode.
@@ -1695,22 +1699,60 @@ const PASSOS_ARMAZENAMENTO = [
   "No console do Firebase (projeto super-hqs), troque o plano para Blaze e crie um alerta de orçamento (Google Cloud › Faturamento › Orçamentos e alertas), por exemplo R$ 50/mês.",
   "Firebase › Storage › Começar: região southamerica-east1 (São Paulo), modo de produção.",
   "Storage › Regras: apague o que houver, cole o arquivo firebase/storage.rules inteiro e publique.",
-  "Firestore › Regras: cole o firebase/firestore.rules (versão 6, com o acervo) e publique.",
+  "Firestore › Regras: confira firebase/firestore.rules (versão 7) e o índice de coleções.",
   "Mande ao Claude o nome do balde que aparece no topo do Storage (algo como super-hqs.firebasestorage.app). Ele entra em FIREBASE_ARMAZENAMENTO e esta tela passa a enviar.",
 ];
+// Cada chamada tem prazo limitado; repetir até o servidor concluir preserva
+// o cursor e permite continuar após fechar a tela ou perder a conexão.
+async function indexarDriveAteConcluir(chamar, aoLote, continuar) {
+  let relatorio;
+  do {
+    if (!continuar()) break;
+    relatorio = await chamar();
+    if (!relatorio || typeof relatorio.completo !== "boolean") throw Error("Resposta de indexação inválida.");
+    await aoLote(relatorio);
+  } while (!relatorio.completo);
+  return relatorio;
+}
 function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
   const [dados, setDados] = useState({ titular: "", licenca: "", origem: "", editora: "", autor: "", ano: "", categoria: "hq", colecao: "", publicar: true, confirmo: false });
   const [linhas, setLinhas] = useState([]);
   const [andamento, setAndamento] = useState(null);   // { atual, total, nome, fracao }
   const [lista, setLista] = useState(null);
   const [erro, setErro] = useState("");
+  const [indexandoDrive, setIndexandoDrive] = useState(false);
+  const [relatorioDrive, setRelatorioDrive] = useState(null);
+  const [erroDrive, setErroDrive] = useState("");
+  const continuarDrive = useRef(false);
+  useEffect(() => () => { continuarDrive.current = false; }, []);
+  const indexarDrive = async () => {
+    const endpoint = urlDaFuncaoDrive(FIREBASE_DRIVE.indexar, "indexarAcervo");
+    if (!endpoint || indexandoDrive) return;
+    continuarDrive.current = true;
+    setIndexandoDrive(true); setErroDrive("");
+    try {
+      await indexarDriveAteConcluir(async () => {
+        const s = await tokenValido(lerSessaoConta());
+        const r = await fetch(endpoint, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json", Authorization: "Bearer " + s.idToken },
+          body: JSON.stringify({ data: { continuar: true } }) });
+        const j = await r.json();
+        if (!r.ok || j.error) throw new Error((j.error && j.error.message) || "Falha na indexação do Drive.");
+        return j.result || j.data;
+      }, async (relatorio) => {
+        if (!continuarDrive.current) return;
+        setRelatorioDrive(relatorio); await carregar();
+        window.dispatchEvent(new Event("superhqs:acervo-atualizado"));
+      }, () => continuarDrive.current);
+    } catch (e) { setErroDrive(e.message || "Falha ao indexar o Drive."); }
+    finally { setIndexandoDrive(false); }
+  };
   const arquivos = useRef(null), pasta = useRef(null);
   const mudar = (k) => (e) => { const v = e.target.type === "checkbox" ? e.target.checked : e.target.value; setDados((d) => ({ ...d, [k]: v })); };
   const token = async () => (await tokenValido(lerSessaoConta())).idToken;
   const carregar = useCallback(async () => {
-    if (!FIREBASE_ARMAZENAMENTO) return;
+    if (!FIREBASE_ARMAZENAMENTO && !FIREBASE_DRIVE.baixar) return;
     try { setLista(await contaApi.listarAcervo(await token(), {})); setErro(""); }
-    catch (e) { setErro("Não consegui ler o acervo (" + ((e && e.message) || "erro") + "). Confira se as regras da versão 6 foram publicadas."); }
+    catch (e) { setErro("Não consegui ler o acervo (" + ((e && e.message) || "erro") + "). Confira a conexão e as regras de acesso publicadas."); }
   }, []);
   useEffect(() => { carregar(); }, []);
   const prontoParaEnviar = direitosCompletos(dados) && dados.confirmo && !andamento;
@@ -1768,9 +1810,9 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
     try { await contaApi.mudarNoAcervo(d.uid, { status: novo }, await token()); carregar(); }
     catch (e) { setErro("Não consegui mudar: " + ((e && e.message) || "erro")); }
   };
-  const apagar = (d) => pedirConfirmacao("Apagar \u201c" + d.titulo + "\u201d do acervo? O arquivo sai do Storage; quem já baixou continua com a cópia no aparelho.",
+  const apagar = (d) => pedirConfirmacao("Apagar \u201c" + d.titulo + "\u201d do acervo? A ficha sai do app; o original no Drive é preservado. Quem já baixou continua com a cópia no aparelho.",
     async () => {
-      try { const t = await token(); await contaApi.apagarDoAcervo(d.uid, t); await contaApi.apagarDoArmazenamento(d.caminho, t); carregar(); }
+      try { const t = await token(); await contaApi.apagarDoAcervo(d.uid, t); if (d.provedor !== "drive") await contaApi.apagarDoArmazenamento(d.caminho, t); carregar(); }
       catch (e) { setErro("Não consegui apagar: " + ((e && e.message) || "erro")); }
     });
 
@@ -1783,14 +1825,29 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
   return (
     <React.Fragment>
       <button onClick={onVoltar} style={{ ...S.btnGhost, marginBottom: 12 }}>‹ Voltar</button>
-      {!FIREBASE_ARMAZENAMENTO ? (
+      <div style={S.card}>
+        <div style={S.label}>📁 Acervo do Drive</div>
+        {urlDaFuncaoDrive(FIREBASE_DRIVE.indexar, "indexarAcervo") ? (
+          <React.Fragment>
+            <p style={{ color: "var(--cinza)", fontSize: 13.5 }}>Atualize a estante com as edições da pasta cadastrada. Cada etapa continua do ponto salvo.</p>
+            <button style={S.btn} disabled={indexandoDrive} onClick={indexarDrive}>{indexandoDrive ? "Conferindo a pasta…" : relatorioDrive && !relatorioDrive.completo ? "Continuar indexação" : "Atualizar acervo do Drive"}</button>
+            {indexandoDrive && <button style={S.btnGhost} onClick={() => { continuarDrive.current = false; }}>Parar após este lote</button>}
+          </React.Fragment>
+        ) : <p style={{ color: "var(--cinza)", fontSize: 13.5 }}>A conexão privada com o Drive ainda precisa ser ativada pelo administrador.</p>}
+        {erroDrive && <p role="alert" style={{ color: "var(--danger)" }}>{erroDrive}</p>}
+        {relatorioDrive && <div role="status" style={{ fontSize: 13.5, lineHeight: 1.6, marginTop: 12 }}>
+          {relatorioDrive.completo ? "Conferência concluída" : indexandoDrive ? "Indexação em andamento" : "Conferência parcial; continue a indexação"}: {relatorioDrive.arquivos} arquivos · {relatorioDrive.publicadas} novas edições publicadas · {relatorioDrive.duplicados} já cadastrados · {relatorioDrive.pendentes} pendentes · {relatorioDrive.erros} erros · {relatorioDrive.atalhos} atalhos · {relatorioDrive.ignorados} ignorados.
+          {(relatorioDrive.detalhes || []).filter((x) => x.motivo).map((x, i) => <div key={i}>{x.nome}: {x.motivo}</div>)}
+        </div>}
+      </div>
+      {!FIREBASE_ARMAZENAMENTO && !FIREBASE_DRIVE.baixar ? (
         <div style={S.card}>
           <div style={S.label}>📦 Acervo do app: falta o armazenamento</div>
           <p style={{ fontSize: 14, color: "var(--cinza)", lineHeight: 1.6 }}>As edições do acervo moram no Firebase Storage, que pede o plano Blaze (pago pelo uso). O app não liga nada pago sozinho. Para ligar:</p>
           <ol style={{ fontSize: 14, lineHeight: 1.6, paddingLeft: 20 }}>{PASSOS_ARMAZENAMENTO.map((t, i) => <li key={i} style={{ marginBottom: 6 }}>{t}</li>)}</ol>
           <p style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.5 }}>Só entra obra sua, licenciada a você ou em domínio público no Brasil. Acervo de outro serviço (Ink, Comixfy...) não entra, mesmo com assinatura: a licença de leitura não dá direito de republicar.</p>
         </div>
-      ) : (
+      ) : FIREBASE_ARMAZENAMENTO ? (
         <React.Fragment>
           <div style={S.card}>
             <div style={S.label}>📤 Enviar edições ao acervo</div>
@@ -1841,6 +1898,10 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
               </div>
             </div>
           )}
+
+        </React.Fragment>
+      ) : null}
+      {(FIREBASE_ARMAZENAMENTO || FIREBASE_DRIVE.baixar) && (
           <div style={S.card}>
             <div style={S.label}>📚 No acervo ({lista ? lista.length : "…"})</div>
             {erro && <div role="alert" style={{ color: "var(--danger)", fontSize: 13.5, lineHeight: 1.5, margin: "6px 0" }}>{erro}</div>}
@@ -1855,7 +1916,6 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
               </div>
             ))}
           </div>
-        </React.Fragment>
       )}
     </React.Fragment>
   );
@@ -3010,9 +3070,20 @@ function colecaoDaTrilha(trilha) {
   return partes.length >= 2 ? partes[partes.length - 2] : "";
 }
 // A ficha do Firestore vira uma edição da estante (baixada e conferida ao ler).
-function fichaDoAcervoApp(d, balde) {
+function urlDaFuncaoDrive(valor, nome) {
+  try {
+    const u = new URL(valor);
+    if (u.protocol !== "https:" || u.username || u.password || u.search || u.hash) return "";
+    if (!/^[a-z0-9-]+-super-hqs\.cloudfunctions\.net$/.test(u.hostname) || u.pathname !== "/" + nome) return "";
+    return u.href;
+  } catch (e) { return ""; }
+}
+function fichaDoAcervoApp(d, balde, driveUrl) {
   const sha = String((d && (d.sha256 || d.uid)) || "").toLowerCase();
   if (!/^[a-f0-9]{64}$/.test(sha) || !d.caminho || !(d.paginas > 0) || (d.tipo !== "pdf" && d.tipo !== "zip")) return null;
+  const doDrive = d.provedor === "drive";
+  const endpoint = doDrive ? urlDaFuncaoDrive(driveUrl, "baixarEdicao") : "";
+  if (doDrive ? !endpoint : !balde) return null;
   const texto = (v) => (typeof v === "string" ? v.slice(0, 500) : "");
   return {
     id: sha, titulo: texto(d.titulo) || "Sem título", nomeOriginal: texto(d.nomeOriginal), tipo: d.tipo,
@@ -3022,7 +3093,8 @@ function fichaDoAcervoApp(d, balde) {
     capaUrl: /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(d.capa || "") ? d.capa : "",
     autor: texto(d.autor), editora: texto(d.editora), ano: d.ano || null,
     direitos: { titular: texto(d.titular), licenca: texto(d.licenca), origem: texto(d.origem) },
-    online: { url: urlDoArmazenamento(balde, d.caminho), privado: true, fonte: "acervo-super-hqs", id: sha, revisao: sha },
+    online: { url: doDrive ? endpoint + "?edicao=" + sha : urlDoArmazenamento(balde, d.caminho),
+      entrega: doDrive ? "drive" : "storage", privado: true, fonte: "acervo-super-hqs", id: sha, revisao: sha },
   };
 }
 // O relatório de um envio: cada arquivo cai em uma situação só.
@@ -3169,6 +3241,25 @@ async function buscarCatalogo(url) {
   } finally { clearTimeout(tempo); }
 }
 
+// O arquivo do Drive vem em partes menores que o limite das Functions.
+// Só grava a edição depois de conferir o hash e as páginas.
+async function baixarArquivoDoDrive(obra, cab, signal) {
+  const tamanho = obra.tamanho;
+  if (!Number.isSafeInteger(tamanho) || tamanho <= 0) throw new Error("Edição do Drive sem tamanho verificado.");
+  const partes = [], passo = 8 * 1048576;
+  for (let inicio = 0; inicio < tamanho; inicio += passo) {
+    const fim = Math.min(inicio + passo, tamanho) - 1;
+    const r = await fetch(obra.online.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal,
+      headers: { ...cab, Range: "bytes=" + inicio + "-" + fim } });
+    if (r.status === 401 || r.status === 403) throw new Error("O seu acesso não permite baixar esta edição agora (confira o seu plano em Perfil).");
+    if (r.status !== 206 || r.headers.get("Content-Range") !== "bytes " + inicio + "-" + fim + "/" + tamanho) throw new Error("O servidor não entregou o intervalo esperado da edição.");
+    const parte = await r.blob();
+    if (parte.size !== fim - inicio + 1) throw new Error("Uma parte da edição veio incompleta.");
+    partes.push(parte);
+  }
+  return new Blob(partes, { type: obra.tipo === "pdf" ? "application/pdf" : "application/zip" });
+}
+
 async function baixarObraOnline(obra) {
   if (await estanteDb.arquivo(obra.id)) return (await estanteDb.obra(obra.id)) || obra;
   const controle = new AbortController();
@@ -3177,12 +3268,19 @@ async function baixarObraOnline(obra) {
   let blob;
   try {
     const cab = {};
-    // o acervo do app: só quem está liberado lê (as regras do Storage conferem)
-    if (obra.online.privado) { const s = await tokenValido(lerSessaoConta()); cab.Authorization = "Firebase " + s.idToken; }
-    const r = await fetch(obra.online.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: controle.signal, headers: cab });
-    if (obra.online.privado && (r.status === 401 || r.status === 403)) throw new Error("O seu acesso não permite baixar esta edição agora (confira o seu plano em Perfil).");
-    if (!r.ok) throw new Error("O arquivo não respondeu (HTTP " + r.status + ").");
-    blob = await r.blob();
+    const doDrive = obra.online.entrega === "drive";
+    if (doDrive) {
+      const base = urlDaFuncaoDrive(FIREBASE_DRIVE.baixar, "baixarEdicao");
+      if (!base || obra.online.url !== base + "?edicao=" + obra.id) throw new Error("Servidor do Drive não configurado para esta edição.");
+    }
+    if (obra.online.privado) { const s = await tokenValido(lerSessaoConta()); cab.Authorization = (doDrive ? "Bearer " : "Firebase ") + s.idToken; }
+    if (doDrive) blob = await baixarArquivoDoDrive(obra, cab, controle.signal);
+    else {
+      const r = await fetch(obra.online.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: controle.signal, headers: cab });
+      if (obra.online.privado && (r.status === 401 || r.status === 403)) throw new Error("O seu acesso não permite baixar esta edição agora (confira o seu plano em Perfil).");
+      if (!r.ok) throw new Error("O arquivo não respondeu (HTTP " + r.status + ").");
+      blob = await r.blob();
+    }
   } catch (e) {
     if (e.name === "AbortError") throw new Error("O download demorou demais. Tente de novo.");
     throw e;
@@ -4232,9 +4330,9 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
   // O acervo do app: a última lista guardada aparece na hora (e sem rede); a
   // nova vem do Firestore, que só entrega a quem está liberado.
   useEffect(() => {
-    if (!FIREBASE_ARMAZENAMENTO || !acessoLigado() || !lerSessaoConta()) return undefined;
+    if ((!FIREBASE_ARMAZENAMENTO && !FIREBASE_DRIVE.baixar) || !acessoLigado() || !lerSessaoConta()) return undefined;
     let vivo = true;
-    const CHAVE = "acervo-do-app";
+    const CHAVE = "acervo-do-app:" + lerSessaoConta().uid;
     estanteDb.catalogo(CHAVE).then((c) => { if (vivo && c) setObrasDoApp(c.obras); }).catch(() => {});
     const carregar = async () => {
       try {
@@ -4243,7 +4341,7 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
         let opc = {};
         if (!souDono) { const meu = await contaApi.ler(s.uid, s.idToken); const ac = acervoLiberadoDaConta(meu); opc = ac === true ? { soPublicadas: true } : { colecoes: ac }; }
         const lista = (await contaApi.listarAcervo(s.idToken, opc))
-          .filter((d) => d.status === "publicada").map((d) => fichaDoAcervoApp(d, FIREBASE_ARMAZENAMENTO)).filter(Boolean);
+          .filter((d) => d.status === "publicada").map((d) => fichaDoAcervoApp(d, FIREBASE_ARMAZENAMENTO, FIREBASE_DRIVE.baixar)).filter(Boolean);
         if (!vivo) return;
         setObrasDoApp(lista);
         estanteDb.guardarCatalogo(CHAVE, lista).catch(() => {});
@@ -4251,7 +4349,14 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
     };
     carregar();
     window.addEventListener("online", carregar);
-    return () => { vivo = false; window.removeEventListener("online", carregar); };
+    window.addEventListener("superhqs:acervo-atualizado", carregar);
+    const aoVoltar = () => { if (document.visibilityState === "visible") carregar(); };
+    document.addEventListener("visibilitychange", aoVoltar);
+    return () => {
+      vivo = false; window.removeEventListener("online", carregar);
+      window.removeEventListener("superhqs:acervo-atualizado", carregar);
+      document.removeEventListener("visibilitychange", aoVoltar);
+    };
   }, []);
   const [catalogoUrl, setCatalogoUrl] = useState(() => { try { return store.get("superhqs:catalogo-url") || CATALOGO_PADRAO; } catch (e) { return CATALOGO_PADRAO; } });
   const [catalogoEstado, setCatalogoEstado] = useState({ ocupado: false, erro: "", em: 0 });

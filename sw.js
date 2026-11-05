@@ -1,5 +1,5 @@
 // Super HQs - Service Worker (modo offline). Veio do Treino Livre.
-const CACHE = "superhqs-v17";
+const CACHE = "superhqs-v19";
 // A vinheta de abertura num cache só dela, preservado entre versões: guardá-la
 // no cache da versão a baixaria de novo a cada atualização do app.
 const CACHE_MIDIA = "superhqs-midia";
@@ -62,7 +62,7 @@ self.addEventListener("fetch", (e) => {
   if (url.hostname === "identitytoolkit.googleapis.com" || url.hostname === "securetoken.googleapis.com" || url.hostname === "firestore.googleapis.com") return;
   // O acervo (Firebase Storage) passa direto: quem guarda as edições para ler
   // offline é o app, que confere página por página antes de dizer "disponível".
-  if (url.hostname === "firebasestorage.googleapis.com") return;
+  if (url.hostname === "firebasestorage.googleapis.com" || url.hostname.endsWith(".cloudfunctions.net") || e.request.headers.has("Authorization")) return;
   // O catálogo do acervo: rede primeiro (é ele que traz as novidades da
   // sincronização), guardado numa chave só, para abrir offline com o último.
   if (url.pathname.endsWith("/catalogo/acervo.json")) {

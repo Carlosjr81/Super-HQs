@@ -251,29 +251,22 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
   **regras de Storage** (`storage.rules`) entram pelo console quando o Storage
   for ligado (Blaze).
 
-## O backend do acervo privado no Drive (`functions/`, escrito 2026-11-05)
+## Integração do acervo privado no Drive
 
-Pedido do dono: usuários aprovados leem pelo app **só** os arquivos de uma pasta
-de acervo do Drive dele, sem dar acesso ao resto do Drive. É a **menor
-ampliação** da arquitetura (duas Cloud Functions, sem banco novo, reaproveitando
-`acervo/{sha256}` e as regras de conta/coleção). Tudo em `functions/LEIA-ME.md`.
+A integração do PR #19 é a base. Origem primária em `conectores/config.json`,
+`drive.pastaId = 1NrPoBf734hH_haSV5H9AtNfwm97Uq5R6` (Acervo_Organizado).
+`conectores/configurar-drive.js` gera a configuração empacotada nas Functions
+e os endpoints alvo do frontend; `--conferir` impede deploy com divergência.
+Região configurada: us-central1. Segredo: DRIVE_SERVICE_ACCOUNT. A raiz deixou
+de depender de DRIVE_PASTA_ACERVO; o segredo antigo não é apagado.
 
-- **Núcleo escrito e testado** (entra em `node testes/rodar.js`, 31 casos):
-  `functions/acesso.js` (autorização por conta/prazo/plano/coleção — espelha
-  `firestore.rules` e `planoDaConta`; mudou uma, mude as outras) e
-  `functions/indexador.js` (classificar item do Drive, decidir direitos, montar
-  ficha, deduplicar por SHA-256, relatório). Lógica pura, I/O injetado, como os
-  `conectores/`.
-- **Fiação escrita, NÃO implantada** (`functions/index.js`): `indexarAcervo` (só
-  o dono; percorre a pasta aprovada sem seguir atalhos para fora, baixa, confere
-  tipo/SHA-256/páginas/direitos, grava as fichas) e `baixarEdicao` (verifica o
-  ID token, aplica `podeBaixarEdicao`, resolve o arquivo **pela ficha**, nunca
-  por id do cliente). Depende do dono: **Blaze**, conta de serviço com leitura
-  só das pastas aprovadas (chave no Secret Manager, nunca no repo),
-  `DRIVE_PASTA_ACERVO`, e `config/direitosAcervo` (mapa pasta→direitos). Sem
-  isso não publica. Integração real (indexar/baixar) é teste de deploy, pendente.
-- O app baixa por essa Function quando ela existir (adaptar `baixarObraOnline`);
-  hoje o acervo do app usa o Storage (desligado) / catálogo online.
+O dono informa Blaze ativo. Esta alteração não comprova deploy. As instruções
+operacionais e o contrato callable/HTTP estão em `functions/LEIA-ME.md`.
+O frontend lê Firestore sem exigir Storage, solicita lotes até completar,
+atualiza a estante entre lotes e permite interromper/retomar. O servidor confere
+SHA-256, páginas e direitos e resolve downloads pela ficha com verificação de
+conta e coleção a cada intervalo de 8 MiB. Atalhos não são cópias; quarentena,
+formato inválido e falta de registro de direitos não são publicação automática.
 
 ## A abertura
 
