@@ -253,15 +253,20 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
 
 ## Integração do acervo privado no Drive
 
-O dono informou que concluiu Firebase/backend pelo Claude. Não repetir a
-ativação nem tratar a documentação antiga de pendências como estado atual.
-A revisão `codex/integracao-drive-estante` corrige a ligação entre frontend e
-Drive, coleções e origem da ficha, retomada, quarentena, autorização e download
-em partes de até 8 MiB (limite das Cloud Functions). Não foi implantada contra
-o backend informado pelo dono: as URLs/commit dessa conclusão ainda precisam
-ser relacionados à configuração do frontend. Ver `functions/LEIA-ME.md`.
-Preservar login, regras e o backend já implantado; comparar antes de aplicar.
+A integração do PR #19 é a base. Origem primária em `conectores/config.json`,
+`drive.pastaId = 1NrPoBf734hH_haSV5H9AtNfwm97Uq5R6` (Acervo_Organizado).
+`conectores/configurar-drive.js` gera a configuração empacotada nas Functions
+e os endpoints alvo do frontend; `--conferir` impede deploy com divergência.
+Região configurada: us-central1. Segredo: DRIVE_SERVICE_ACCOUNT. A raiz deixou
+de depender de DRIVE_PASTA_ACERVO; o segredo antigo não é apagado.
 
+O dono informa Blaze ativo. Esta alteração não comprova deploy. As instruções
+operacionais e o contrato callable/HTTP estão em `functions/LEIA-ME.md`.
+O frontend lê Firestore sem exigir Storage, solicita lotes até completar,
+atualiza a estante entre lotes e permite interromper/retomar. O servidor confere
+SHA-256, páginas e direitos e resolve downloads pela ficha com verificação de
+conta e coleção a cada intervalo de 8 MiB. Atalhos não são cópias; quarentena,
+formato inválido e falta de registro de direitos não são publicação automática.
 
 ## A abertura
 

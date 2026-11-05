@@ -23,6 +23,7 @@ const ctx = { exports: {}, Buffer, require: (nome) => {
     assert.equal(verificarRevogacao, true); if (valor === "invalido" || revogado) throw Error("invalid"); return token;
   } }) };
   if (nome === "googleapis") return { google: { auth: { GoogleAuth: class {} }, drive: () => drive } };
+  if (nome === "./configuracao-drive.json") return { pastaId: "raiz", regiao: "us-central1" };
   if (nome === "./indexador") return I;
   if (nome === "./acesso") return A;
   if (nome === "./sincronizacao") return S;

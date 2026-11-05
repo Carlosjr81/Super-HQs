@@ -1,3 +1,7 @@
+> Para o pipeline do Drive e o plano Blaze informado pelo dono, siga
+> `functions/LEIA-ME.md` e use `firebase.drive.json`. As observações sobre
+> Spark abaixo registram o estado histórico.
+
 # Firebase sem depender do botão de instalação
 
 O projeto deste repositório é `super-hqs`. Authentication e Firestore foram

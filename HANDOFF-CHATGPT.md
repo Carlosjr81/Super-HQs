@@ -1,20 +1,15 @@
-# Continuidade: ligação do acervo à estante
+# Continuidade: pipeline do Drive
 
-O dono informou que Firebase e backend já foram concluídos no Claude. Não
-reabrir essa etapa usando os textos antigos deste arquivo. O GitHub e o site
-consultados nesta revisão estavam no commit e8c181c, versão 2026-11-05, com
-FIREBASE_ARMAZENAMENTO vazio e sem URL de entregador no frontend.
+Origem: `conectores/config.json`, pasta Acervo_Organizado
+`1NrPoBf734hH_haSV5H9AtNfwm97Uq5R6`. A integração do PR #19 é a base;
+a revisão seguinte configura frontend e Functions, continuação automática
+entre lotes e atualização da estante. Blaze ativo foi informado pelo dono.
 
-A revisão `codex/integracao-drive-estante` contém correções propostas de
-integração. Leia CLAUDE.md e functions/LEIA-ME.md. Compare o backend realmente
-implantado pelo Claude antes de aplicar; não houve deploy de Functions nem
-mudança no plano nesta revisão.
+Execute o roteiro completo de `functions/LEIA-ME.md` com a identidade já usada
+no backend. O runtime empacota `functions/configuracao-drive.json`; os endpoints
+são gerados por `conectores/configurar-drive.js`. Não use o segredo antigo de
+raiz como fonte concorrente. Nenhuma credencial entra no código público.
 
-O próximo dado necessário é o endereço do backend ou o commit/PR da conclusão
-feita no Claude. Reutilize esse serviço para configurar a ligação do app.
-Não invente endpoint nem execute deploy a partir do código antigo.
-
-A pasta Acervo_Organizado foi localizada e suas subpastas físicas conferidas.
-Atalhos não são cópias de revistas; não os anuncie como edições disponíveis.
-O relatório privado tem o inventário detalhado. Nenhuma revista foi adicionada
-ao repositório público e nenhum item do Drive foi apagado ou tornado público.
+Deploy e inventário real não foram executados nesta revisão. Não anunciar
+quantidade publicada com base em atalhos ou somente nos testes simulados.
+Preservar direitos, acesso por coleção, validade do arquivo e quarentena.

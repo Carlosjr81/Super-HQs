@@ -266,7 +266,7 @@ const INSTAGRAM = "superhqs";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-11-05a";
+const VERSAO_APP = "2026-11-05b";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -373,9 +373,10 @@ const FIREBASE_ACESSO = { apiKey: "AIzaSyD2r9A1bcEytofZiST_7xbJsCfLXfeu6D8", pro
 // Vazio = acervo do app desligado: o painel do dono mostra o passo a passo
 // (plano Blaze com alerta de orçamento, criar o Storage, colar as regras).
 const FIREBASE_ARMAZENAMENTO = "";
-// URLs REAIS devolvidas pelo deploy (vazias enquanto o backend não existir).
+// Endereços alvo da implantação, gerados de conectores/config.json.
+// A configuração não comprova que o deploy já foi executado.
 // Só endpoints HTTPS do projeto super-hqs; nunca links de tela do Drive.
-const FIREBASE_DRIVE = { baixar: "", indexar: "" };
+const FIREBASE_DRIVE = {"baixar":"https://us-central1-super-hqs.cloudfunctions.net/baixarEdicao","indexar":"https://us-central1-super-hqs.cloudfunctions.net/indexarAcervo"};
 const EMAIL_DONO = "carlos.jr.81@hotmail.com";
 // Sem rede, quem estava liberado continua entrando por 7 dias: quem lê no metrô
 // ou no avião não tem sinal, e travar a leitura por isso seria punir quem pode.
@@ -1701,6 +1702,18 @@ const PASSOS_ARMAZENAMENTO = [
   "Firestore › Regras: confira firebase/firestore.rules (versão 7) e o índice de coleções.",
   "Mande ao Claude o nome do balde que aparece no topo do Storage (algo como super-hqs.firebasestorage.app). Ele entra em FIREBASE_ARMAZENAMENTO e esta tela passa a enviar.",
 ];
+// Cada chamada tem prazo limitado; repetir até o servidor concluir preserva
+// o cursor e permite continuar após fechar a tela ou perder a conexão.
+async function indexarDriveAteConcluir(chamar, aoLote, continuar) {
+  let relatorio;
+  do {
+    if (!continuar()) break;
+    relatorio = await chamar();
+    if (!relatorio || typeof relatorio.completo !== "boolean") throw Error("Resposta de indexação inválida.");
+    await aoLote(relatorio);
+  } while (!relatorio.completo);
+  return relatorio;
+}
 function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
   const [dados, setDados] = useState({ titular: "", licenca: "", origem: "", editora: "", autor: "", ano: "", categoria: "hq", colecao: "", publicar: true, confirmo: false });
   const [linhas, setLinhas] = useState([]);
@@ -1710,17 +1723,26 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
   const [indexandoDrive, setIndexandoDrive] = useState(false);
   const [relatorioDrive, setRelatorioDrive] = useState(null);
   const [erroDrive, setErroDrive] = useState("");
+  const continuarDrive = useRef(false);
+  useEffect(() => () => { continuarDrive.current = false; }, []);
   const indexarDrive = async () => {
     const endpoint = urlDaFuncaoDrive(FIREBASE_DRIVE.indexar, "indexarAcervo");
     if (!endpoint || indexandoDrive) return;
+    continuarDrive.current = true;
     setIndexandoDrive(true); setErroDrive("");
     try {
-      const s = await tokenValido(lerSessaoConta());
-      const r = await fetch(endpoint, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json", Authorization: "Bearer " + s.idToken },
-        body: JSON.stringify({ data: { continuar: true } }) });
-      const j = await r.json();
-      if (!r.ok || j.error) throw new Error((j.error && j.error.message) || "Falha na indexação do Drive.");
-      setRelatorioDrive(j.result || j.data); await carregar();
+      await indexarDriveAteConcluir(async () => {
+        const s = await tokenValido(lerSessaoConta());
+        const r = await fetch(endpoint, { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json", Authorization: "Bearer " + s.idToken },
+          body: JSON.stringify({ data: { continuar: true } }) });
+        const j = await r.json();
+        if (!r.ok || j.error) throw new Error((j.error && j.error.message) || "Falha na indexação do Drive.");
+        return j.result || j.data;
+      }, async (relatorio) => {
+        if (!continuarDrive.current) return;
+        setRelatorioDrive(relatorio); await carregar();
+        window.dispatchEvent(new Event("superhqs:acervo-atualizado"));
+      }, () => continuarDrive.current);
     } catch (e) { setErroDrive(e.message || "Falha ao indexar o Drive."); }
     finally { setIndexandoDrive(false); }
   };
@@ -1809,22 +1831,23 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
           <React.Fragment>
             <p style={{ color: "var(--cinza)", fontSize: 13.5 }}>Atualize a estante com as edições da pasta cadastrada. Cada etapa continua do ponto salvo.</p>
             <button style={S.btn} disabled={indexandoDrive} onClick={indexarDrive}>{indexandoDrive ? "Conferindo a pasta…" : relatorioDrive && !relatorioDrive.completo ? "Continuar indexação" : "Atualizar acervo do Drive"}</button>
+            {indexandoDrive && <button style={S.btnGhost} onClick={() => { continuarDrive.current = false; }}>Parar após este lote</button>}
           </React.Fragment>
         ) : <p style={{ color: "var(--cinza)", fontSize: 13.5 }}>A conexão privada com o Drive ainda precisa ser ativada pelo administrador.</p>}
         {erroDrive && <p role="alert" style={{ color: "var(--danger)" }}>{erroDrive}</p>}
         {relatorioDrive && <div role="status" style={{ fontSize: 13.5, lineHeight: 1.6, marginTop: 12 }}>
-          {relatorioDrive.completo ? "Conferência concluída" : "Conferência parcial; continue a indexação"}: {relatorioDrive.arquivos} arquivos · {relatorioDrive.publicadas} novas edições publicadas · {relatorioDrive.duplicados} já cadastrados · {relatorioDrive.pendentes} pendentes · {relatorioDrive.erros} erros · {relatorioDrive.atalhos} atalhos · {relatorioDrive.ignorados} ignorados.
+          {relatorioDrive.completo ? "Conferência concluída" : indexandoDrive ? "Indexação em andamento" : "Conferência parcial; continue a indexação"}: {relatorioDrive.arquivos} arquivos · {relatorioDrive.publicadas} novas edições publicadas · {relatorioDrive.duplicados} já cadastrados · {relatorioDrive.pendentes} pendentes · {relatorioDrive.erros} erros · {relatorioDrive.atalhos} atalhos · {relatorioDrive.ignorados} ignorados.
           {(relatorioDrive.detalhes || []).filter((x) => x.motivo).map((x, i) => <div key={i}>{x.nome}: {x.motivo}</div>)}
         </div>}
       </div>
-      {!FIREBASE_ARMAZENAMENTO ? (
+      {!FIREBASE_ARMAZENAMENTO && !FIREBASE_DRIVE.baixar ? (
         <div style={S.card}>
           <div style={S.label}>📦 Acervo do app: falta o armazenamento</div>
           <p style={{ fontSize: 14, color: "var(--cinza)", lineHeight: 1.6 }}>As edições do acervo moram no Firebase Storage, que pede o plano Blaze (pago pelo uso). O app não liga nada pago sozinho. Para ligar:</p>
           <ol style={{ fontSize: 14, lineHeight: 1.6, paddingLeft: 20 }}>{PASSOS_ARMAZENAMENTO.map((t, i) => <li key={i} style={{ marginBottom: 6 }}>{t}</li>)}</ol>
           <p style={{ fontSize: 13, color: "var(--cinza)", lineHeight: 1.5 }}>Só entra obra sua, licenciada a você ou em domínio público no Brasil. Acervo de outro serviço (Ink, Comixfy...) não entra, mesmo com assinatura: a licença de leitura não dá direito de republicar.</p>
         </div>
-      ) : (
+      ) : FIREBASE_ARMAZENAMENTO ? (
         <React.Fragment>
           <div style={S.card}>
             <div style={S.label}>📤 Enviar edições ao acervo</div>
@@ -1877,7 +1900,7 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
           )}
 
         </React.Fragment>
-      )}
+      ) : null}
       {(FIREBASE_ARMAZENAMENTO || FIREBASE_DRIVE.baixar) && (
           <div style={S.card}>
             <div style={S.label}>📚 No acervo ({lista ? lista.length : "…"})</div>
@@ -4326,7 +4349,14 @@ function SuperHQs({ contaPendentes, contaPagamentos, onContaVista }) {
     };
     carregar();
     window.addEventListener("online", carregar);
-    return () => { vivo = false; window.removeEventListener("online", carregar); };
+    window.addEventListener("superhqs:acervo-atualizado", carregar);
+    const aoVoltar = () => { if (document.visibilityState === "visible") carregar(); };
+    document.addEventListener("visibilitychange", aoVoltar);
+    return () => {
+      vivo = false; window.removeEventListener("online", carregar);
+      window.removeEventListener("superhqs:acervo-atualizado", carregar);
+      document.removeEventListener("visibilitychange", aoVoltar);
+    };
   }, []);
   const [catalogoUrl, setCatalogoUrl] = useState(() => { try { return store.get("superhqs:catalogo-url") || CATALOGO_PADRAO; } catch (e) { return CATALOGO_PADRAO; } });
   const [catalogoEstado, setCatalogoEstado] = useState({ ocupado: false, erro: "", em: 0 });

@@ -1,0 +1,9 @@
+{
+  "pastaId": "1NrPoBf734hH_haSV5H9AtNfwm97Uq5R6",
+  "projeto": "super-hqs",
+  "regiao": "us-central1",
+  "endpoints": {
+    "baixar": "https://us-central1-super-hqs.cloudfunctions.net/baixarEdicao",
+    "indexar": "https://us-central1-super-hqs.cloudfunctions.net/indexarAcervo"
+  }
+}

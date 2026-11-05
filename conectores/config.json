@@ -108,5 +108,12 @@
    "idioma": "en",
    "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1911"
   }
- ]
+ ],
+ "fontePrimaria": "drive",
+ "drive": {
+  "projeto": "super-hqs",
+  "regiao": "us-central1",
+  "pastaId": "1NrPoBf734hH_haSV5H9AtNfwm97Uq5R6",
+  "nome": "Acervo_Organizado"
+ }
 }

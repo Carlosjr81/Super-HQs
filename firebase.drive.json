@@ -3,5 +3,15 @@
     "rules": "firebase/firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "functions": [{ "source": "functions", "codebase": "acervo-drive", "runtime": "nodejs22" }]
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "acervo-drive",
+      "runtime": "nodejs22",
+      "predeploy": [
+        "node \"$PROJECT_DIR/conectores/configurar-drive.js\" --conferir",
+        "node \"$PROJECT_DIR/testes/rodar.js\""
+      ]
+    }
+  ]
 }

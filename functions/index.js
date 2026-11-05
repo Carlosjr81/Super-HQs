@@ -15,7 +15,8 @@ admin.initializeApp();
 const db = admin.firestore();
 const EMAIL_DONO = "carlos.jr.81@hotmail.com";
 const ORIGEM_APP = "https://carlosjr81.github.io";
-const PASTA_ACERVO = defineSecret("DRIVE_PASTA_ACERVO");
+const CONFIG_DRIVE = require("./configuracao-drive.json");
+const PASTA_ACERVO = CONFIG_DRIVE.pastaId;
 const SA_JSON = defineSecret("DRIVE_SERVICE_ACCOUNT");
 const MAX_ARQUIVO = 150 * 1048576;
 
@@ -58,9 +59,9 @@ async function contarPaginas(buf, tipo) {
   });
 }
 
-exports.indexarAcervo = onCall({ secrets: [PASTA_ACERVO, SA_JSON], cors: [ORIGEM_APP], timeoutSeconds: 540, memory: "1GiB" }, async (req) => {
+exports.indexarAcervo = onCall({ region: CONFIG_DRIVE.regiao, secrets: [SA_JSON], concurrency: 1, maxInstances: 2, invoker: "public", cors: [ORIGEM_APP], timeoutSeconds: 540, memory: "1GiB" }, async (req) => {
   if (!acesso.ehDono(req.auth && req.auth.token, EMAIL_DONO)) throw new HttpsError("permission-denied", "Só o dono indexa o acervo.");
-  const raiz = PASTA_ACERVO.value();
+  const raiz = PASTA_ACERVO;
   const controle = db.doc("controleAcervo/indexacaoDrive");
   const execucao = crypto.randomUUID();
   let estado;
@@ -112,7 +113,7 @@ exports.indexarAcervo = onCall({ secrets: [PASTA_ACERVO, SA_JSON], cors: [ORIGEM
   }
 });
 
-exports.baixarEdicao = onRequest({ secrets: [PASTA_ACERVO, SA_JSON], cors: [ORIGEM_APP], timeoutSeconds: 540, memory: "512MiB" }, async (req, res) => {
+exports.baixarEdicao = onRequest({ region: CONFIG_DRIVE.regiao, secrets: [SA_JSON], concurrency: 1, maxInstances: 2, invoker: "public", cors: [ORIGEM_APP], timeoutSeconds: 540, memory: "512MiB" }, async (req, res) => {
   if (req.method !== "GET") return res.status(405).set("Allow", "GET").json({ erro: "método não permitido" });
   res.setHeader("Cache-Control", "private, no-store");
   try {
@@ -132,7 +133,7 @@ exports.baixarEdicao = onRequest({ secrets: [PASTA_ACERVO, SA_JSON], cors: [ORIG
     const driveId = ed.provedor === "drive" && ed.arquivoDrive && ed.arquivoDrive.id;
     if (!driveId || ed.caminho !== "drive/" + driveId) return res.status(409).json({ erro: "edição sem arquivo do Drive cadastrado" });
     const drive = driveClient();
-    const meta = await S.arquivoNaRaiz(driveId, PASTA_ACERVO.value(), async (fileId) =>
+    const meta = await S.arquivoNaRaiz(driveId, PASTA_ACERVO, async (fileId) =>
       (await drive.files.get({ fileId, fields: "id,name,mimeType,size,parents,trashed", supportsAllDrives: true })).data);
     if (!meta) return res.status(403).json({ erro: "arquivo fora da pasta aprovada ou em quarentena" });
     if (Number(meta.size) !== ed.tamanho || I.tipoDaEdicao(meta.name, meta.mimeType) !== ed.tipo) return res.status(409).json({ erro: "arquivo alterado; atualize o acervo" });

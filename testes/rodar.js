@@ -10,6 +10,8 @@ const path = require("path");
 const { caminhoDoApp } = require("./app");
 
 const SUITES = [
+  ["../functions/testes/teste-indexacao", "handler do indexador: SHA dos bytes, ficha, duplicação, direitos e erros"],
+  ["teste-integracao-drive", "origem do Drive, configuração de deploy e indexação automática até concluir"],
   ["../functions/testes/teste-entregador", "handler do Drive: tokens, acesso, arquivo movido, intervalos e entrega privada"],
   ["../functions/testes/teste-sincronizacao", "Drive: paginação, retomada, quarentena, mais de 500 edições e download por partes"],
   ["teste-acesso", "login com aprovação, termos, cobrança e o painel do dono"],
