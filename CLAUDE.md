@@ -233,13 +233,20 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
   dono define por usuário (Mais opções › 📚 Coleções do acervo). Cada edição
   guarda `chaveAcesso` = `"status|coleção"`, para a consulta parcial usar **um
   campo só** (`chaveAcesso in [...]`, índice automático, sem índice composto).
-  O leitor consulta conforme a própria conta (`acervoLiberadoDaConta`). As
-  regras **v7** (`firestore.rules`) e **v2** (`storage.rules`) conferem a
-  coleção no servidor (`podeVerColecaoAcervo` / `podeVerArquivoAcervo`): regra
-  não filtra, então a consulta pede exatamente o que a regra permite. Dormente
-  enquanto o Storage estiver desligado (sem dados). **As regras v7/v2 precisam
-  ser publicadas pelo dono** (`firebase deploy --only firestore:rules` e as de
-  Storage pelo console): a sessão na nuvem não tem login no Firebase.
+  O leitor consulta conforme a própria conta (`acervoLiberadoDaConta`): acesso
+  parcial pede **`status==publicada` E `colecao in [...]`** — os MESMOS campos
+  que a regra confere. (A regra não filtra; o Firestore recusa uma consulta que
+  filtre por outro campo. A tentativa anterior com `chaveAcesso` foi **removida**
+  por isso, provado no emulador.) Precisa do índice composto
+  `acervo (status, colecao)` em `firestore.indexes.json`. As regras **v7**
+  (`firestore.rules`) e **v2** (`storage.rules`) conferem a coleção no servidor
+  (`podeVerColecaoAcervo` / `podeVerArquivoAcervo`). Provado com o emulador por
+  `testes/prova-regras-colecao.js` (15/15: lê a coleção liberada, nega as
+  outras, pendente/bloqueado/vencido negados, leitor não se dá acesso).
+  Dormente enquanto o Storage estiver desligado (sem dados). **Falta publicar
+  pelo dono** (a sessão na nuvem não tem login):
+  `firebase deploy --only firestore:rules,firestore:indexes --project super-hqs`
+  e as regras de Storage pelo console; depois `node testes/prova-regras-firebase.js`.
 
 ## A abertura
 

@@ -266,7 +266,7 @@ const INSTAGRAM = "superhqs";
 const LINK_INSTAGRAM = "https://instagram.com/" + INSTAGRAM;
 // Qual versão está rodando neste aparelho. Aparece nos Ajustes.
 // SOBE A CADA PUBLICAÇÃO, junto com o versao.json e o CACHE do sw.js.
-const VERSAO_APP = "2026-11-04b";
+const VERSAO_APP = "2026-11-05";
 // Rodando como app instalado: não faz sentido oferecer instalação a quem já instalou.
 const JA_INSTALADO = (() => {
   try {
@@ -810,8 +810,9 @@ const contaApi = {
   // O acervo do app. Quem não é dono só pode pedir as "publicada" (as regras
   // recusam a consulta inteira se ela puder trazer uma "pendente").
   // `opc`: {} = dono (tudo); { soPublicadas:true } = liberado com acervo inteiro;
-  // { colecoes:[...] } = acesso parcial (consulta por chaveAcesso, um campo só,
-  // que a regra aceita; lista vazia = sem acesso, nem consulta).
+  // { colecoes:[...] } = acesso parcial: consulta status==publicada E
+  // colecao IN [...], os MESMOS campos que a regra confere (regra não filtra;
+  // uma consulta por outro campo é recusada inteira). Lista vazia = sem acesso.
   async listarAcervo(token, opc) {
     const o = opc || {};
     if (Array.isArray(o.colecoes) && o.colecoes.length === 0) return [];
@@ -820,7 +821,10 @@ const contaApi = {
     let ultimo = null;
     for (let volta = 0; volta < 400; volta++) {
       const q = { from: [{ collectionId: "acervo" }], orderBy: [{ field: { fieldPath: "__name__" }, direction: "ASCENDING" }], limit: 300 };
-      if (colecoes) q.where = { fieldFilter: { field: { fieldPath: "chaveAcesso" }, op: "IN", value: { arrayValue: { values: colecoes.map((c) => ({ stringValue: chaveAcessoAcervo("publicada", c) })) } } } };
+      if (colecoes) q.where = { compositeFilter: { op: "AND", filters: [
+        { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "publicada" } } },
+        { fieldFilter: { field: { fieldPath: "colecao" }, op: "IN", value: { arrayValue: { values: colecoes.map((c) => ({ stringValue: c })) } } } },
+      ] } };
       else if (o.soPublicadas) q.where = { fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "publicada" } } };
       if (ultimo) q.startAt = { values: [{ referenceValue: ultimo }], before: false };
       const j = await chamarFirebase(this.doc("").replace(/\/$/, "") + ":runQuery",
@@ -1745,7 +1749,6 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
           titular: dados.titular.trim(), licenca: dados.licenca.trim(), origem: dados.origem.trim(),
           status: dados.publicar ? "publicada" : "pendente", caminho: caminho, capa: capa, enviadoPor: (CONTA_ATUAL && CONTA_ATUAL.email) || "",
         };
-        ficha.chaveAcesso = chaveAcessoAcervo(ficha.status, ficha.colecao);
         try { await contaApi.criarNoAcervo(sha, ficha, await token()); }
         catch (e) { contaApi.apagarDoArmazenamento(caminho, await token()).catch(() => {}); throw e; }
         existentes.add(sha);
@@ -1762,7 +1765,7 @@ function TelaAcervoDono({ onVoltar, pedirConfirmacao }) {
 
   const alternar = async (d) => {
     const novo = d.status === "publicada" ? "pendente" : "publicada";
-    try { await contaApi.mudarNoAcervo(d.uid, { status: novo, chaveAcesso: chaveAcessoAcervo(novo, d.colecao) }, await token()); carregar(); }
+    try { await contaApi.mudarNoAcervo(d.uid, { status: novo }, await token()); carregar(); }
     catch (e) { setErro("Não consegui mudar: " + ((e && e.message) || "erro")); }
   };
   const apagar = (d) => pedirConfirmacao("Apagar \u201c" + d.titulo + "\u201d do acervo? O arquivo sai do Storage; quem já baixou continua com a cópia no aparelho.",
@@ -3044,9 +3047,6 @@ function podeLerColecaoAcervo(d, colecao) {
   const a = acervoLiberadoDaConta(d);
   return a === true || a.indexOf(colecao) >= 0;
 }
-// A chave gravada em cada edição ("status|coleção"): deixa a consulta por
-// coleção usar um campo só (índice automático, sem índice composto).
-function chaveAcessoAcervo(status, colecao) { return (status || "pendente") + "|" + (colecao || ""); }
 // ---------------- FIM DAS CONTAS DO CATALOGO ----------------
 
 // ---------------- ESTANTE: O ARMAZENAMENTO (IndexedDB) ----------------

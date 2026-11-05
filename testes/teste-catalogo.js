@@ -7,7 +7,7 @@ const ctx = { URL, Set, Map, Blob, crypto: webcrypto, AbortController, setTimeou
 vm.createContext(ctx);
 vm.runInContext(trecho("// ---------------- ESTANTE: AS CONTAS", "// ---------------- FIM DAS CONTAS DA ESTANTE") +
   trecho("// ---------------- CATALOGO: AS CONTAS", "// ---------------- FIM DAS CONTAS DO CATALOGO") +
-  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal, caminhoNoArmazenamento, urlDoArmazenamento, direitosCompletos, colecaoDaTrilha, fichaDoAcervoApp, resumoDoEnvio, acervoLiberadoDaConta, podeLerColecaoAcervo, chaveAcessoAcervo};", ctx);
+  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal, caminhoNoArmazenamento, urlDoArmazenamento, direitosCompletos, colecaoDaTrilha, fichaDoAcervoApp, resumoDoEnvio, acervoLiberadoDaConta, podeLerColecaoAcervo};", ctx);
 let ok = 0, mal = 0;
 function teste(nome, esperado, obtido) {
   if (JSON.stringify(esperado) === JSON.stringify(obtido)) { ok++; console.log("  ok   " + nome); }
@@ -105,7 +105,6 @@ vm.runInContext(baixador+"\nthis.baixar = baixarObraOnline;",ctx);
   teste("acervoTudo false: só a lista", ["A","B"], F.acervoLiberadoDaConta({acervoTudo:false, colecoes:["A","B"]}));
   teste("acervoTudo false sem lista: nada", [], F.acervoLiberadoDaConta({acervoTudo:false}));
   teste("pode ler coleção liberada; nega as outras", [true,false,true], [F.podeLerColecaoAcervo({acervoTudo:false,colecoes:["A"]},"A"), F.podeLerColecaoAcervo({acervoTudo:false,colecoes:["A"]},"B"), F.podeLerColecaoAcervo({status:"liberado"},"Qualquer")]);
-  teste("chave de acesso é status|coleção", ["publicada|Turma","pendente|"], [F.chaveAcessoAcervo("publicada","Turma"), F.chaveAcessoAcervo()]);
   teste("lista de strings sobrevive ao round-trip Firestore", {acervoTudo:false, colecoes:["A","B"]}, (() => { const o = ctx2.deFirestore(ctx2.paraFirestore({acervoTudo:false, colecoes:["A","B"]})); delete o.uid; return o; })());
   console.log("\n--- as regras do acesso por coleção (v7) ---");
   const rFs = require("fs").readFileSync(require("path").join(__dirname,"..","firebase","firestore.rules"),"utf8");
