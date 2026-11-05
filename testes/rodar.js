@@ -15,6 +15,7 @@ const SUITES = [
   ["teste-conectores", "a sincronização do acervo: paginação, retomada, duplicatas, direitos e falhas"],
   ["teste-leitor", "o leitor: toque x arraste, virada da folha e o Toque para Ler achando o balão"],
   ["teste-catalogo", "catálogo online, união com a estante e download conferido"],
+  ["../functions/testes/teste-funcoes", "o backend do Drive (núcleo): autorização por conta/coleção e indexação"],
 ];
 
 console.log("app: " + caminhoDoApp() + "\n");

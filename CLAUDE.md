@@ -248,6 +248,30 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
   `firebase deploy --only firestore:rules,firestore:indexes --project super-hqs`
   e as regras de Storage pelo console; depois `node testes/prova-regras-firebase.js`.
 
+## O backend do acervo privado no Drive (`functions/`, escrito 2026-11-05)
+
+Pedido do dono: usuários aprovados leem pelo app **só** os arquivos de uma pasta
+de acervo do Drive dele, sem dar acesso ao resto do Drive. É a **menor
+ampliação** da arquitetura (duas Cloud Functions, sem banco novo, reaproveitando
+`acervo/{sha256}` e as regras de conta/coleção). Tudo em `functions/LEIA-ME.md`.
+
+- **Núcleo escrito e testado** (entra em `node testes/rodar.js`, 31 casos):
+  `functions/acesso.js` (autorização por conta/prazo/plano/coleção — espelha
+  `firestore.rules` e `planoDaConta`; mudou uma, mude as outras) e
+  `functions/indexador.js` (classificar item do Drive, decidir direitos, montar
+  ficha, deduplicar por SHA-256, relatório). Lógica pura, I/O injetado, como os
+  `conectores/`.
+- **Fiação escrita, NÃO implantada** (`functions/index.js`): `indexarAcervo` (só
+  o dono; percorre a pasta aprovada sem seguir atalhos para fora, baixa, confere
+  tipo/SHA-256/páginas/direitos, grava as fichas) e `baixarEdicao` (verifica o
+  ID token, aplica `podeBaixarEdicao`, resolve o arquivo **pela ficha**, nunca
+  por id do cliente). Depende do dono: **Blaze**, conta de serviço com leitura
+  só das pastas aprovadas (chave no Secret Manager, nunca no repo),
+  `DRIVE_PASTA_ACERVO`, e `config/direitosAcervo` (mapa pasta→direitos). Sem
+  isso não publica. Integração real (indexar/baixar) é teste de deploy, pendente.
+- O app baixa por essa Function quando ela existir (adaptar `baixarObraOnline`);
+  hoje o acervo do app usa o Storage (desligado) / catálogo online.
+
 ## A abertura
 
 **Aplicada em 2026-11-04b.** `VIDEO_ABERTURA = "abertura-v1.mp4"` (vinheta

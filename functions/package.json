@@ -1,0 +1,17 @@
+{
+  "name": "super-hqs-functions",
+  "description": "Backend do acervo privado no Drive (não implantado: ver LEIA-ME.md)",
+  "private": true,
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "scripts": {
+    "testes": "node testes/teste-funcoes.js"
+  },
+  "dependencies": {
+    "firebase-admin": "12.7.0",
+    "firebase-functions": "5.1.1",
+    "googleapis": "144.0.0",
+    "pdf-parse": "1.1.1",
+    "yauzl": "3.2.0"
+  }
+}
