@@ -102,8 +102,13 @@ async function buscarJsonReal(url) {
   return r.json();
 }
 async function disponivelReal(url) {
-  const r = await fetch(url, { method: "HEAD", headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20000) });
-  return r.ok;
+  // Só um 404/410 prova que o arquivo sumiu. Throttle do Wikimedia (429),
+  // erro 5xx ou timeout NÃO são prova de ausência — tratar como disponível
+  // evita mandar para revisão páginas boas quando o host limita a taxa.
+  try {
+    const r = await fetch(url, { method: "HEAD", headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20000) });
+    return r.status !== 404 && r.status !== 410;
+  } catch (e) { return true; }
 }
 
 module.exports = { coletarFonte, paginaDoResultado, paramsDaConsulta, buscarJsonReal, disponivelReal, UA, API };
