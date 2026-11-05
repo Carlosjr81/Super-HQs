@@ -107,51 +107,6 @@
    "categoriaApp": "hq",
    "idioma": "en",
    "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1911"
-  },
-  {
-   "id": "nemo-1912",
-   "tipo": "commons-categoria",
-   "categoria": "Category:Little Nemo in Slumberland, 1912",
-   "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$",
-   "alternativas": "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$",
-   "titulo": "Little Nemo in Slumberland — 1912",
-   "colecao": "Little Nemo in Slumberland",
-   "autor": "Winsor McCay",
-   "autorFalecidoEm": 1934,
-   "ano": 1912,
-   "categoriaApp": "hq",
-   "idioma": "en",
-   "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1912"
-  },
-  {
-   "id": "nemo-1913",
-   "tipo": "commons-categoria",
-   "categoria": "Category:Little Nemo in Slumberland, 1913",
-   "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$",
-   "alternativas": "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$",
-   "titulo": "Little Nemo in Slumberland — 1913",
-   "colecao": "Little Nemo in Slumberland",
-   "autor": "Winsor McCay",
-   "autorFalecidoEm": 1934,
-   "ano": 1913,
-   "categoriaApp": "hq",
-   "idioma": "en",
-   "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1913"
-  },
-  {
-   "id": "nemo-1914",
-   "tipo": "commons-categoria",
-   "categoria": "Category:Little Nemo in Slumberland, 1914",
-   "padrao": "^Little Nemo \\d{4}-\\d{2}-\\d{2}\\.(jpe?g|png)$",
-   "alternativas": "Nemo.*\\d{4}-\\d{2}-\\d{2}.*\\.(jpe?g|png)$",
-   "titulo": "Little Nemo in Slumberland — 1914",
-   "colecao": "Little Nemo in Slumberland",
-   "autor": "Winsor McCay",
-   "autorFalecidoEm": 1934,
-   "ano": 1914,
-   "categoriaApp": "hq",
-   "idioma": "en",
-   "origemUrl": "https://commons.wikimedia.org/wiki/Category:Little_Nemo_in_Slumberland,_1914"
   }
  ]
 }
