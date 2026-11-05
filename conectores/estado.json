@@ -41,6 +41,60 @@
    "encontradas": 52,
    "publicadas": 52,
    "revisao": 0
+  },
+  "nemo-1909": {
+   "ultimaTentativa": 1793840118907,
+   "cursor": null,
+   "erro": null,
+   "ultimaColeta": 1793840118907,
+   "encontradas": 52,
+   "publicadas": 10,
+   "revisao": 42
+  },
+  "nemo-1910": {
+   "ultimaTentativa": 1793840118907,
+   "cursor": null,
+   "erro": null,
+   "ultimaColeta": 1793840118907,
+   "encontradas": 15,
+   "publicadas": 0,
+   "revisao": 15
+  },
+  "nemo-1911": {
+   "ultimaTentativa": 1793840118907,
+   "cursor": null,
+   "erro": null,
+   "ultimaColeta": 1793840118907,
+   "encontradas": 30,
+   "publicadas": 0,
+   "revisao": 30
+  },
+  "nemo-1912": {
+   "ultimaTentativa": 1793840118907,
+   "cursor": null,
+   "erro": null,
+   "ultimaColeta": 1793840118907,
+   "encontradas": 0,
+   "publicadas": 0,
+   "revisao": 0
+  },
+  "nemo-1913": {
+   "ultimaTentativa": 1793840118907,
+   "cursor": null,
+   "erro": null,
+   "ultimaColeta": 1793840118907,
+   "encontradas": 0,
+   "publicadas": 0,
+   "revisao": 0
+  },
+  "nemo-1914": {
+   "ultimaTentativa": 1793840118907,
+   "cursor": null,
+   "erro": null,
+   "ultimaColeta": 1793840118907,
+   "encontradas": 0,
+   "publicadas": 0,
+   "revisao": 0
   }
  }
 }
