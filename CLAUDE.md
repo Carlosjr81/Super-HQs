@@ -243,10 +243,16 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
 
 ## A abertura
 
-`VIDEO_ABERTURA` está vazio: o dono vai mandar a vinheta pronta (pedido dele,
-31/10/2026: "deixe que a vinheta eu crio"). Quando chegar: `abertura-v1.mp4`,
-720×1280, sem som, comprimida como a do Treino Livre, e o `sw.js` já tem o
-cache próprio (`superhqs-midia`). Vinheta nova entra com outro nome (v2).
+**Aplicada em 2026-11-04b.** `VIDEO_ABERTURA = "abertura-v1.mp4"` (vinheta
+oficial do dono, H.264 720×1280, 5,5s, **sem áudio**, hashes conferidos com
+`SHA256SUMS.txt`). Poster `capa-super-hqs.png` (1080×1920; é a capa vertical
+oficial, **não** é logo nem ícone), no precache do `sw.js` para a abertura
+abrir offline; o vídeo fica no cache `superhqs-midia`. A tela usa
+`objectFit: contain` (arte inteira), botão **Pular** acessível por teclado
+(`autoFocus`), encerra em qualquer erro do vídeo e no timer de 5 s, sem som e
+respeitando movimento reduzido. Testada no Chromium (toca, pula por
+clique/teclado, movimento reduzido, vídeo ausente, horizontal). Vinheta nova
+entra com outro nome (v2).
 
 ## O app Android (`android/`)
 

@@ -1,3 +1,17 @@
+> **Atualização 2026-11-04b:** a abertura (Tarefa 1) foi **concluída e
+> publicada** (PR #12): `abertura-v1.mp4` + `capa-super-hqs.png`, botão
+> Pular, `contain`, fallback, poster no precache; 270/0, verificar ok,
+> teste visual no Chromium. **Pendentes** (credencial/Blaze/Drive):
+> publicar+provar as regras v7/v2, backend do Drive, logo.
+>
+> IDs do Drive confirmados pelo dono (para o backend/logo): pasta
+> `Super_HQs` `19ck3UTDNoB4EJ9u_BCL5hj4okPNDEmqc`; `Acervo_Organizado`
+> `1NrPoBf734hH_haSV5H9AtNfwm97Uq5R6` (contém **atalhos e subpastas** — não
+> contar atalho como edição; não seguir atalho para fora da pasta); vinheta
+> original `1rE6IiNm7wE5pB8_ao-bejdAflhHan3mk`; capa original
+> `1TswIe6j_PRRYiuH5rbJtoah0noiuo1cc`; projeto visual HD (ZIP, onde deve
+> estar o logo) `1Czr4FI8vMNpVZX3kV_QPOfavrc2VJ7nh`.
+
 # Continuação do Super HQs (handoff para o ChatGPT) — 04/11/2026
 
 Cole o bloco **PROMPT** abaixo no ChatGPT que tem acesso ao seu Firebase e ao
