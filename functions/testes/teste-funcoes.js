@@ -53,6 +53,8 @@ const arq = { driveId: "d1", nome: "Edição 01.cbz", tipo: "zip", sha256: "a".r
 const dir = { titular: "Editora X", licenca: "Contrato 2026", origem: "Acervo do dono" };
 const r = I.montarFicha(arq, dir, agora);
 teste("ficha publicada com direitos e caminho resolvido pelo servidor", ["a".repeat(64), "publicada", "Turma", "drive/d1", "Editora X"], r.ficha && [r.ficha.sha256, r.ficha.status, r.ficha.colecao, r.ficha.caminho, r.ficha.titular]);
+teste("origem é texto para as regras e a ficha preserva referência do Drive", ["Acervo do dono", "d1", "publicada|Turma"], [r.ficha.origem, r.ficha.arquivoDrive.id, r.ficha.chaveAcesso]);
+teste("sem tamanho inteiro ou páginas fracionárias não publica", [true, true], [!!I.montarFicha({...arq, tamanho: 0}, dir, agora).revisao, !!I.montarFicha({...arq, paginas: 1.5}, dir, agora).revisao]);
 teste("sem direitos: vai para revisão, não publica", true, !!I.montarFicha(arq, { titular: "X" }, agora).revisao);
 teste("sem páginas: revisão", true, !!I.montarFicha(Object.assign({}, arq, { paginas: 0 }), dir, agora).revisao);
 teste("sem sha256: revisão", true, !!I.montarFicha(Object.assign({}, arq, { sha256: "" }), dir, agora).revisao);

@@ -251,29 +251,17 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
   **regras de Storage** (`storage.rules`) entram pelo console quando o Storage
   for ligado (Blaze).
 
-## O backend do acervo privado no Drive (`functions/`, escrito 2026-11-05)
+## Integração do acervo privado no Drive
 
-Pedido do dono: usuários aprovados leem pelo app **só** os arquivos de uma pasta
-de acervo do Drive dele, sem dar acesso ao resto do Drive. É a **menor
-ampliação** da arquitetura (duas Cloud Functions, sem banco novo, reaproveitando
-`acervo/{sha256}` e as regras de conta/coleção). Tudo em `functions/LEIA-ME.md`.
+O dono informou que concluiu Firebase/backend pelo Claude. Não repetir a
+ativação nem tratar a documentação antiga de pendências como estado atual.
+A revisão `codex/integracao-drive-estante` corrige a ligação entre frontend e
+Drive, coleções e origem da ficha, retomada, quarentena, autorização e download
+em partes de até 8 MiB (limite das Cloud Functions). Não foi implantada contra
+o backend informado pelo dono: as URLs/commit dessa conclusão ainda precisam
+ser relacionados à configuração do frontend. Ver `functions/LEIA-ME.md`.
+Preservar login, regras e o backend já implantado; comparar antes de aplicar.
 
-- **Núcleo escrito e testado** (entra em `node testes/rodar.js`, 31 casos):
-  `functions/acesso.js` (autorização por conta/prazo/plano/coleção — espelha
-  `firestore.rules` e `planoDaConta`; mudou uma, mude as outras) e
-  `functions/indexador.js` (classificar item do Drive, decidir direitos, montar
-  ficha, deduplicar por SHA-256, relatório). Lógica pura, I/O injetado, como os
-  `conectores/`.
-- **Fiação escrita, NÃO implantada** (`functions/index.js`): `indexarAcervo` (só
-  o dono; percorre a pasta aprovada sem seguir atalhos para fora, baixa, confere
-  tipo/SHA-256/páginas/direitos, grava as fichas) e `baixarEdicao` (verifica o
-  ID token, aplica `podeBaixarEdicao`, resolve o arquivo **pela ficha**, nunca
-  por id do cliente). Depende do dono: **Blaze**, conta de serviço com leitura
-  só das pastas aprovadas (chave no Secret Manager, nunca no repo),
-  `DRIVE_PASTA_ACERVO`, e `config/direitosAcervo` (mapa pasta→direitos). Sem
-  isso não publica. Integração real (indexar/baixar) é teste de deploy, pendente.
-- O app baixa por essa Function quando ela existir (adaptar `baixarObraOnline`);
-  hoje o acervo do app usa o Storage (desligado) / catálogo online.
 
 ## A abertura
 

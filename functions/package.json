@@ -2,7 +2,9 @@
   "name": "super-hqs-functions",
   "description": "Backend do acervo privado no Drive (não implantado: ver LEIA-ME.md)",
   "private": true,
-  "engines": { "node": "20" },
+  "engines": {
+    "node": "22"
+  },
   "main": "index.js",
   "scripts": {
     "testes": "node testes/teste-funcoes.js"

@@ -30,6 +30,20 @@ function direitosOk(d) {
   return !!d && ["titular", "licenca", "origem"].every((k) => typeof d[k] === "string" && d[k].trim().length > 0);
 }
 
+// Pastas administrativas e arquivos explicitamente separados não são edições.
+function ignorarItem(item) {
+  const nome = String(item && item.name || "").trim();
+  return /^(00_Controle|90_Quarentena)$/i.test(nome)
+    || /^INCOMPLETO_NAO_IMPORTAR_/i.test(nome);
+}
+
+function tipoPelosBytes(buf) {
+  if (buf.length >= 5 && buf.subarray(0, 5).toString() === "%PDF-") return "pdf";
+  if (buf.length >= 4 && buf[0] === 0x50 && buf[1] === 0x4b
+    && ((buf[2] === 3 && buf[3] === 4) || (buf[2] === 5 && buf[3] === 6))) return "zip";
+  return null;
+}
+
 // Monta a ficha do Firestore (coleção `acervo`) a partir de um arquivo já
 // baixado e conferido pelo index.js. `arq`: { driveId, nome, tipo, sha256,
 // paginas, tamanho, colecao }. `direitos`: { titular, licenca, origem } da
@@ -37,9 +51,10 @@ function direitosOk(d) {
 // inventa direito nem publica sem registro.
 function montarFicha(arq, direitos, agora) {
   if (!arq || !arq.driveId) return { revisao: true, motivo: "item sem id do Drive" };
-  if (!arq.tipo) return { revisao: true, motivo: "não é PDF nem CBZ" };
+  if (!["pdf", "zip"].includes(arq.tipo)) return { revisao: true, motivo: "não é PDF nem CBZ" };
   if (!/^[a-f0-9]{64}$/.test(String(arq.sha256 || ""))) return { revisao: true, motivo: "sem SHA-256" };
-  if (!(arq.paginas > 0)) return { revisao: true, motivo: "sem contagem de páginas" };
+  if (!Number.isSafeInteger(arq.paginas) || arq.paginas <= 0) return { revisao: true, motivo: "sem contagem de páginas" };
+  if (!Number.isSafeInteger(arq.tamanho) || arq.tamanho <= 0) return { revisao: true, motivo: "sem tamanho verificado" };
   if (!direitosOk(direitos)) return { revisao: true, motivo: "sem registro de direitos (titular, licença, origem)" };
   const txt = (v, n) => (typeof v === "string" ? v.slice(0, n || 500) : "");
   return {
@@ -55,11 +70,13 @@ function montarFicha(arq, direitos, agora) {
       status: "publicada",
       // o arquivo é resolvido pelo servidor a partir daqui; o cliente nunca
       // manda um driveId
-      origem: { tipo: "drive", driveId: arq.driveId, pasta: txt(arq.pastaId, 80) },
+      provedor: "drive",
+      arquivoDrive: { id: arq.driveId, pasta: txt(arq.pastaId, 80) },
       caminho: "drive/" + arq.driveId,
       titular: txt(direitos.titular),
       licenca: txt(direitos.licenca),
-      origemRegistro: txt(direitos.origem),
+      origem: txt(direitos.origem),
+      chaveAcesso: "publicada|" + txt(arq.colecao, 200),
       enviadoEm: agora || 0,
     },
   };
@@ -89,4 +106,4 @@ function resumoIndexacao(linhas) {
   return r;
 }
 
-module.exports = { PASTA, ATALHO, classificarItem, tipoDaEdicao, direitosOk, montarFicha, dedupPorSha, resumoIndexacao };
+module.exports = { PASTA, ATALHO, classificarItem, tipoDaEdicao, direitosOk, ignorarItem, tipoPelosBytes, montarFicha, dedupPorSha, resumoIndexacao };

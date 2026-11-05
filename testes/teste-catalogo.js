@@ -7,7 +7,7 @@ const ctx = { URL, Set, Map, Blob, crypto: webcrypto, AbortController, setTimeou
 vm.createContext(ctx);
 vm.runInContext(trecho("// ---------------- ESTANTE: AS CONTAS", "// ---------------- FIM DAS CONTAS DA ESTANTE") +
   trecho("// ---------------- CATALOGO: AS CONTAS", "// ---------------- FIM DAS CONTAS DO CATALOGO") +
-  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal, caminhoNoArmazenamento, urlDoArmazenamento, direitosCompletos, colecaoDaTrilha, fichaDoAcervoApp, resumoDoEnvio, acervoLiberadoDaConta, podeLerColecaoAcervo};", ctx);
+  "\nthis.funcoes = {converterIndiceGenerico, urlDoCatalogo, mesclarEstantes, urlNaLargura, urlDoOriginal, caminhoNoArmazenamento, urlDoArmazenamento, direitosCompletos, colecaoDaTrilha, fichaDoAcervoApp, resumoDoEnvio, acervoLiberadoDaConta, podeLerColecaoAcervo, urlDaFuncaoDrive};", ctx);
 let ok = 0, mal = 0;
 function teste(nome, esperado, obtido) {
   if (JSON.stringify(esperado) === JSON.stringify(obtido)) { ok++; console.log("  ok   " + nome); }
@@ -38,6 +38,12 @@ teste("direitos: titular, licença e origem obrigatórios", [true,false,false], 
 teste("a pasta vira a coleção", ["Turma", "", "Sub"], [F.colecaoDaTrilha("HQs/Turma/Edição 1.cbz"), F.colecaoDaTrilha("solta.cbz"), F.colecaoDaTrilha("A/B/Sub/x.pdf")]);
 const fichaA = F.fichaDoAcervoApp({uid:shaA, sha256:shaA, titulo:"Edição 1", tipo:"zip", paginas:24, tamanho:999, caminho:"acervo/"+shaA+".cbz", categoria:"manga", capa:"data:image/jpeg;base64,AAAA", titular:"T", licenca:"L", origem:"O", status:"publicada"}, "balde");
 teste("ficha do acervo vira edição da estante, privada e com direitos", [shaA, 24, "manga", true, "T", "data:image/jpeg;base64,AAAA"], [fichaA.id, fichaA.paginas, fichaA.categoria, fichaA.online.privado, fichaA.direitos.titular, fichaA.capaUrl]);
+const driveUrl = "https://us-central1-super-hqs.cloudfunctions.net/baixarEdicao";
+const driveFicha = { sha256: shaA, tipo: "zip", paginas: 24, tamanho: 999, caminho: "drive/id", provedor: "drive", titular: "T", licenca: "L", origem: "Arquivo do autor" };
+const driveObra = F.fichaDoAcervoApp(driveFicha, "", driveUrl);
+teste("ficha do Drive funciona sem Storage e preserva origem e hash", [driveUrl + "?edicao=" + shaA, "drive", "Arquivo do autor"], [driveObra.online.url, driveObra.online.entrega, driveObra.direitos.origem]);
+teste("Drive sem endpoint real não é anunciado como disponível", null, F.fichaDoAcervoApp(driveFicha, "", ""));
+teste("endpoint de outro projeto ou com credenciais é recusado", ["", "", ""], [F.urlDaFuncaoDrive("https://x-outro.cloudfunctions.net/baixarEdicao", "baixarEdicao"), F.urlDaFuncaoDrive("https://senha@us-central1-super-hqs.cloudfunctions.net/baixarEdicao", "baixarEdicao"), F.urlDaFuncaoDrive(driveUrl + "?edicao=x", "baixarEdicao")]);
 teste("capa que não é JPEG em base64 é descartada (nada de script na capa)", "", F.fichaDoAcervoApp({uid:shaA, tipo:"pdf", paginas:1, caminho:"x", capa:"javascript:alert(1)"}, "b").capaUrl);
 teste("ficha sem caminho, sem páginas ou com tipo estranho não entra", [null,null,null], [F.fichaDoAcervoApp({uid:shaA,tipo:"zip",paginas:3},"b"), F.fichaDoAcervoApp({uid:shaA,tipo:"zip",paginas:0,caminho:"x"},"b"), F.fichaDoAcervoApp({uid:shaA,tipo:"rar",paginas:3,caminho:"x"},"b")]);
 teste("relatório do envio separa cada situação", {encontrados:5,integros:4,enviados:2,repetidos:1,erro:1,direitos:1},
@@ -73,7 +79,7 @@ teste("preserva progresso e categoria pessoal",[2,"hq",true],[mesclada[0].leitur
 teste("não altera a entrada",undefined,local.noAparelho);
 
 // Exercita a função real de download com os limites do navegador simulados.
-const baixador=trecho("async function baixarObraOnline(obra)","// ---------------- ESTANTE: ABRIR OS ARQUIVOS");
+const baixador=trecho("async function baixarArquivoDoDrive(obra, cab, signal)","// ---------------- ESTANTE: ABRIR OS ARQUIVOS");
 ctx.hexDe = b=>Buffer.from(b).toString("hex");
 ctx.abrirArquivoDaEstante = async ()=>({paginas:4,imagem:async()=>new Blob(["capa"]),fechar(){}});
 ctx.miniatura = async b=>b;
@@ -95,6 +101,19 @@ vm.runInContext(baixador+"\nthis.baixar = baixarObraOnline;",ctx);
   falhou=false;
   try{await ctx.baixar(real);}catch(e){falhou=true;}
   teste("HTML de login não vira edição",[true,1],[falhou,gravou]);
+  ctx.FIREBASE_DRIVE = { baixar: driveUrl };
+  ctx.tokenValido = async () => ({ idToken: "token-teste" }); ctx.lerSessaoConta = () => ({});
+  let chamadasDrive = [];
+  ctx.fetch = async (url, opt) => { chamadasDrive.push(opt.headers); return { status: 206, headers: { get: () => "bytes 0-" + (bytes.size - 1) + "/" + bytes.size }, blob: async () => bytes }; };
+  const dReal = { ...real, online: { ...driveObra.online, url: driveUrl + "?edicao=" + hash } };
+  await ctx.baixar(dReal);
+  teste("Drive usa Bearer e intervalo, grava só depois da conferência", ["Bearer token-teste", "bytes=0-" + (bytes.size - 1), 2], [chamadasDrive[0].Authorization, chamadasDrive[0].Range, gravou]);
+  ctx.fetch = async () => ({ status: 206, headers: { get: () => "bytes 0-1/2" }, blob: async () => bytes });
+  falhou = false; try { await ctx.baixar(dReal); } catch (e) { falhou = true; }
+  teste("Drive não grava resposta com intervalo incorreto", [true, 2], [falhou, gravou]);
+  ctx.fetch = async () => ({ status: 403 }); falhou = false;
+  try { await ctx.baixar(dReal); } catch (e) { falhou = true; }
+  teste("Drive nega acesso revogado e não grava", [true, 2], [falhou, gravou]);
   ctx.estanteDb.arquivo=async()=>bytes;
   ctx.estanteDb.obra=async()=>({...real,leitura:{pagina:3,em:10}});
   ctx.fetch=async()=>{throw Error("não deveria baixar");};

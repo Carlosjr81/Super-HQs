@@ -10,6 +10,8 @@ const path = require("path");
 const { caminhoDoApp } = require("./app");
 
 const SUITES = [
+  ["../functions/testes/teste-entregador", "handler do Drive: tokens, acesso, arquivo movido, intervalos e entrega privada"],
+  ["../functions/testes/teste-sincronizacao", "Drive: paginação, retomada, quarentena, mais de 500 edições e download por partes"],
   ["teste-acesso", "login com aprovação, termos, cobrança e o painel do dono"],
   ["teste-estante", "a estante: tipo pelos bytes, páginas do CBZ, título, busca e leitura"],
   ["teste-conectores", "a sincronização do acervo: paginação, retomada, duplicatas, direitos e falhas"],
