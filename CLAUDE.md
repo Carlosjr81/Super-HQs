@@ -71,12 +71,12 @@ de montagem trocou `treinolivre:` por `superhqs:` e os textos de treino). A
 documentação completa de cada parte está no CLAUDE.md do Treino Livre, seções
 *Login com aprovação*, *Os Termos de Uso*, *O app pago* e *Entrar com o Google*.
 
-- **Firebase (verificado 04/11/2026)**: projeto `super-hqs`, **plano Spark**
-  (sem Storage/Functions até o dono ligar o Blaze), Auth e Firestore ativos. A
-  sessão do Claude na nuvem **não autentica** no Firebase (CLI/MCP sem login) e
-  **não publica regras nem valida pelo console** daqui; isso é do dono ou de uma
-  sessão com login. As regras são testadas contra o Firebase real pelo
-  `prova-regras-firebase.js` (REST, conta descartável).
+- **Firebase (04/11–05/11/2026)**: projeto `super-hqs`, **plano Spark**
+  (sem Storage/Functions até o dono ligar o Blaze), Auth e Firestore ativos.
+  Regras **v7 + índice composto publicados em 05/11/2026** (o dono rodou
+  `firebase deploy` pelo Cloud Shell; a sessão do Claude na nuvem não tem login
+  no Firebase). As regras são provadas contra o Firebase real por
+  `prova-regras-firebase.js` (REST, conta descartável): 19/19 em 05/11.
 - **`Porteiro`** envolve o app. `FIREBASE_ACESSO` **vazio = porteiro desligado**
   **Ligado em 2026-10-31e** no projeto `super-hqs` (Auth e-mail/senha e Google,
   Firestore, regras v5). Provado no Firebase real com
@@ -243,10 +243,13 @@ Storage (`FIREBASE_ARMAZENAMENTO` vazio; passo a passo em
   (`podeVerColecaoAcervo` / `podeVerArquivoAcervo`). Provado com o emulador por
   `testes/prova-regras-colecao.js` (15/15: lê a coleção liberada, nega as
   outras, pendente/bloqueado/vencido negados, leitor não se dá acesso).
-  Dormente enquanto o Storage estiver desligado (sem dados). **Falta publicar
-  pelo dono** (a sessão na nuvem não tem login):
-  `firebase deploy --only firestore:rules,firestore:indexes --project super-hqs`
-  e as regras de Storage pelo console; depois `node testes/prova-regras-firebase.js`.
+  **Publicado em 2026-11-05** no Firebase real (pelo dono, via Cloud Shell:
+  `firebase deploy --only firestore:rules,firestore:indexes`): regras v7 e o
+  índice composto estão no ar, **provados** por `node testes/prova-regras-firebase.js`
+  (19/19, inclui "conta pendente não lista o acervo" e "conta comum não cria
+  ficha"). Dormente só enquanto o Storage estiver desligado (sem dados). As
+  **regras de Storage** (`storage.rules`) entram pelo console quando o Storage
+  for ligado (Blaze).
 
 ## O backend do acervo privado no Drive (`functions/`, escrito 2026-11-05)
 
