@@ -1,21 +1,12 @@
 # Relatório da sincronização do acervo
 
-Gerado em 2026-11-05T00:55:18.907Z. Gravado a cada execução por `conectores/rodar.js`.
+Gerado em 2026-11-05T01:00:07.650Z. Gravado a cada execução por `conectores/rodar.js`.
 
 | Fonte | Situação | Mudança | Na fonte | Publicadas | Em revisão |
 |---|---|---|---|---|---|
-| Little Nemo in Slumberland — 1905 | em dia |  |  |  |  |
-| Little Nemo in Slumberland — 1906 | em dia |  |  |  |  |
-| Little Nemo in Slumberland — 1907 | em dia |  |  |  |  |
-| Little Nemo in Slumberland — 1908 | em dia |  |  |  |  |
-| Little Nemo in Slumberland — 1909 | ok | nova | 52 | 10 | 42 |
-| Little Nemo in Slumberland — 1910 | ok | nada | 15 | 0 | 15 |
-| Little Nemo in Slumberland — 1911 | ok | nada | 30 | 0 | 30 |
-| Little Nemo in Slumberland — 1912 | ok | nada | 0 | 0 | 0 |
-| Little Nemo in Slumberland — 1913 | ok | nada | 0 | 0 | 0 |
-| Little Nemo in Slumberland — 1914 | ok | nada | 0 | 0 | 0 |
+| Little Nemo in Slumberland — 1909 | ok | alterada | 52 | 52 | 0 |
 
-No catálogo: 5 obras publicadas, 0 indisponíveis, 173 páginas, 87 itens esperando revisão.
+No catálogo: 5 obras publicadas, 0 indisponíveis, 215 páginas, 45 itens esperando revisão.
 
 "Na fonte" conta só os arquivos que casam com o padrão da fonte; a diferença para "Publicadas" está em revisão (com o motivo em `catalogo/acervo.json`, campo `revisao`) ou é imagem repetida (mesmo SHA-1).
 
@@ -23,8 +14,7 @@ No catálogo: 5 obras publicadas, 0 indisponíveis, 173 páginas, 87 itens esper
 
 | Fonte | Largura mediana do original | Páginas trocadas por versão maior |
 |---|---|---|
-| Little Nemo in Slumberland — 1909 | 1752 px | 0 |
-| Little Nemo in Slumberland — 1910 |  | 0 |
+| Little Nemo in Slumberland — 1909 | 1748 px | 0 |
 
 Outros arquivos em **Little Nemo in Slumberland — 1909** (fora do padrão, os maiores primeiro):
 
@@ -34,9 +24,3 @@ Outros arquivos em **Little Nemo in Slumberland — 1909** (fora do padrão, os 
 - Little Nemo creature.jpg — 846×1119 (image/jpeg)
 - Little Nemo.jpg — 573×749 (image/jpeg)
 - Little Nemo monkeys.jpg — 449×600 (image/jpeg)
-
-Outros arquivos em **Little Nemo in Slumberland — 1910** (fora do padrão, os maiores primeiro):
-
-- Little Nemo in slumberland. Ha! Ha! I see smugglers in the distance! - Winsor McCay. LCCN2003675426.tif — 4114×5167 (image/tiff)
-- Little Nemo in slumberland. Ha! Ha! I see smugglers in the distance! 1910.jpg — 815×1024 (image/jpeg)
-- Little nemo panels.jpg — 750×649 (image/jpeg)
