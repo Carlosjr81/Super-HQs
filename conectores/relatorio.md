@@ -1,6 +1,6 @@
 # Relatório da sincronização do acervo
 
-Gerado em 2026-11-11T06:33:19.618Z. Gravado a cada execução por `conectores/rodar.js`.
+Gerado em 2026-11-12T07:18:21.905Z. Gravado a cada execução por `conectores/rodar.js`.
 
 | Fonte | Situação | Mudança | Na fonte | Publicadas | Em revisão |
 |---|---|---|---|---|---|
