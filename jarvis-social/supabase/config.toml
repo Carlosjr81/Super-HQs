@@ -1,0 +1,11 @@
+# Configuração mínima do Supabase CLI (usada pelo workflow de implantação).
+project_id = "jarvis-social"
+
+[functions.api]
+# A API confere o token do usuário por conta própria (e a rota de retorno do
+# OAuth da Meta não tem token), por isso o portão automático fica desligado.
+verify_jwt = false
+
+[functions.worker]
+# Protegido pelo cabeçalho x-jarvis-worker (segredo JS_SEGREDO_WORKER).
+verify_jwt = false

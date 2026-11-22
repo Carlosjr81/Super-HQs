@@ -1,0 +1,28 @@
+# Relógio RESERVA do worker do Jarvis Social. O principal é o pg_cron no
+# Supabase (a cada minuto). O cron do Actions pode atrasar ou ser descartado
+# em horário de pico (documentação do GitHub), por isso NÃO é o mecanismo
+# principal: só garante que, se o pg_cron parar, a fila ainda anda.
+name: Jarvis Social - relógio reserva
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bater:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      REF: ${{ secrets.JS_SUPABASE_PROJECT_REF }}
+      SENHA: ${{ secrets.JS_SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Chamar o worker
+        run: |
+          if [ -z "$REF" ] || [ -z "$SENHA" ]; then echo "Servidor ainda não configurado."; exit 0; fi
+          WORKER=$(printf 'jarvis-social-worker:%s' "$SENHA" | sha256sum | cut -c1-48)
+          echo "::add-mask::$WORKER"
+          curl -fsS -m 90 -X POST "https://$REF.supabase.co/functions/v1/worker" -H "x-jarvis-worker: $WORKER" | head -c 600; echo

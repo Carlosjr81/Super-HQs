@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0B1020">
+<title>Jarvis Social</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone.svg">
+<style>
+:root {
+  --canvas: #0B1020; --surface: #141B2E; --surface-2: #1C2540; --border: #2A3556;
+  --text: #EEF1F8; --text-2: #B7C0D8; --muted: #8D97B3;
+  --brand: #35D6A4; --on-brand: #06231A; --warn: #F5C451; --danger: #FF7A85; --info: #7FB2FF;
+  --raio: 14px;
+}
+@media (prefers-color-scheme: light) {
+  :root { --canvas: #F5F7FB; --surface: #FFFFFF; --surface-2: #EEF2F8; --border: #D5DCEA;
+    --text: #0E1424; --text-2: #39435C; --muted: #5A6480; --brand: #0E8C66; --on-brand: #FFFFFF;
+    --warn: #8A5B00; --danger: #B3261E; --info: #1F5BB8; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--canvas); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); overflow-x: hidden; }
+main { max-width: 640px; margin: 0 auto; padding: 12px 16px 24px; }
+h1 { font-size: 22px; margin: 6px 0 12px; } h2 { font-size: 18px; margin: 18px 0 8px; } h3 { font-size: 16px; margin: 12px 0 6px; }
+p { margin: 6px 0; } small, .fraco { color: var(--muted); }
+a { color: var(--info); }
+.cartao { background: var(--surface); border: 1px solid var(--border); border-radius: var(--raio); padding: 14px; margin: 10px 0; }
+.faixa { border-radius: 10px; padding: 10px 12px; margin: 8px 0; font-size: 14px; border: 1px solid var(--border); background: var(--surface-2); }
+.faixa.demo { border-color: var(--warn); color: var(--warn); font-weight: 600; }
+.faixa.erro { border-color: var(--danger); color: var(--danger); }
+.faixa.ok { border-color: var(--brand); color: var(--brand); }
+button, .botao { min-height: 48px; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+button.primario, .botao.primario { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+button.perigo { color: var(--danger); border-color: var(--danger); background: transparent; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
+.linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.linha > button { flex: 1 1 auto; }
+.grande { width: 100%; font-size: 18px; min-height: 56px; }
+label { display: block; font-weight: 600; margin: 12px 0 4px; }
+input, textarea, select { width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; }
+textarea { min-height: 140px; resize: vertical; }
+input[type=checkbox] { width: 22px; min-height: 22px; height: 22px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.chip { min-height: 40px; padding: 6px 12px; border-radius: 999px; font-weight: 500; font-size: 14px; }
+.chip.ativo { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+.selo { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid currentColor; }
+.selo.scheduled { color: var(--info); } .selo.published { color: var(--brand); } .selo.failed, .selo.needs_reconciliation { color: var(--danger); }
+.selo.paused, .selo.retry_wait { color: var(--warn); } .selo.cancelled, .selo.draft { color: var(--muted); }
+.item { display: flex; gap: 12px; align-items: flex-start; }
+.miniatura { width: 56px; height: 100px; border-radius: 8px; object-fit: cover; background: var(--surface-2); flex: 0 0 auto; }
+.item .texto { min-width: 0; flex: 1; } .item .texto p { overflow-wrap: anywhere; }
+.dia { font-weight: 700; color: var(--text-2); margin-top: 16px; text-transform: capitalize; }
+nav.barra { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+nav.barra a { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60px; color: var(--muted); text-decoration: none; font-size: 12px; gap: 2px; }
+nav.barra a.ativo { color: var(--brand); font-weight: 700; }
+nav.barra span.ic { font-size: 20px; line-height: 1; }
+.previa { position: relative; width: 100%; max-width: 270px; aspect-ratio: 9/16; margin: 8px auto; background: #000; border-radius: 12px; overflow: hidden; }
+.previa video, .previa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.previa .grade { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); aspect-ratio: 3/4; border: 2px dashed rgba(255,255,255,.9); box-shadow: 0 0 0 999px rgba(0,0,0,.45); pointer-events: none; }
+.barra-prog { height: 10px; border-radius: 6px; background: var(--surface-2); overflow: hidden; margin: 6px 0; }
+.barra-prog > div { height: 100%; background: var(--brand); width: 0; transition: width .2s; }
+.passos { display: flex; gap: 4px; margin: 4px 0 12px; } .passos span { flex: 1; height: 4px; border-radius: 4px; background: var(--border); } .passos span.feito { background: var(--brand); }
+pre.resposta { white-space: pre-wrap; font: inherit; margin: 8px 0 0; }
+dl.recibo { display: grid; grid-template-columns: max-content 1fr; gap: 4px 10px; margin: 8px 0; font-size: 14px; } dl.recibo dt { color: var(--muted); } dl.recibo dd { margin: 0; overflow-wrap: anywhere; }
+.folha { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 10; display: flex; align-items: flex-end; justify-content: center; }
+.folha > div { background: var(--surface); width: 100%; max-width: 640px; max-height: 92vh; overflow: auto; border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+.oculto { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main id="tela" aria-live="polite"><p>Carregando…</p></main>
+<nav class="barra" aria-label="Navegação">
+  <a href="#inicio" data-aba="inicio"><span class="ic" aria-hidden="true">⌂</span>Início</a>
+  <a href="#criar" data-aba="criar"><span class="ic" aria-hidden="true">＋</span>Criar</a>
+  <a href="#agenda" data-aba="agenda"><span class="ic" aria-hidden="true">▦</span>Agenda</a>
+  <a href="#biblioteca" data-aba="biblioteca"><span class="ic" aria-hidden="true">▤</span>Biblioteca</a>
+  <a href="#ajustes" data-aba="ajustes"><span class="ic" aria-hidden="true">⚙</span>Ajustes</a>
+</nav>
+<div id="folha" class="folha oculto" role="dialog" aria-modal="true"><div id="folha-conteudo"></div></div>
+<noscript>Ative o JavaScript para usar o Jarvis Social.</noscript>
+<script type="module" src="app.js"></script>
+</body>
+</html>

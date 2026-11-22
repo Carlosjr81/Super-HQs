@@ -1,0 +1,14 @@
+{
+  "name": "Jarvis Social",
+  "short_name": "Jarvis Social",
+  "description": "Agende e publique Reels pelo celular.",
+  "start_url": "./#inicio",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0B1020",
+  "theme_color": "#0B1020",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

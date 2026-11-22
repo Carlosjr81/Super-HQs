@@ -1,0 +1,1096 @@
+{
+ "openapi": "3.0.3",
+ "info": {
+  "title": "Jarvis Social API",
+  "version": "2026-11-22a",
+  "description": "Mesma API do painel. Tenant sempre derivado da sessão. Horários de entrada em data/hora locais do fuso do espaço (padrão America/Sao_Paulo); saída em UTC + fuso + texto local."
+ },
+ "servers": [
+  {
+   "url": "https://{ref}.supabase.co/functions/v1/api",
+   "variables": {
+    "ref": {
+     "default": "SEU_REF"
+    }
+   }
+  }
+ ],
+ "paths": {
+  "/v1/saude": {
+   "get": {
+    "summary": "Saúde",
+    "responses": {
+     "200": {
+      "description": "ok"
+     }
+    }
+   }
+  },
+  "/v1/eu": {
+   "get": {
+    "summary": "Usuário, espaço, conexões e alertas",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    }
+   }
+  },
+  "/v1/organizacoes": {
+   "post": {
+    "summary": "Criar espaço",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "nome": {
+          "type": "string"
+         },
+         "fuso": {
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/organizacao": {
+   "put": {
+    "summary": "Ajustar espaço",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "fuso": {
+          "type": "string"
+         },
+         "politica_atraso": {
+          "type": "string",
+          "enum": [
+           "aguardar",
+           "publicar",
+           "reagendar"
+          ]
+         },
+         "tolerancia_atraso_min": {
+          "type": "integer"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/midias": {
+   "get": {
+    "summary": "Biblioteca",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    }
+   },
+   "post": {
+    "summary": "Registrar mídia e obter URL de upload assinada",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "tipo",
+         "mime",
+         "tamanho"
+        ],
+        "properties": {
+         "tipo": {
+          "type": "string",
+          "enum": [
+           "video",
+           "capa"
+          ]
+         },
+         "mime": {
+          "type": "string"
+         },
+         "tamanho": {
+          "type": "integer"
+         },
+         "sha256": {
+          "type": "string"
+         },
+         "nome": {
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/midias/{id}/finalizar": {
+   "post": {
+    "summary": "Conferir que o arquivo chegou inteiro",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   }
+  },
+  "/v1/posts": {
+   "get": {
+    "summary": "Listar (de/ate em datas locais)",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "parameters": [
+     {
+      "name": "de",
+      "in": "query",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "ate",
+      "in": "query",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "estado",
+      "in": "query",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ]
+   },
+   "post": {
+    "summary": "Criar rascunho ou agendar (idempotente)",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "video_id",
+         "chave_idempotencia"
+        ],
+        "properties": {
+         "video_id": {
+          "type": "string"
+         },
+         "capa_id": {
+          "type": "string"
+         },
+         "conta_id": {
+          "type": "string"
+         },
+         "legenda": {
+          "type": "string",
+          "maxLength": 2200
+         },
+         "agendar": {
+          "type": "boolean"
+         },
+         "data": {
+          "type": "string",
+          "example": "2026-11-23"
+         },
+         "hora": {
+          "type": "string",
+          "example": "10:00"
+         },
+         "proximo_livre": {
+          "type": "boolean"
+         },
+         "chave_idempotencia": {
+          "type": "string",
+          "maxLength": 100
+         },
+         "fonte": {
+          "type": "object",
+          "properties": {
+           "autor": {
+            "type": "string"
+           },
+           "url": {
+            "type": "string"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/posts/{id}": {
+   "get": {
+    "summary": "Post, recibo e eventos",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   },
+   "patch": {
+    "summary": "Editar (exige versao)",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "allOf": [
+         {
+          "type": "object",
+          "properties": {
+           "versao": {
+            "type": "integer"
+           }
+          }
+         },
+         {
+          "type": "object",
+          "properties": {
+           "legenda": {
+            "type": "string"
+           },
+           "data": {
+            "type": "string"
+           },
+           "hora": {
+            "type": "string"
+           },
+           "capa_id": {
+            "type": "string"
+           }
+          }
+         }
+        ]
+       }
+      }
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   }
+  },
+  "/v1/posts/{id}/agendar": {
+   "post": {
+    "summary": "Agendar",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "versao": {
+          "type": "integer"
+         }
+        }
+       }
+      }
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   }
+  },
+  "/v1/posts/{id}/pausar": {
+   "post": {
+    "summary": "Pausar",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "versao": {
+          "type": "integer"
+         }
+        }
+       }
+      }
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   }
+  },
+  "/v1/posts/{id}/retomar": {
+   "post": {
+    "summary": "Retomar",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "versao": {
+          "type": "integer"
+         }
+        }
+       }
+      }
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   }
+  },
+  "/v1/posts/{id}/cancelar": {
+   "post": {
+    "summary": "Cancelar",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "versao": {
+          "type": "integer"
+         }
+        }
+       }
+      }
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   }
+  },
+  "/v1/frequencia": {
+   "get": {
+    "summary": "Política atual",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    }
+   },
+   "put": {
+    "summary": "Aplicar (hash_previa obrigatório se muda posts)",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "politica": {
+          "type": "object",
+          "properties": {
+           "horarios": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            }
+           },
+           "dias": {
+            "type": "array",
+            "items": {
+             "type": "integer",
+             "minimum": 1,
+             "maximum": 7
+            }
+           },
+           "pausadaAte": {
+            "type": "string",
+            "nullable": true
+           },
+           "fuso": {
+            "type": "string"
+           }
+          }
+         },
+         "hash_previa": {
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/frequencia/previa": {
+   "post": {
+    "summary": "Prévia das remarcações",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "politica": {
+          "type": "object",
+          "properties": {
+           "horarios": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            }
+           },
+           "dias": {
+            "type": "array",
+            "items": {
+             "type": "integer",
+             "minimum": 1,
+             "maximum": 7
+            }
+           },
+           "pausadaAte": {
+            "type": "string",
+            "nullable": true
+           },
+           "fuso": {
+            "type": "string"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/fila/pausar": {
+   "post": {
+    "summary": "Pausar fila",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    }
+   }
+  },
+  "/v1/fila/retomar": {
+   "post": {
+    "summary": "Retomar fila",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    }
+   }
+  },
+  "/v1/comandos": {
+   "post": {
+    "summary": "Comando em português",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "texto"
+        ],
+        "properties": {
+         "texto": {
+          "type": "string"
+         },
+         "post_id": {
+          "type": "string"
+         },
+         "confirmar": {
+          "type": "boolean"
+         },
+         "hash_previa": {
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/instagram/conectar": {
+   "post": {
+    "summary": "URL de autorização oficial do Instagram",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    }
+   }
+  },
+  "/v1/instagram/{id}/desconectar": {
+   "post": {
+    "summary": "Desconectar conta",
+    "security": [
+     {
+      "sessao": []
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "ok"
+     },
+     "400": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "401": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "404": {
+      "$ref": "#/components/responses/Erro"
+     },
+     "409": {
+      "$ref": "#/components/responses/Erro"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      }
+     }
+    ]
+   }
+  }
+ },
+ "components": {
+  "securitySchemes": {
+   "sessao": {
+    "type": "http",
+    "scheme": "bearer",
+    "description": "access_token do Supabase Auth; enviar também o cabeçalho apikey com a chave anon"
+   }
+  },
+  "responses": {
+   "Erro": {
+    "description": "erro",
+    "content": {
+     "application/json": {
+      "schema": {
+       "type": "object",
+       "properties": {
+        "erro": {
+         "type": "string"
+        },
+        "mensagem": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

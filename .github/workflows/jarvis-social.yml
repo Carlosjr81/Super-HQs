@@ -1,0 +1,129 @@
+# Jarvis Social: testes em todo push/PR que mexa em jarvis-social/ e
+# implantação do servidor (Supabase) quando os segredos existirem.
+# Não mexe no Super HQs: só lê e escreve dentro de jarvis-social/.
+name: Jarvis Social
+
+on:
+  push:
+    branches: [main]
+    paths: ["jarvis-social/**", ".github/workflows/jarvis-social*.yml"]
+  pull_request:
+    paths: ["jarvis-social/**", ".github/workflows/jarvis-social*.yml"]
+  workflow_dispatch:
+    inputs:
+      implantar:
+        description: "Implantar o servidor (Supabase) depois dos testes"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jarvis-social-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      # O runner já traz o PostgreSQL; a suíte SQL sobe um cluster temporário.
+      - name: Testes (núcleo, API, worker, SQL, painel)
+        run: node jarvis-social/testes/rodar.mjs
+
+  implantar:
+    needs: testes
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.implantar)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.JS_SUPABASE_ACCESS_TOKEN }}
+      REF: ${{ secrets.JS_SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.JS_SUPABASE_DB_PASSWORD }}
+      META_APP_ID: ${{ secrets.JS_META_APP_ID }}
+      META_APP_SECRET: ${{ secrets.JS_META_APP_SECRET }}
+      EMAILS: ${{ secrets.JS_EMAILS_PERMITIDOS }}
+      PAINEL: https://carlosjr81.github.io/Super-HQs/jarvis-social/
+    steps:
+      - name: Segredos presentes?
+        id: seg
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$REF" ] || [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "::warning::Implantação pulada: faltam JS_SUPABASE_ACCESS_TOKEN, JS_SUPABASE_PROJECT_REF ou JS_SUPABASE_DB_PASSWORD (veja jarvis-social/docs/DEPLOY.md)."
+            echo "ok=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=1" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.seg.outputs.ok == '1'
+      - uses: supabase/setup-cli@v1
+        if: steps.seg.outputs.ok == '1'
+        with:
+          version: latest
+      - name: Banco (migrations)
+        if: steps.seg.outputs.ok == '1'
+        working-directory: jarvis-social
+        run: |
+          supabase link --project-ref "$REF" -p "$SUPABASE_DB_PASSWORD"
+          supabase db push -p "$SUPABASE_DB_PASSWORD"
+      - name: Segredos do servidor (derivados; nada novo para o dono guardar)
+        if: steps.seg.outputs.ok == '1'
+        working-directory: jarvis-social
+        run: |
+          # Derivados da senha do banco: estáveis entre implantações. Trocar a
+          # senha do banco troca a chave de cifra (aí basta reconectar o Instagram).
+          WORKER=$(printf 'jarvis-social-worker:%s' "$SUPABASE_DB_PASSWORD" | sha256sum | cut -c1-48)
+          CIFRA=$(printf 'jarvis-social-cifra:%s' "$SUPABASE_DB_PASSWORD" | sha256sum | cut -c1-64 | xxd -r -p | base64)
+          echo "::add-mask::$WORKER"; echo "::add-mask::$CIFRA"
+          echo "WORKER=$WORKER" >> "$GITHUB_ENV"
+          ARGS=(JS_SEGREDO_WORKER="$WORKER" JS_CHAVE_CIFRA="$CIFRA" JS_URL_PAINEL="$PAINEL" JS_ORIGENS_PERMITIDAS="https://carlosjr81.github.io")
+          [ -n "$META_APP_ID" ] && ARGS+=(JS_META_APP_ID="$META_APP_ID")
+          [ -n "$META_APP_SECRET" ] && ARGS+=(JS_META_APP_SECRET="$META_APP_SECRET")
+          [ -n "$EMAILS" ] && ARGS+=(JS_EMAILS_PERMITIDOS="$EMAILS")
+          supabase secrets set --project-ref "$REF" "${ARGS[@]}"
+      - name: Funções (api e worker)
+        if: steps.seg.outputs.ok == '1'
+        working-directory: jarvis-social
+        run: supabase functions deploy api worker --project-ref "$REF" --use-api
+      - name: Relógio do worker (pg_cron, a cada minuto) e login (URL do painel)
+        if: steps.seg.outputs.ok == '1'
+        run: |
+          URL="https://$REF.supabase.co"
+          SQL=$(sed -e "s#__URL__#$URL#" -e "s#__SEGREDO__#$WORKER#" jarvis-social/supabase/agendar-worker.sql)
+          jq -n --arg q "$SQL" '{query:$q}' > /tmp/q.json
+          curl -fsS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/q.json > /dev/null
+          jq -n --arg s "$PAINEL" '{site_url:$s, uri_allow_list:$s}' > /tmp/a.json
+          curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/a.json > /dev/null
+      - name: Prova de vida (saúde da API e do worker)
+        if: steps.seg.outputs.ok == '1'
+        run: |
+          URL="https://$REF.supabase.co"
+          curl -fsS "$URL/functions/v1/api/v1/saude" | tee /tmp/saude.json; echo
+          curl -fsS -X POST "$URL/functions/v1/worker" -H "x-jarvis-worker: $WORKER" | head -c 400; echo
+      - name: Endereço público no painel (URL + chave anon, que é pública)
+        if: steps.seg.outputs.ok == '1'
+        run: |
+          ANON=$(curl -fsS "https://api.supabase.com/v1/projects/$REF/api-keys" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" | jq -r '[.[] | select(.name=="anon")][0].api_key')
+          test -n "$ANON" && test "$ANON" != "null"
+          cat > jarvis-social/config.js <<EOF2
+          // Endereços PÚBLICOS do servidor (gerado pelo workflow Jarvis Social).
+          // A chave "anon" é pública por natureza; segredos ficam só no Supabase.
+          export const CONFIG = {
+            supabaseUrl: "https://$REF.supabase.co",
+            supabaseAnon: "$ANON",
+          };
+          EOF2
+          if ! git diff --quiet jarvis-social/config.js; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add jarvis-social/config.js
+            git commit -m "Jarvis Social: endereço do servidor no painel"
+            git push
+          fi
