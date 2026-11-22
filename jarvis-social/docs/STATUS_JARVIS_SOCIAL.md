@@ -7,7 +7,8 @@
 | Campo | Valor |
 |---|---|
 | Repositório / pasta | `Carlosjr81/Super-HQs` › `jarvis-social/` (público) |
-| Branch de trabalho | `ccr-272ef392-6vuh6i` (ainda **não** está na `main`) |
+| Branch de trabalho | `ccr-272ef392-6vuh6i` (ainda **não** está na `main`); commit da fundação `a8cace1` |
+| Actions | o workflow *Jarvis Social* só passa a existir para o GitHub depois do merge na `main` (dispatch exige o arquivo na branch padrão) |
 | Etapa | A concluída (fundação) + B em parte (agendamento e adaptador Meta escritos e testados com simulador) |
 | Testes | `node jarvis-social/testes/rodar.mjs` → 74 passou / 0 falhou (22/11/2026, sessão na nuvem) |
 | Painel publicado | **Ainda não.** Depois do merge na `main`: https://carlosjr81.github.io/Super-HQs/jarvis-social/ (abre em DEMONSTRAÇÃO até o servidor existir) |
