@@ -319,14 +319,3 @@ obrigariam a abrir o app inteiro.
 | `firebase/` | Regras do Firestore e o passo a passo do dono |
 | `android/`, `.github/workflows/` | APK e conferidas |
 | `testes/` | `rodar.js`, `verificar.js`, `servir.js` (localhost:8765), `teste-acesso.js` |
-
-## Jarvis Social (pasta `jarvis-social/`, 22/11/2026)
-
-Outro produto, hospedado aqui **a pedido do dono** ("crie um novo local no
-repositório"): agendador/publicador de Reels com servidor próprio (Supabase,
-projeto separado). **Não faz parte do app Super HQs**: nada fora de
-`jarvis-social/` e dos workflows `jarvis-social*.yml`; o `sw.js` dele tem
-escopo só da pasta; as travas do Super HQs não mudam. Regras, estado e
-próxima ação: `jarvis-social/CLAUDE.md` e `jarvis-social/docs/STATUS_JARVIS_SOCIAL.md`.
-Trava própria: `node jarvis-social/testes/rodar.mjs`. Repositório público ⇒
-nunca voz, vídeos pessoais ou tokens nessa pasta.
